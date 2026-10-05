@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSM Playground — mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Kannada:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: fixed spruce sidebar + top bar + scrolling work area; forms in titled panels, dense tables. */
+:root{
+  --ink:#15201E; --muted:#5B6967; --faint:#8A9794; --line:#D9E1DF; --line-strong:#C3CECB;
+  --bg:#EEF2F1; --surface:#FFFFFF; --sunken:#F6F8F8;
+  --side:#0F2D2A; --side-2:#163A36; --side-fg:#BFD3CE; --side-dim:#7E9B95;
+  --accent:#0D7564; --accent-ink:#095A4D; --accent-weak:#E2F1EE;
+  --brass:#B4862C; --brass-weak:#F7EEDB;
+  --ok:#1E7F45; --ok-weak:#E3F3E8; --warn:#A86A12; --warn-weak:#FBF0DC;
+  --bad:#B42318; --bad-weak:#FDE8E6; --info:#2560A0; --info-weak:#E5EEF8;
+  --sans:"IBM Plex Sans","Noto Sans Kannada",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:6px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:14px/1.45 var(--sans);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.num{font-variant-numeric:tabular-nums}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ── shell ── */
+.app{display:grid;grid-template-columns:248px 1fr;min-height:900px}
+.side{background:var(--side);color:var(--side-fg);display:flex;flex-direction:column;padding:18px 12px}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 8px 18px;border-bottom:1px solid var(--side-2);margin-bottom:12px}
+.mark{width:32px;height:32px;border-radius:7px;background:var(--brass);display:grid;place-items:center;color:#2A1D05;font-weight:700;font-size:13px;letter-spacing:.02em}
+.brand b{display:block;color:#fff;font-size:14px;font-weight:600}
+.brand span{font-size:11px;color:var(--side-dim);letter-spacing:.06em;text-transform:uppercase}
+.navg{margin:10px 0 4px;padding:0 10px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--side-dim);display:flex;justify-content:space-between}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;color:var(--side-fg);text-decoration:none;font-size:13.5px}
+.nav a.sub{padding-inline-start:36px;font-size:13px}
+.nav a.on{background:var(--side-2);color:#fff;box-shadow:inset 3px 0 0 var(--brass)}
+.nav a .cnt{margin-inline-start:auto;background:#24504A;color:#E3EFEC;font-size:11px;padding:1px 7px;border-radius:10px}
+.side-foot{margin-top:auto;border-top:1px solid var(--side-2);padding:12px 8px 0;font-size:12px;color:var(--side-dim)}
+.side-foot b{color:#E6F0EE;font-weight:500;display:block;font-size:13px}
+.main{display:flex;flex-direction:column;min-width:0}
+.top{height:56px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 24px}
+.crumb{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.crumb b{color:var(--ink);font-weight:600}
+.top .grow{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12.5px;color:var(--muted);background:var(--sunken)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-weak);color:var(--accent-ink);display:grid;place-items:center;font-weight:600;font-size:12px}
+.who{font-size:12.5px;line-height:1.2}
+.who b{display:block;font-weight:600;font-size:13px}
+.who span{color:var(--muted)}
+.work{padding:22px 28px 32px;display:flex;flex-direction:column;gap:16px}
+.ph{display:flex;align-items:flex-end;gap:12px}
+.ph h1{margin:0;font-size:21px;font-weight:600;letter-spacing:-.01em}
+.ph p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.ph .grow{flex:1}
+
+/* ── controls ── */
+.btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:var(--r);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font:500 13px var(--sans);white-space:nowrap}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--accent-ink)}
+.btn.danger{color:var(--bad);border-color:#EBC1BC}
+.btn.dis{opacity:.45}
+.btn.sm{height:28px;padding:0 10px;font-size:12.5px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.panel>header{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.panel>header h2{margin:0;font-size:14px;font-weight:600}
+.panel>header .hint{color:var(--muted);font-size:12.5px}
+.panel>.body{padding:16px 18px}
+.grid{display:grid;gap:14px 18px}
+.g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+.span2{grid-column:span 2} .span3{grid-column:span 3} .span4{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f>label,.lbl{font-size:12px;font-weight:500;color:var(--muted)}
+.req::after{content:" *";color:var(--bad)}
+.in{height:36px;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--surface);padding:0 11px;display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);min-width:0}
+.in.ph-t{color:var(--faint)}
+.in.sel::after{content:"";margin-inline-start:auto;width:7px;height:7px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:translateY(-2px) rotate(45deg)}
+.in.err{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad-weak)}
+.in.focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+.in.ro{background:var(--sunken);color:var(--muted)}
+.in .tail{margin-inline-start:auto;color:var(--muted);display:flex}
+.in.ta{height:auto;min-height:74px;align-items:flex-start;padding:9px 11px}
+.errmsg{font-size:12px;color:var(--bad)}
+.help{font-size:12px;color:var(--faint)}
+.opts{display:flex;flex-wrap:wrap;gap:6px 18px;min-height:36px;align-items:center}
+.rb,.cb{display:inline-flex;align-items:center;gap:7px;font-size:13.5px}
+.rb i{width:16px;height:16px;border-radius:50%;border:1.6px solid var(--line-strong);background:var(--surface);display:inline-block}
+.rb.on i{border:5px solid var(--accent)}
+.cb i{width:16px;height:16px;border-radius:4px;border:1.6px solid var(--line-strong);background:var(--surface);display:inline-grid;place-items:center}
+.cb.on i{background:var(--accent);border-color:var(--accent)}
+.cb.on i::after{content:"";width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+.toggle{width:34px;height:20px;border-radius:10px;background:var(--line-strong);position:relative;display:inline-block}
+.toggle::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{inset-inline-start:16px}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{border:1px solid var(--line-strong);border-radius:999px;padding:5px 12px;font-size:12.5px;background:var(--surface);display:inline-flex;gap:6px;align-items:center}
+.tag.on{background:var(--accent-weak);border-color:#9CCFC4;color:var(--accent-ink);font-weight:500}
+.slider{display:flex;align-items:center;gap:14px;height:36px}
+.slider .track{flex:1;height:4px;background:var(--line);border-radius:2px;position:relative}
+.slider .track b{position:absolute;inset-block:0;inset-inline-start:0;width:38%;background:var(--accent);border-radius:2px}
+.slider .track i{position:absolute;top:50%;inset-inline-start:38%;width:18px;height:18px;margin:-9px -9px 0;border-radius:50%;background:#fff;border:2px solid var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.slider .val{font-weight:600;min-width:96px;text-align:end}
+
+/* status pills */
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:2px 9px 2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-weak);color:var(--ok)} .pill.warn{background:var(--warn-weak);color:var(--warn)}
+.pill.bad{background:var(--bad-weak);color:var(--bad)} .pill.info{background:var(--info-weak);color:var(--info)}
+.pill.mute{background:var(--sunken);color:var(--muted);border:1px solid var(--line)}
+.prio{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px}
+.prio.c{background:var(--bad);color:#fff} .prio.h{background:var(--bad-weak);color:var(--bad)} .prio.m{background:var(--warn-weak);color:var(--warn)} .prio.l{background:var(--sunken);color:var(--muted)}
+
+/* table */
+.tw{overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:start;padding:10px 14px;background:var(--sunken);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+tr.sel td{background:#F2F9F7}
+tr:last-child td{border-bottom:0}
+th .sort{color:var(--accent)}
+.kebab{color:var(--muted);letter-spacing:1px;font-weight:700}
+.tfoot{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.pager{display:flex;gap:4px;margin-inline-start:auto}
+.pager span{min-width:30px;height:30px;border:1px solid var(--line);border-radius:5px;display:grid;place-items:center;font-size:12.5px;color:var(--ink);padding:0 6px;background:var(--surface)}
+.pager span.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.pager span.gap{border:0;background:none;color:var(--muted)}
+
+/* stepper */
+.steps{display:flex;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.step{flex:1;display:flex;gap:10px;align-items:center;padding:12px 16px;border-inline-end:1px solid var(--line);font-size:13px;color:var(--muted)}
+.step:last-child{border-inline-end:0}
+.step .n{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line-strong);display:grid;place-items:center;font-size:12px;font-weight:600;flex:none}
+.step.done .n{background:var(--accent);border-color:var(--accent);color:#fff}
+.step.cur{color:var(--ink);font-weight:600;box-shadow:inset 0 -3px 0 var(--accent)}
+.step.cur .n{border-color:var(--accent);color:var(--accent)}
+.step small{display:block;font-weight:400;color:var(--faint);font-size:11.5px}
+.actions{display:flex;gap:10px;align-items:center}
+.actions .grow{flex:1}
+.saved{font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+
+/* tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 18px}
+.tabs span{padding:11px 14px;font-size:13.5px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;gap:6px;align-items:center}
+.tabs span.on{color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.tabs .c{font-size:11px;background:var(--sunken);border:1px solid var(--line);border-radius:9px;padding:0 6px;color:var(--muted)}
+
+/* misc */
+.dz{border:1.5px dashed var(--line-strong);border-radius:8px;background:var(--sunken);padding:16px;display:flex;gap:14px;align-items:center;color:var(--muted);font-size:13px}
+.dz b{color:var(--accent-ink)}
+.files{display:flex;gap:10px;flex-wrap:wrap}
+.file{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface);font-size:12.5px;min-width:220px}
+.thumb{width:40px;height:30px;border-radius:4px;background:linear-gradient(135deg,#d9e6e3,#b9cfca);position:relative;overflow:hidden}
+.thumb::after{content:"";position:absolute;left:5px;top:6px;width:10px;height:12px;border-radius:2px;background:#8FAEA8}
+.thumb::before{content:"";position:absolute;left:19px;right:5px;top:8px;height:2px;background:#8FAEA8;box-shadow:0 5px 0 #8FAEA8,0 10px 0 #a9c2bd}
+.file .meta{color:var(--faint);font-size:11.5px}
+.bar{height:3px;background:var(--line);border-radius:2px;margin-top:4px;overflow:hidden}
+.bar b{display:block;height:100%;width:64%;background:var(--accent)}
+.note{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:6px;font-size:13px}
+.note.warn{background:var(--warn-weak);color:#6E4508} .note.info{background:var(--info-weak);color:#1D4A7C} .note.bad{background:var(--bad-weak);color:#7D1810}
+.reveal{border-inline-start:3px solid var(--brass);background:var(--brass-weak);padding:12px 14px;border-radius:0 6px 6px 0}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 24px}
+.kv div span{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.kv div b{font-weight:500}
+.toast{position:absolute;bottom:24px;inset-inline-end:28px;background:var(--ink);color:#fff;border-radius:8px;padding:12px 16px;display:flex;gap:12px;align-items:center;font-size:13px;box-shadow:0 10px 30px rgba(10,30,28,.25)}
+.toast .ok{width:22px;height:22px;border-radius:50%;background:var(--ok);display:grid;place-items:center}
+.tip{position:absolute;background:var(--ink);color:#fff;font-size:12px;padding:7px 10px;border-radius:6px;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.tip::after{content:"";position:absolute;top:100%;left:50%;margin-left:-5px;border:5px solid transparent;border-top-color:var(--ink)}
+.menu{position:absolute;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 32px rgba(10,30,28,.16);padding:6px;min-width:190px;font-size:13px}
+.menu div{padding:7px 10px;border-radius:5px;display:flex;gap:8px;align-items:center}
+.menu div.hl{background:var(--accent-weak);color:var(--accent-ink)}
+.menu div.dis{color:var(--faint)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.scrim{position:absolute;inset:0;background:rgba(12,28,26,.38)}
+.drawer{position:absolute;top:0;bottom:0;inset-inline-end:0;width:560px;background:var(--surface);box-shadow:-20px 0 40px rgba(10,30,28,.18);display:flex;flex-direction:column}
+.drawer>header{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+.drawer>header h2{margin:0;font-size:16px}
+.drawer .x{margin-inline-start:auto;color:var(--muted);font-size:18px}
+.drawer .db{padding:18px 22px;display:flex;flex-direction:column;gap:16px;overflow:hidden;flex:1}
+.drawer>footer{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px}
+.modal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:460px;background:var(--surface);border-radius:10px;box-shadow:0 24px 60px rgba(10,30,28,.3)}
+.modal header{padding:16px 20px 0;font-weight:600;font-size:16px}
+.modal .mb{padding:10px 20px 16px;display:flex;flex-direction:column;gap:12px;color:var(--muted)}
+.modal footer{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;background:var(--sunken);border-radius:0 0 10px 10px}
+.rel{position:relative}
+.matrix td,.matrix th{text-align:center} .matrix td:first-child,.matrix th:first-child{text-align:start}
+.matrix .inh i{background:var(--line);border-color:var(--line-strong)}
+.matrix .inh.on i{background:#9FBFB8;border-color:#9FBFB8}
+.ovr{font-size:10px;font-weight:700;color:var(--brass);margin-inline-start:3px;vertical-align:top}
+.na{color:var(--line-strong)}
+.drag{color:var(--faint);letter-spacing:-2px;font-weight:700}
+
+/* board */
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
+.col{background:#E5EBEA;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.col h3{margin:0 0 2px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;align-items:center;color:var(--muted);padding:2px 4px}
+.col h3 .c{background:var(--surface);border-radius:9px;padding:0 7px;color:var(--ink);font-size:11.5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.card .t{font-weight:600;font-size:13px}
+.card .r{display:flex;gap:8px;align-items:center;color:var(--muted)}
+.card .r .grow{flex:1}
+.card.lift{transform:rotate(-2deg);box-shadow:0 14px 30px rgba(10,30,28,.22);border-color:var(--accent)}
+.card.ghost{border:1.5px dashed var(--accent);background:var(--accent-weak);min-height:74px}
+.sla{font-size:11.5px;display:inline-flex;gap:4px;align-items:center}
+.sla.late{color:var(--bad);font-weight:600}
+.more{text-align:center;font-size:12px;color:var(--muted);padding:6px;display:flex;gap:6px;justify-content:center;align-items:center}
+.spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--line-strong);border-top-color:var(--accent)}
+.comment{display:flex;gap:10px;font-size:13px}
+.comment .avatar{width:26px;height:26px;font-size:10.5px}
+.comment p{margin:2px 0 0;color:var(--ink)}
+.comment small{color:var(--faint)}
+
+/* login */
+.login{display:grid;grid-template-columns:1fr 1fr;min-height:900px}
+.lside{background:var(--side);color:var(--side-fg);padding:56px 64px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.lside h1{color:#fff;font-size:34px;line-height:1.15;font-weight:600;margin:auto 0 14px;max-width:440px;letter-spacing:-.015em}
+.lside p{max-width:420px;margin:0;color:var(--side-fg);font-size:15px}
+.lside .ledger{position:absolute;inset-inline-end:-40px;top:120px;width:360px;opacity:.13;font-family:var(--mono);font-size:12px;line-height:2;color:#fff;white-space:pre}
+.lside .foot{margin-top:40px;display:flex;gap:18px;font-size:12px;color:var(--side-dim)}
+.lform{display:grid;place-items:center;background:var(--bg)}
+.lcard{width:400px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:30px 32px;display:flex;flex-direction:column;gap:16px;box-shadow:0 2px 6px rgba(10,30,28,.05)}
+.lcard h2{margin:0;font-size:20px}
+.lcard .sub{margin:-10px 0 0;color:var(--muted);font-size:13px}
+.link{color:var(--accent-ink);font-weight:500}
+.lang{display:flex;gap:4px;justify-content:center;font-size:12.5px;color:var(--muted)}
+.lang b{color:var(--ink)}
+
+/* mobile */
+.m-app{width:390px;min-height:844px;background:var(--bg)}
+.m-top{height:56px;background:var(--side);color:#fff;display:flex;align-items:center;gap:12px;padding:0 16px}
+.m-top b{font-size:15px;font-weight:600}
+.m-work{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.m-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.m-card .r{display:flex;gap:8px;align-items:center}
+.m-card .r .grow{flex:1}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const P = new URLSearchParams(location.search)
+const S = P.get('s') || 'login'
+const KN = P.get('lang') === 'kn'
+if (KN) document.documentElement.lang = 'kn'
+
+const ICONS = {
+  home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
+  userplus:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/>',
+  inbox:'<path d="M4 4h16v16H4z"/><path d="M4 14h5l1 2h4l1-2h5"/>',
+  board:'<rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="10" rx="1"/><rect x="17" y="4" width="4" height="13" rx="1"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  users:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M17 4a4 4 0 010 8M22 21c0-3-2-5-5-6"/>',
+  sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  check:'<path d="M5 12l5 5 9-10"/>',
+  bell:'<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 21h4"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  dl:'<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  ban:'<circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/>',
+  filter:'<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+  back:'<path d="M15 6l-6 6 6 6"/>',
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  warn:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+  paper:'<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.5M3 12h.5M3 18h.5"/>',
+  logout:'<path d="M15 4h4v16h-4M10 17l5-5-5-5M15 12H3"/>',
+}
+const ic = (n, s='') => `<svg class="i" viewBox="0 0 24 24" ${s}>${ICONS[n]}</svg>`
+
+// ── shell ──────────────────────────────────────────────
+const USERS = {
+  csr:   { name:'Kavya Hegde', init:'KH', role:'Customer service rep', roleKn:'ಗ್ರಾಹಕ ಸೇವಾ ಪ್ರತಿನಿಧಿ', id:'csr001' },
+  admin: { name:'Raghavendra Rao', init:'RR', role:'System administrator', roleKn:'ಸಿಸ್ಟಮ್ ನಿರ್ವಾಹಕ', id:'admin001' },
+}
+function shell({ user='csr', active, crumb, body, overlay='' }) {
+  const u = USERS[user]
+  const L = KN ? {
+    g1:'ಗ್ರಾಹಕರು', g2:'ಸೇವಾ ವಿನಂತಿಗಳು', g3:'ಆಡಳಿತ', dash:'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್', onb:'ಗ್ರಾಹಕರ ನೋಂದಣಿ', srch:'ಗ್ರಾಹಕರ ಹುಡುಕಾಟ',
+    nsr:'ಹೊಸ ವಿನಂತಿ', brd:'ವಿನಂತಿ ಫಲಕ', usr:'ಬಳಕೆದಾರರು ಮತ್ತು ಪ್ರವೇಶ', scr:'ಪರದೆ ಸಂರಚನೆ', branch:'ಎಂ.ಜಿ. ರಸ್ತೆ, ಬೆಂಗಳೂರು · 0001',
+    bank:'CSM ಪ್ಲೇಗ್ರೌಂಡ್ ಬ್ಯಾಂಕ್', sub:'ಗ್ರಾಹಕ ಸೇವೆ', signed:'09:12ಕ್ಕೆ ಸೈನ್ ಇನ್'
+  } : {
+    g1:'Customers', g2:'Service requests', g3:'Administration', dash:'Dashboard', onb:'Onboard customer', srch:'Customer search',
+    nsr:'New request', brd:'Request board', usr:'Users & access', scr:'Screen configuration', branch:'MG Road, Bengaluru · 0001',
+    bank:'CSM Playground Bank', sub:'Customer service', signed:'Signed in 09:12'
+  }
+  const a = k => active === k ? 'on' : ''
+  const admin = user === 'admin' ? `
+      <div class="navg">${L.g3}</div>
+      <a class="${a('users')}">${ic('users')}${L.usr}</a>
+      <a class="${a('screens')}">${ic('sliders')}${L.scr}</a>` : ''
+  return `<div class="app">
+    <aside class="side">
+      <div class="brand"><div class="mark">CSM</div><div><b>${L.bank}</b><span>${L.sub}</span></div></div>
+      <nav class="nav">
+        <a class="${a('dash')}">${ic('home')}${L.dash}</a>
+        <div class="navg">${L.g1}</div>
+        <a class="${a('onboard')}">${ic('userplus')}${L.onb}</a>
+        <a class="${a('search')}">${ic('search')}${L.srch}</a>
+        <div class="navg">${L.g2}</div>
+        <a class="${a('newsr')}">${ic('plus')}${L.nsr}</a>
+        <a class="${a('board')}">${ic('board')}${L.brd}<span class="cnt">42</span></a>
+        ${admin}
+      </nav>
+      <div class="side-foot"><b>${u.name}</b>${u.id} · ${L.signed}</div>
+    </aside>
+    <div class="main rel">
+      <div class="top">
+        <div class="crumb">${crumb}</div>
+        <div class="grow"></div>
+        <span class="chip">${ic('home')}${L.branch}</span>
+        <span class="chip">${ic('globe')}${KN ? 'ಕನ್ನಡ' : 'English'}</span>
+        <span style="color:var(--muted)">${ic('bell')}</span>
+        <div class="avatar">${u.init}</div>
+        <div class="who"><b>${u.name}</b><span>${KN ? u.roleKn : u.role}</span></div>
+      </div>
+      <div class="work">${body}</div>
+      ${overlay}
+    </div>
+  </div>`
+}
+const sep = `<span style="color:var(--faint)">/</span>`
+const field = (label, val, o={}) => `<div class="f ${o.cls||''}"><label class="${o.req?'req':''}">${label}</label>
+  <div class="in ${o.sel?'sel':''} ${o.ph?'ph-t':''} ${o.err?'err':''} ${o.focus?'focus':''} ${o.ro?'ro':''} ${o.ta?'ta':''}">${o.pre||''}${val}${o.tail?`<span class="tail">${o.tail}</span>`:''}</div>
+  ${o.err?`<span class="errmsg">${o.err}</span>`:''}${o.help?`<span class="help">${o.help}</span>`:''}</div>`
+const rb = (t,on) => `<span class="rb ${on?'on':''}"><i></i>${t}</span>`
+const cb = (t,on) => `<span class="cb ${on?'on':''}"><i></i>${t}</span>`
+
+// ── screens ────────────────────────────────────────────
+const screens = {}
+
+screens.login = () => {
+  const T = KN ? {
+    h:'ಶಾಖಾ ಸಿಬ್ಬಂದಿಗಾಗಿ ಬ್ಯಾಕ್-ಆಫೀಸ್ ಕನ್ಸೋಲ್', p:'ಗ್ರಾಹಕರ ನೋಂದಣಿ, KYC ಪರಿಶೀಲನೆ ಮತ್ತು ಸೇವಾ ವಿನಂತಿಗಳು ಒಂದೇ ಕಡೆ. ಅಧಿಕೃತ ಸಿಬ್ಬಂದಿಗೆ ಮಾತ್ರ.',
+    t:'ಸೈನ್ ಇನ್', s:'ನಿಮ್ಮ ಸಿಬ್ಬಂದಿ ಐಡಿ ಮತ್ತು ಪಾಸ್‌ವರ್ಡ್ ಬಳಸಿ.', id:'ಸಿಬ್ಬಂದಿ ಐಡಿ', pw:'ಪಾಸ್‌ವರ್ಡ್', rem:'ಈ ಸಾಧನವನ್ನು ನೆನಪಿಡಿ', fg:'ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ?',
+    btn:'ಸೈನ್ ಇನ್', warn:'ಸಿಬ್ಬಂದಿ ಐಡಿ ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್ ತಪ್ಪಾಗಿದೆ. ಖಾತೆ ಲಾಕ್ ಆಗುವ ಮೊದಲು ಇನ್ನೂ 2 ಪ್ರಯತ್ನಗಳು ಉಳಿದಿವೆ.', log:'ಈ ಸೆಷನ್‌ನ ಎಲ್ಲಾ ಚಟುವಟಿಕೆಗಳನ್ನು ದಾಖಲಿಸಲಾಗುತ್ತದೆ.', f1:'ಅಭ್ಯಾಸ ಪರಿಸರ', f2:'ಆವೃತ್ತಿ 1.0'
+  } : {
+    h:'Back-office console for branch staff', p:'Onboarding, KYC review and service requests in one place. Authorised staff only.',
+    t:'Sign in', s:'Use your staff ID and password.', id:'Staff ID', pw:'Password', rem:'Remember this device', fg:'Forgot password?',
+    btn:'Sign in', warn:'Staff ID or password is incorrect. 2 attempts left before the account is locked.', log:'All activity in this session is logged.', f1:'Practice environment', f2:'v1.0'
+  }
+  return `<div class="login">
+    <div class="lside">
+      <div class="brand" style="border:0;padding:0"><div class="mark">CSM</div><div><b>${KN?'CSM ಪ್ಲೇಗ್ರೌಂಡ್ ಬ್ಯಾಂಕ್':'CSM Playground Bank'}</b><span>${KN?'ಗ್ರಾಹಕ ಸೇವೆ':'Customer service'}</span></div></div>
+      <div class="ledger">CIF-000124  ACTIVE   KYC OK
+CIF-000123  DRAFT    KYC PEND
+CIF-000122  ACTIVE   KYC OK
+CIF-000121  BLOCKED  KYC EXP
+SR-2026-000031  CARD  HIGH
+SR-2026-000030  ADDR  MED
+SR-2026-000029  STMT  LOW
+CIF-000120  ACTIVE   KYC OK
+CIF-000119  ACTIVE   KYC OK</div>
+      <h1>${T.h}</h1><p>${T.p}</p>
+      <div class="foot"><span>${ic('shield')} ${T.log}</span><span>${T.f1} · ${T.f2}</span></div>
+    </div>
+    <div class="lform">
+      <div class="lcard">
+        <h2>${T.t}</h2><p class="sub">${T.s}</p>
+        <div class="note bad">${ic('warn')}<span>${T.warn}</span></div>
+        ${field(T.id, 'csr001')}
+        ${field(T.pw, '••••••••••', {tail: ic('eye'), err:' ', focus:true})}
+        <div style="display:flex;justify-content:space-between;align-items:center">${cb(T.rem,true)}<span class="link">${T.fg}</span></div>
+        <span class="btn pri" style="justify-content:center;height:40px">${T.btn}</span>
+        <div class="lang">${KN?'<span>English</span><span>·</span><b>ಕನ್ನಡ</b>':'<b>English</b><span>·</span><span>ಕನ್ನಡ</span>'}</div>
+      </div>
+    </div>
+  </div>`
+}
+
+screens.onboard1 = () => shell({ active:'onboard',
+  crumb:`Customers ${sep} <b>Onboard customer</b>`,
+  body:`
+  <div class="ph"><div><h1>Onboard customer</h1><p>Draft <span class="mono">D-2026-00418</span> · creates a CIF when submitted</p></div><div class="grow"></div>
+    <span class="saved">${ic('check')}Draft saved 10:42</span><span class="btn">Save draft</span><span class="btn ghost">Cancel</span></div>
+  <div class="steps">
+    <div class="step cur"><span class="n">1</span><div>Personal<small>Identity and profile</small></div></div>
+    <div class="step"><span class="n">2</span><div>Contact &amp; address<small>Phone, email, addresses</small></div></div>
+    <div class="step"><span class="n">3</span><div>KYC &amp; documents<small>ID, PEP, uploads</small></div></div>
+    <div class="step"><span class="n">4</span><div>Review &amp; submit<small>Check and confirm</small></div></div>
+  </div>
+  <section class="panel"><header><h2>Customer profile</h2><span class="hint">Fields marked * are required</span></header>
+    <div class="body grid g4">
+      <div class="f span2"><label class="req">Customer type</label><div class="opts">${rb('Individual',1)}${rb('Corporate')}</div></div>
+      <div class="f span2"><label>Segment</label><div class="opts">${rb('Retail',1)}${rb('Premier')}${rb('Private')}</div></div>
+      ${field('Title','Ms',{sel:1})}
+      ${field('First name','Ananya',{req:1})}
+      ${field('Middle name','',{})}
+      ${field('Last name','',{req:1,err:'Enter the last name as it appears on the ID.',focus:1})}
+      ${field("Father's / spouse name",'Suresh Rao',{req:1,cls:'span2'})}
+      ${field('Date of birth','12/04/1990',{req:1,tail:ic('cal'),help:'Age 36 · must be 18 or older'})}
+      <div class="f"><label class="req">Gender</label><div class="opts">${rb('Female',1)}${rb('Male')}${rb('Other')}</div></div>
+      ${field('Nationality','Indian',{req:1,sel:1})}
+      ${field('Country of birth','India',{sel:1})}
+      ${field('Marital status','Married',{sel:1})}
+      ${field('Dependants','2',{})}
+    </div></section>
+  <section class="panel"><header><h2>Employment &amp; income</h2></header>
+    <div class="body grid g4">
+      ${field('Occupation','Salaried — private sector',{sel:1})}
+      ${field('Employer','Kaveri Software Labs Pvt Ltd',{})}
+      <div class="f span2"><label>Monthly income</label><div class="slider"><span class="help num">₹0</span><div class="track"><b></b><i></i></div><span class="help num">₹10,00,000+</span><span class="val num">₹1,20,000</span></div></div>
+      <div class="f span3"><label>Products of interest</label><div class="tags">
+        <span class="tag on">${ic('check')}Savings account</span><span class="tag">Current account</span><span class="tag">Credit card</span>
+        <span class="tag on">${ic('check')}Personal loan</span><span class="tag">Fixed deposit</span><span class="tag">Remittance</span></div></div>
+      ${field('Preferred language','Kannada',{sel:1})}
+    </div></section>
+  <div class="actions"><span class="help">Step 1 of 4</span><div class="grow"></div><span class="btn dis">${ic('back')}Back</span><span class="btn pri">Next: Contact &amp; address ${ic('chev')}</span></div>`
+})
+
+screens.onboard3 = () => shell({ active:'onboard',
+  crumb:`Customers ${sep} Onboard customer ${sep} <b>KYC &amp; documents</b>`,
+  body:`
+  <div class="ph"><div><h1>Onboard customer</h1><p>Ananya Rao · draft <span class="mono">D-2026-00418</span></p></div><div class="grow"></div>
+    <span class="saved">${ic('check')}Draft saved 10:47</span><span class="btn">Save draft</span><span class="btn ghost">Cancel</span></div>
+  <div class="steps">
+    <div class="step done"><span class="n">${ic('check','style="width:13px;height:13px;stroke-width:2.6"')}</span><div>Personal<small>Complete</small></div></div>
+    <div class="step done"><span class="n">${ic('check','style="width:13px;height:13px;stroke-width:2.6"')}</span><div>Contact &amp; address<small>Complete</small></div></div>
+    <div class="step cur"><span class="n">3</span><div>KYC &amp; documents<small>ID, PEP, uploads</small></div></div>
+    <div class="step"><span class="n">4</span><div>Review &amp; submit<small>Check and confirm</small></div></div>
+  </div>
+  <section class="panel"><header><h2>Identity document</h2></header>
+    <div class="body grid g4">
+      ${field('ID type','Passport',{req:1,sel:1})}
+      ${field('ID number','<span class="mono">W••••• 67</span>',{req:1,tail:ic('eye'),help:'Hidden by default · click the eye to show'})}
+      ${field('Issue date','03/02/2022',{req:1,tail:ic('cal')})}
+      ${field('Expiry date','01/02/2022',{req:1,tail:ic('cal'),err:'Expiry date must be after the issue date.'})}
+      <div class="f span4"><label class="req">Documents</label>
+        <div class="dz">${ic('upload','style="width:26px;height:26px;color:var(--accent)"')}<div><b>Drop files here or browse</b><br>Passport front, back and a recent photo · JPG, PNG or PDF · up to 2 MB each</div></div>
+        <div class="files" style="margin-top:10px">
+          <div class="file"><div class="thumb"></div><div style="flex:1">passport-front.jpg<div class="meta">Passport front · 412 KB</div></div><span class="pill ok">Uploaded</span></div>
+          <div class="file"><div class="thumb"></div><div style="flex:1">passport-back.jpg<div class="meta">Passport back · 388 KB</div><div class="bar"><b></b></div></div><span class="help num">64%</span></div>
+          <div class="file" style="border-color:#EBC1BC"><div class="thumb" style="filter:grayscale(1)"></div><div style="flex:1">address-proof.tiff<div class="meta" style="color:var(--bad)">TIFF files aren't accepted. Use JPG, PNG or PDF.</div></div></div>
+        </div></div>
+    </div></section>
+  <section class="panel"><header><h2>Due diligence</h2><span class="hint">Risk rating updates from these answers</span></header>
+    <div class="body grid g4">
+      <div class="f span2"><label class="req">Is the customer a politically exposed person (PEP)?</label><div class="opts">${rb('No')}${rb('Yes',1)}</div></div>
+      <div class="f"><label>Risk rating</label><div class="in ro"><span class="pill warn">Medium</span><span class="help">calculated</span></div></div>
+      <div class="f"><label>FATCA / CRS</label><div class="opts">${cb('US tax resident')}</div></div>
+      <div class="span4 reveal grid g3">
+        ${field('PEP position','BBMP ward corporator',{req:1})}
+        ${field('Country','India',{req:1,sel:1})}
+        ${field('Since','2019',{})}
+        ${field('Source of wealth','Salary and family business income. Supporting letter attached.',{ta:1,cls:'span3'})}
+      </div>
+      <div class="f span4"><label class="req">Declarations</label><div style="display:flex;flex-direction:column;gap:8px">
+        ${cb('I have seen the original passport and verified the photo matches the customer.',1)}
+        ${cb('The customer agrees to the account terms and the privacy notice.',0)}</div></div>
+    </div></section>
+  <div class="actions"><span class="help">Step 3 of 4 · 1 error to fix</span><div class="grow"></div><span class="btn">${ic('back')}Back</span><span class="btn pri">Next: Review ${ic('chev')}</span></div>`
+})
+
+const CUST = [
+  ['CIF-000124','Ananya Rao','+91 98450 •••• 12','ok','Active','ok','Verified','05/10/2026'],
+  ['CIF-000123','Kiran Gowda','+91 99011 •••• 70','warn','Draft','warn','Pending','05/10/2026'],
+  ['CIF-000122','Shreya Hegde','+91 97399 •••• 38','ok','Active','ok','Verified','04/10/2026'],
+  ['CIF-000121','Manjunath Shetty','+91 96860 •••• 81','bad','Blocked','bad','Expired','03/10/2026'],
+  ['CIF-000120','Meghana Reddy','+91 98868 •••• 05','ok','Active','ok','Verified','03/10/2026'],
+  ['CIF-000119','Vikram Bhat','+91 99862 •••• 50','ok','Active','warn','Due 30 d','02/10/2026'],
+  ['CIF-000118','Pooja Nayak','+91 94480 •••• 91','info','Pending approval','ok','Verified','02/10/2026'],
+  ['CIF-000117','Suresh Shivakumar','+91 90080 •••• 24','ok','Active','ok','Verified','01/10/2026'],
+  ['CIF-000116','Lakshmi Narayan','+91 98440 •••• 87','mute','Closed','mute','—','30/09/2026'],
+  ['CIF-000115','Prakash Kulkarni','+91 97422 •••• 70','ok','Active','ok','Verified','30/09/2026'],
+]
+const CUST_KN_STATUS = {Active:'ಸಕ್ರಿಯ',Draft:'ಕರಡು',Blocked:'ತಡೆಹಿಡಿಯಲಾಗಿದೆ','Pending approval':'ಅನುಮೋದನೆ ಬಾಕಿ',Closed:'ಮುಚ್ಚಲಾಗಿದೆ'}
+const CUST_KN_KYC = {Verified:'ಪರಿಶೀಲಿಸಲಾಗಿದೆ',Pending:'ಬಾಕಿ ಇದೆ',Expired:'ಅವಧಿ ಮುಗಿದಿದೆ','Due 30 d':'30 ದಿನಗಳಲ್ಲಿ ಬಾಕಿ','—':'—'}
+
+screens.search = () => {
+  const T = KN ? {
+    cr:'ಗ್ರಾಹಕರು', b:'ಗ್ರಾಹಕರ ಹುಡುಕಾಟ', h:'ಗ್ರಾಹಕರ ಹುಡುಕಾಟ', p:'ಯಾವುದೇ ಕ್ಷೇತ್ರದಿಂದ ಹುಡುಕಿ. ನಿಮ್ಮ ಫಿಲ್ಟರ್‌ಗಳು URL‌ನಲ್ಲಿ ಉಳಿಯುತ್ತವೆ.', nw:'ಗ್ರಾಹಕರ ನೋಂದಣಿ',
+    crit:'ಹುಡುಕಾಟ ಮಾನದಂಡಗಳು', cif:'CIF ಸಂಖ್ಯೆ', nm:'ಹೆಸರು', mob:'ಮೊಬೈಲ್', idn:'ಐಡಿ ಸಂಖ್ಯೆ', st:'ಸ್ಥಿತಿ', kyc:'KYC', on:'ನೋಂದಣಿ ದಿನಾಂಕ',
+    all:'ಎಲ್ಲಾ', act:'ಸಕ್ರಿಯ', reset:'ಮರುಹೊಂದಿಸಿ', go:'ಹುಡುಕಿ', res:'1,248 ಗ್ರಾಹಕರು', rows:'ಪ್ರತಿ ಪುಟಕ್ಕೆ ಸಾಲುಗಳು', csv:'CSV ರಫ್ತು', hdr:['CIF','ಹೆಸರು','ಮೊಬೈಲ್','ಸ್ಥಿತಿ','KYC','ನೋಂದಣಿ',''],
+    show:'1,248 ರಲ್ಲಿ 26–50 ತೋರಿಸಲಾಗುತ್ತಿದೆ', goto:'ಪುಟಕ್ಕೆ ಹೋಗಿ', hide:'ಮರೆಮಾಡಿ'
+  } : {
+    cr:'Customers', b:'Customer search', h:'Customer search', p:'Search by any field. Your filters are kept in the URL.', nw:'Onboard customer',
+    crit:'Search criteria', cif:'CIF number', nm:'Name', mob:'Mobile', idn:'ID number', st:'Status', kyc:'KYC', on:'Onboarded',
+    all:'All', act:'Active', reset:'Reset', go:'Search', res:'1,248 customers', rows:'Rows per page', csv:'Export CSV', hdr:['CIF','Name','Mobile','Status','KYC','Onboarded',''],
+    show:'Showing 26–50 of 1,248', goto:'Go to page', hide:'Hide'
+  }
+  const rows = CUST.map((c,i) => `<tr class="${i===0?'sel':''}"><td class="mono">${c[0]}</td><td>${c[1]}</td><td class="mono">${c[2]}</td>
+    <td><span class="pill ${c[3]}">${KN?CUST_KN_STATUS[c[4]]:c[4]}</span></td><td><span class="pill ${c[5]}">${KN?CUST_KN_KYC[c[6]]:c[6]}</span> <span style="color:var(--faint);vertical-align:middle">${i===3?ic('info'):''}</span></td>
+    <td class="num">${c[7]}</td><td class="kebab">⋮</td></tr>`).join('')
+  return shell({ active:'search', crumb:`${T.cr} ${sep} <b>${T.b}</b>`,
+    body:`
+    <div class="ph"><div><h1>${T.h}</h1><p>${T.p}</p></div><div class="grow"></div><span class="btn pri">${ic('plus')}${T.nw}</span></div>
+    <section class="panel"><header><h2>${T.crit}</h2><div class="grow" style="flex:1"></div><span class="btn ghost sm">${T.hide}</span></header>
+      <div class="body grid g4">
+        ${field(T.cif,KN?'ಉದಾ: CIF-000124':'e.g. CIF-000124',{ph:1})}
+        ${field(T.nm,KN?'ಅನನ್ಯ':'',{focus:!KN})}
+        ${field(T.mob,'+91',{})}
+        ${field(T.idn,'',{})}
+        ${field(T.st,T.act,{sel:1})}
+        ${field(T.kyc,T.all,{sel:1})}
+        ${field(T.on,'01/09/2026 – 05/10/2026',{tail:ic('cal'),cls:'span2'})}
+        <div class="span4 actions"><div class="grow"></div><span class="btn">${T.reset}</span><span class="btn pri">${ic('search')}${T.go}</span></div>
+      </div></section>
+    <section class="panel tw">
+      <div class="tfoot" style="border:0;border-bottom:1px solid var(--line)"><b style="color:var(--ink)">${T.res}</b><div class="grow" style="flex:1"></div>${T.rows}<span class="in sel" style="height:30px;width:72px">25</span><span class="btn sm">${ic('dl')}${T.csv}</span></div>
+      <div class="rel">
+      <table><thead><tr>${T.hdr.map((h,i)=>`<th>${h}${i===0?' <span class="sort">▼</span>':''}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+      ${KN?'':`<div class="tip" style="top:126px;left:738px">Passport expired 22/09/2026 · re-KYC required</div>
+      <div class="menu" style="top:76px;right:20px"><div class="hl">${ic('eye')}View customer 360</div><div>${ic('edit')}Edit details</div><div>${ic('plus')}New service request</div><hr><div class="dis">${ic('ban')}Request block · needs Edit</div></div>`}
+      </div>
+      <div class="tfoot"><span>${T.show}</span><div class="pager"><span>«</span><span>‹</span><span>1</span><span class="on">2</span><span>3</span><span class="gap">…</span><span>50</span><span>›</span><span>»</span></div>
+      <span>${T.goto}</span><span class="in" style="height:30px;width:56px"></span></div>
+    </section>`})
+}
+
+screens.c360 = () => shell({ active:'search',
+  crumb:`Customers ${sep} Customer search ${sep} <b>CIF-000124</b>`,
+  body:`
+  <div><span class="btn ghost sm" style="padding:0">${ic('back')}Back to results</span></div>
+  <section class="panel"><div class="body" style="display:flex;gap:18px;align-items:center">
+    <div class="avatar" style="width:56px;height:56px;font-size:18px">AR</div>
+    <div style="flex:1"><div style="display:flex;gap:10px;align-items:center"><h1 style="margin:0;font-size:21px;font-weight:600">Ananya Rao</h1><span class="pill ok">Active</span><span class="pill warn">Risk: Medium</span><span class="pill info">PEP</span></div>
+      <div class="help" style="margin-top:3px"><span class="mono">CIF-000124</span> · Retail · MG Road, Bengaluru · Customer since 05/10/2026</div></div>
+    <span class="btn">${ic('edit')}Edit</span><span class="btn danger">${ic('ban')}Request block</span><span class="btn pri">${ic('plus')}Service request</span>
+  </div>
+  <div class="tabs"><span class="on">Overview</span><span>Contact</span><span>KYC &amp; documents <span class="c">3</span></span><span>Service requests <span class="c">2</span></span><span>Audit log</span></div>
+  <div class="body" style="display:flex;flex-direction:column;gap:18px">
+    <div class="kv">
+      <div><span>Date of birth</span><b class="num">12/04/1990</b></div><div><span>Nationality</span><b>Indian</b></div>
+      <div><span>Gender</span><b>Female</b></div><div><span>Marital status</span><b>Married</b></div>
+      <div><span>Occupation</span><b>Salaried — private sector</b></div><div><span>Employer</span><b>Kaveri Software Labs Pvt Ltd</b></div>
+      <div><span>Monthly income</span><b class="num">₹1,20,000</b></div><div><span>Preferred language</span><b>Kannada</b></div>
+      <div><span>Mobile</span><b class="mono">+91 98450 •••• 12</b></div><div><span>Email</span><b>ananya.r••••@mail.com</b></div>
+      <div><span>ID</span><b>Passport · expires <span class="num">03/02/2032</span></b></div><div><span>Products of interest</span><b>Savings, Personal loan</b></div>
+    </div>
+  </div></section>
+  <div class="grid g2">
+    <section class="panel"><header><h2>Open service requests</h2><span class="hint">loaded when this tab opened</span></header>
+      <table><tbody>
+        <tr><td class="mono">SR-2026-000031</td><td>Card blocked — lost wallet</td><td><span class="prio h">High</span></td><td><span class="sla late">${ic('clock')}2 h overdue</span></td></tr>
+        <tr><td class="mono">SR-2026-000019</td><td>Statement for visa application</td><td><span class="prio l">Low</span></td><td><span class="sla">${ic('clock')}due 08/10</span></td></tr>
+      </tbody></table></section>
+    <section class="panel"><header><h2>Recent changes</h2><span class="hint">audit log · loads more as you scroll</span></header>
+      <div class="body" style="display:flex;flex-direction:column;gap:12px;font-size:13px">
+        <div><b>Mobile</b> changed from <span class="mono">+91 98450 •••• 80</span> to <span class="mono">+91 98450 •••• 12</span><div class="help">Kavya Hegde (csr001) · 05/10/2026 11:02</div></div>
+        <div><b>Status</b> changed from Draft to Active<div class="help">Submitted by Kavya Hegde · approved by Naveen Gowda (sup001) · 05/10/2026 10:58</div></div>
+        <div class="more"><span class="spin"></span>Loading older entries…</div>
+      </div></section>
+  </div>`,
+  overlay:`<div class="scrim"></div>
+  <div class="modal"><header>Request to block this customer</header>
+    <div class="mb"><span>A supervisor must approve the block before it takes effect. The customer can't transact once it's approved.</span>
+      ${field('Reason','Suspected fraud',{req:1,sel:1})}
+      ${field('Remarks','Customer reported the card was used at two merchants in Koramangala she does not recognise.',{ta:1,req:1})}
+    </div>
+    <footer><span class="btn">Cancel</span><span class="btn pri" style="background:var(--bad);border-color:var(--bad)">Send for approval</span></footer></div>`
+})
+
+screens.newsr = () => shell({ active:'newsr',
+  crumb:`Service requests ${sep} <b>New request</b>`,
+  body:`
+  <div class="ph"><div><h1>New service request</h1><p>The SLA due date is set from the priority. You can change it.</p></div></div>
+  <section class="panel"><header><h2>Customer</h2></header>
+    <div class="body grid g4">
+      <div class="f span2 rel"><label class="req">Customer</label><div class="in focus">${ic('search')}Anan<span class="tail"><span class="spin"></span></span></div>
+        <div class="menu" style="top:62px;left:0;right:0;z-index:2">
+          <div class="hl"><span class="mono">CIF-000124</span><b style="font-weight:500">Ananya Rao</b><span class="help" style="margin-inline-start:auto">+91 98450 •••• 12</span></div>
+          <div><span class="mono">CIF-000087</span>Ananth Krishna<span class="help" style="margin-inline-start:auto">+91 99000 •••• 19</span></div>
+          <div><span class="mono">CIF-000041</span>Anand Gowda<span class="help" style="margin-inline-start:auto">+91 94483 •••• 64</span></div>
+          <hr><div class="dis">Showing the top 3 matches · type more to narrow down</div></div>
+      </div>
+      <div class="f span2"><label class="req">Channel</label><div class="opts">${rb('Branch',1)}${rb('Phone')}${rb('Email')}${rb('Mobile app')}</div></div>
+    </div></section>
+  <section class="panel"><header><h2>Request details</h2></header>
+    <div class="body grid g4">
+      ${field('Category','Card services',{req:1,sel:1})}
+      ${field('Sub-category','Card blocked',{req:1,sel:1,help:'Options depend on the category'})}
+      <div class="f span2"><label class="req">Priority</label><div class="opts">${rb('Low')}${rb('Medium')}${rb('High',1)}${rb('Critical')}</div></div>
+      ${field('SLA due date','06/10/2026',{tail:ic('cal')})}
+      ${field('SLA due time','10:45',{tail:ic('clock'),help:'High priority · 24 hours'})}
+      ${field('Assign to','Me (Kavya Hegde)',{sel:1,cls:'span2'})}
+      ${field('Subject','Card blocked after lost wallet',{req:1,cls:'span4'})}
+      <div class="f span4"><label class="req">Description</label><div class="in ta" style="min-height:92px">Customer lost her wallet at Phoenix Marketcity, Whitefield on 04/10. Debit card ending 2231 was blocked from the app. She needs a replacement card and confirmation that no UPI or card transactions went through after 18:00.</div><span class="help" style="text-align:end">236 / 1000</span></div>
+      <div class="f span2"><label>Attachments</label><div class="dz" style="padding:12px">${ic('upload')}<span><b>Drop files</b> or browse · up to 5 files</span></div></div>
+      <div class="f span2"><label>Notifications</label><div style="display:flex;flex-direction:column;gap:8px;padding-top:6px">${cb('Send the customer an SMS with the request number',1)}${cb('Email the customer when the request is resolved',0)}</div></div>
+    </div></section>
+  <div class="actions"><div class="grow"></div><span class="btn ghost">Cancel</span><span class="btn pri">Create request</span></div>`
+})
+
+const card = (no,title,cust,pr,sla,late,o='') => `<div class="card ${o}"><div class="r"><span class="mono" style="color:var(--ink)">${no}</span><div class="grow"></div><span class="prio ${pr[0].toLowerCase()}">${pr}</span></div>
+  <div class="t">${title}</div><div class="r">${cust}<div class="grow"></div><span class="sla ${late?'late':''}">${ic('clock')}${sla}</span></div></div>`
+screens.board = () => shell({ active:'board',
+  crumb:`Service requests ${sep} <b>Request board</b>`,
+  body:`
+  <div class="ph"><div><h1>Request board</h1><p>Drag a card to change its status. Each column loads more as you scroll.</p></div><div class="grow"></div>
+    <div class="steps" style="border-radius:6px"><span class="step cur" style="padding:7px 14px;flex:none">${ic('board')}Board</span><span class="step" style="padding:7px 14px;flex:none">${ic('list')}List</span></div>
+    <span class="in sel" style="width:160px">My queue</span><span class="in" style="width:200px">${ic('search')}<span class="help">SR number or customer</span></span></div>
+  <div class="board">
+    <div class="col"><h3>Open <span class="c">42</span></h3>
+      ${card('SR-2026-000031','Card blocked after lost wallet','Ananya Rao','High','2 h overdue',1)}
+      ${card('SR-2026-000030','Update address after move to HSR Layout','Kiran Gowda','Medium','1 d')}
+      ${card('SR-2026-000028','Cheque book request','Prakash Kulkarni','Low','3 d')}
+      ${card('SR-2026-000026','Disputed ATM withdrawal','Manjunath Shetty','Critical','4 h',0)}
+      <div class="more"><span class="spin"></span>Loading 10 more…</div></div>
+    <div class="col"><h3>In progress <span class="c">17</span></h3>
+      ${card('SR-2026-000027','Increase credit card limit','Meghana Reddy','Medium','20 h')}
+      <div class="card ghost"></div>
+      ${card('SR-2026-000022','Change of name after marriage','Shreya Hegde','Low','2 d')}
+      ${card('SR-2026-000018','Standing order not executed','Vikram Bhat','High','6 h')}</div>
+    <div class="col"><h3>Resolved <span class="c">63</span></h3>
+      ${card('SR-2026-000020','Statement for visa application','Pooja Nayak','Low','met')}
+      ${card('SR-2026-000017','Reset mobile banking PIN','Suresh Shivakumar','Medium','met')}
+      ${card('SR-2026-000012','Interest certificate FY 2025–26','Lakshmi Narayan','Low','met')}</div>
+    <div class="col"><h3>Closed <span class="c">178</span></h3>
+      <div class="help" style="display:flex;gap:6px;padding:4px;align-items:center">${ic('lock')}Closing needs Approve</div>
+      ${card('SR-2026-000009','Replace damaged card','Prakash Kulkarni','Medium','met')}
+      ${card('SR-2026-000004','Joint account holder update','Meghana Reddy','Low','met')}</div>
+  </div>`,
+  overlay:`<div style="position:absolute;top:338px;left:282px;width:262px">${card('SR-2026-000029','Lost passbook — reissue','Harish Kumar','Medium','14 h',0,'lift')}</div>`
+})
+
+screens.users = () => shell({ user:'admin', active:'users',
+  crumb:`Administration ${sep} <b>Users &amp; access</b>`,
+  body:`
+  <div class="ph"><div><h1>Users &amp; access</h1><p>Each user gets their role's access plus any changes you make for them.</p></div><div class="grow"></div><span class="btn pri">${ic('plus')}New user</span></div>
+  <section class="panel tw">
+    <div class="body grid g4" style="border-bottom:1px solid var(--line)">
+      ${field('Search','',{pre:ic('search'),cls:'span2'})}
+      ${field('Role','All roles',{sel:1})}
+      ${field('Status','All',{sel:1})}
+    </div>
+    <table><thead><tr><th>Staff ID</th><th>Name</th><th>Role</th><th>Branch</th><th>Status</th><th>Last login</th><th></th></tr></thead><tbody>
+      <tr class="sel"><td class="mono">csr001</td><td>Kavya Hegde</td><td>CSR <span class="ovr">+2 changes</span></td><td>0001</td><td><span class="pill ok">Active</span></td><td class="num">05/10 09:12</td><td class="kebab">⋮</td></tr>
+      <tr><td class="mono">csr002</td><td>Arun Shetty</td><td>CSR</td><td>0004</td><td><span class="pill ok">Active</span></td><td class="num">05/10 08:55</td><td class="kebab">⋮</td></tr>
+      <tr><td class="mono">sup001</td><td>Naveen Gowda</td><td>Supervisor</td><td>0001</td><td><span class="pill bad">Locked</span></td><td class="num">04/10 17:40</td><td class="kebab">⋮</td></tr>
+      <tr><td class="mono">sup002</td><td>Sowmya Murthy</td><td>Supervisor</td><td>0004</td><td><span class="pill ok">Active</span></td><td class="num">05/10 07:31</td><td class="kebab">⋮</td></tr>
+      <tr><td class="mono">csr003</td><td>Harish Kumar</td><td>CSR</td><td>0007</td><td><span class="pill warn">Must change password</span></td><td>—</td><td class="kebab">⋮</td></tr>
+      <tr><td class="mono">csr004</td><td>Deepa Bhat</td><td>CSR</td><td>0007</td><td><span class="pill mute">Deactivated</span></td><td class="num">12/09 16:02</td><td class="kebab">⋮</td></tr>
+    </tbody></table>
+    <div class="tfoot"><span>Showing 1–6 of 38</span><div class="pager"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>›</span></div></div>
+  </section>`,
+  overlay:`<div class="scrim"></div><aside class="drawer">
+    <header><div class="avatar">KH</div><div><h2>Kavya Hegde</h2><div class="help"><span class="mono">csr001</span> · MG Road, Bengaluru · Active</div></div><span class="x">✕</span></header>
+    <div class="db">
+      <div class="grid g2">${field('Role','Customer service rep',{sel:1})}${field('Branch','MG Road, Bengaluru · 0001',{sel:1})}</div>
+      <div><div class="lbl" style="margin-bottom:6px">Screen access</div>
+        <div class="help" style="margin-bottom:8px">Grey ticks come from the role. Ticks marked ● are changes for this user only.</div>
+        <div class="panel" style="overflow:hidden"><table class="matrix"><thead><tr><th>Screen</th><th>View</th><th>Create</th><th>Edit</th><th>Approve</th><th>Export</th></tr></thead><tbody>
+          <tr><td>Onboard customer</td><td>${cb('',1).replace('cb','cb inh')}</td><td>${cb('',1).replace('cb','cb inh')}</td><td>${cb('',1).replace('cb','cb inh')}</td><td class="na">—</td><td class="na">—</td></tr>
+          <tr><td>Customer search</td><td>${cb('',1).replace('cb','cb inh')}</td><td class="na">—</td><td class="na">—</td><td class="na">—</td><td>${cb('',1)}<span class="ovr">●</span></td></tr>
+          <tr><td>Customer 360</td><td>${cb('',1).replace('cb','cb inh')}</td><td class="na">—</td><td>${cb('',1).replace('cb','cb inh')}</td><td>${cb('',0)}</td><td class="na">—</td></tr>
+          <tr><td>New request</td><td>${cb('',1).replace('cb','cb inh')}</td><td>${cb('',1).replace('cb','cb inh')}</td><td class="na">—</td><td class="na">—</td><td class="na">—</td></tr>
+          <tr><td>Request board</td><td>${cb('',1).replace('cb','cb inh')}</td><td class="na">—</td><td>${cb('',1).replace('cb','cb inh')}</td><td>${cb('',0)}<span class="ovr">●</span></td><td>${cb('',0)}</td></tr>
+          <tr><td style="color:var(--faint)">Users &amp; access</td><td>${cb('',0)}</td><td>${cb('',0)}</td><td>${cb('',0)}</td><td class="na">—</td><td class="na">—</td></tr>
+        </tbody></table></div></div>
+      <div class="note info">${ic('info')}<span>Changes apply on Kavya's next request. She is signed in now, so her menu refreshes within a few seconds.</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="btn sm dis">${ic('lock')}Unlock account</span><span class="btn sm">Force password reset</span><span class="btn sm danger">Deactivate</span></div>
+    </div>
+    <footer><span class="help" style="align-self:center">2 unsaved changes</span><div style="flex:1"></div><span class="btn">Discard</span><span class="btn pri">Save access</span></footer>
+  </aside>`
+})
+
+screens.screens = () => shell({ user:'admin', active:'screens',
+  crumb:`Administration ${sep} <b>Screen configuration</b>`,
+  body:`
+  <div class="ph"><div><h1>Screen configuration</h1><p>Turn screens on or off, choose what each one allows, and set their order in the menu.</p></div></div>
+  <div class="grid" style="grid-template-columns:1.15fr 1fr;align-items:start">
+    <section class="panel tw"><header><h2>Screens</h2><span class="hint">drag ⠿ to reorder the menu</span></header>
+      <table><thead><tr><th></th><th>Screen</th><th>Menu group</th><th>Capabilities</th><th>Enabled</th></tr></thead><tbody>
+        <tr><td class="drag">⠿</td><td>Dashboard</td><td>—</td><td><span class="mono">V</span></td><td><span class="toggle on"></span></td></tr>
+        <tr><td class="drag">⠿</td><td>Onboard customer</td><td>Customers</td><td><span class="mono">V C E</span></td><td><span class="toggle on"></span></td></tr>
+        <tr class="sel"><td class="drag">⠿</td><td><b style="font-weight:600">Customer search</b></td><td>Customers</td><td><span class="mono">V X</span></td><td><span class="toggle on"></span></td></tr>
+        <tr><td class="drag">⠿</td><td>Customer 360</td><td>Customers</td><td><span class="mono">V E A</span></td><td><span class="toggle on"></span></td></tr>
+        <tr><td class="drag">⠿</td><td>New request</td><td>Service requests</td><td><span class="mono">V C</span></td><td><span class="toggle on"></span></td></tr>
+        <tr><td class="drag">⠿</td><td>Request board</td><td>Service requests</td><td><span class="mono">V E A X</span></td><td><span class="toggle on"></span></td></tr>
+        <tr><td class="drag">⠿</td><td style="color:var(--muted)">Accounts</td><td style="color:var(--muted)">Accounts</td><td><span class="mono">V C E A</span></td><td><span class="toggle"></span></td></tr>
+        <tr><td class="drag">⠿</td><td style="color:var(--muted)">Cards</td><td style="color:var(--muted)">Cards</td><td><span class="mono">V E A</span></td><td><span class="toggle"></span></td></tr>
+      </tbody></table>
+      <div class="tfoot"><span class="mono">V</span> view · <span class="mono">C</span> create · <span class="mono">E</span> edit · <span class="mono">A</span> approve · <span class="mono">X</span> export</div>
+    </section>
+    <section class="panel"><header><h2>Customer search</h2><span class="hint mono">customers.search</span></header>
+      <div class="body grid g2">
+        ${field('Menu label (English)','Customer search')}
+        ${field('Menu label (Kannada)','ಗ್ರಾಹಕರ ಹುಡುಕಾಟ')}
+        ${field('Menu group','Customers',{sel:1})}
+        ${field('Route','/customers',{ro:1})}
+        <div class="f span2"><label>Capabilities offered</label><div class="opts">${cb('View',1)}${cb('Create')}${cb('Edit')}${cb('Approve')}${cb('Export',1)}</div></div>
+        <div class="f span2"><label>When a user lacks a capability</label><div class="opts">${rb('Hide the action',1)}${rb('Show it disabled with a tooltip')}</div></div>
+        ${field('Default page size','25',{sel:1})}
+        ${field('Maximum page size','100',{help:'The API never returns more than this'})}
+        <div class="f span2"><label>Roles with access</label><div class="tags"><span class="tag on">${ic('check')}Admin</span><span class="tag on">${ic('check')}Supervisor</span><span class="tag on">${ic('check')}CSR</span><span class="tag">Auditor</span></div></div>
+        <div class="span2 note warn">${ic('warn')}<span>Turning this screen off removes it from the menu for 37 users and its API starts returning 403.</span></div>
+        <div class="span2 actions"><span class="help">Last changed by Raghavendra Rao · 04/10/2026 16:20</span><div class="grow"></div><span class="btn">Discard</span><span class="btn pri">Save changes</span></div>
+      </div></section>
+  </div>`
+})
+
+// ── mobile ──
+screens.m_search = () => `<div class="m-app">
+  <div class="m-top">${ic('menu')}<b>Customer search</b><div style="flex:1"></div><div class="avatar" style="width:28px;height:28px">KH</div></div>
+  <div class="m-work">
+    <div class="in focus">${ic('search')}+91 9</div>
+    <div style="display:flex;gap:8px"><span class="chip">${ic('filter')}Status: Active</span><span class="chip">KYC: All</span></div>
+    <div class="help"><b style="color:var(--ink)">3 customers</b> · mobile starts with +91 9</div>
+    ${CUST.filter((_,i)=>[0,2,5].includes(i)).map(c=>`<div class="m-card"><div class="r"><span class="mono">${c[0]}</span><div class="grow"></div><span class="pill ${c[3]}">${c[4]}</span></div>
+      <b style="font-size:15px">${c[1]}</b><div class="r help"><span class="mono">${c[2]}</span><div class="grow"></div>KYC <span class="pill ${c[5]}">${c[6]}</span></div></div>`).join('')}
+    <div class="more"><span class="spin"></span>Loading more…</div>
+  </div></div>`
+
+screens.m_onboard = () => `<div class="m-app">
+  <div class="m-top">${ic('menu')}<b>Onboard customer</b><div style="flex:1"></div><span style="font-size:12px;color:var(--side-fg)">1 / 4</span></div>
+  <div style="height:4px;background:var(--line)"><div style="width:25%;height:100%;background:var(--brass)"></div></div>
+  <div class="m-work">
+    <div class="f"><label class="req">Customer type</label><div class="opts">${rb('Individual',1)}${rb('Corporate')}</div></div>
+    ${field('Title','Ms',{sel:1})}
+    ${field('First name','Ananya',{req:1})}
+    ${field('Last name','',{req:1,err:'Enter the last name as it appears on the ID.',focus:1})}
+    ${field('Date of birth','12/04/1990',{req:1,tail:ic('cal')})}
+    <div class="f"><label class="req">Gender</label><div class="opts">${rb('Female',1)}${rb('Male')}${rb('Other')}</div></div>
+    ${field('Nationality','Indian',{req:1,sel:1})}
+    <div class="actions" style="margin-top:8px"><span class="btn">Save draft</span><div class="grow"></div><span class="btn pri">Next ${ic('chev')}</span></div>
+  </div></div>`
+
+document.getElementById('root').innerHTML = (screens[S] || screens.login)()
+document.body.dataset.ready = '1'
+</script>
+</body>
+</html>

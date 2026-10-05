@@ -1,0 +1,158 @@
+<title>CSM Playground Mockups</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: single reading column; screens grouped by module, each a full-width figure with what-to-practise notes beside it. */
+:root{
+  --bg:#EEF2F1; --surface:#FFFFFF; --ink:#15201E; --muted:#5B6967; --line:#D6DFDC;
+  --accent:#0D7564; --accent-weak:#E2F1EE; --brass:#B4862C;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1716; --surface:#16211F; --ink:#E4ECEA; --muted:#9AAAA6; --line:#2A3835;
+  --accent:#4FC2AC; --accent-weak:#173A34; --brass:#D9A947; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1716; --surface:#16211F; --ink:#E4ECEA; --muted:#9AAAA6; --line:#2A3835;
+  --accent:#4FC2AC; --accent-weak:#173A34; --brass:#D9A947; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 20px 72px;display:flex;flex-direction:column;gap:36px}
+header h1{font-size:30px;line-height:1.2;margin:0 0 8px;font-weight:600;letter-spacing:-.015em;text-wrap:balance}
+header p{margin:0;max-width:68ch;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.meta span{font-size:12.5px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 11px;color:var(--muted)}
+nav.jump{display:flex;flex-wrap:wrap;gap:8px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:10px;z-index:3;border-bottom:1px solid var(--line)}
+nav.jump a{font-size:13px;color:var(--ink);text-decoration:none;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface)}
+nav.jump a:hover,nav.jump a:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+section{display:flex;flex-direction:column;gap:22px;scroll-margin-top:64px}
+section>h2{margin:0;font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;gap:10px;align-items:center}
+section>h2::after{content:"";flex:1;height:1px;background:var(--line)}
+figure{margin:0;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;align-items:start}
+figure.phone{grid-template-columns:repeat(2,minmax(0,300px)) minmax(0,1fr)}
+.shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);cursor:zoom-in;padding:0;display:block;width:100%}
+.shot:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.shot img{display:block;width:100%;height:auto}
+figcaption h3{margin:0 0 4px;font-size:17px;font-weight:600}
+figcaption .id{font-family:var(--mono);font-size:12px;color:var(--brass)}
+figcaption p{margin:6px 0 10px;color:var(--muted);font-size:14px}
+figcaption ul{margin:0;padding-inline-start:18px;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
+figcaption li::marker{color:var(--accent)}
+.lb{position:fixed;inset:0;background:rgba(5,12,11,.86);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10;cursor:zoom-out}
+.lb img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:860px){
+  figure,figure.phone{grid-template-columns:1fr}
+  figure.phone{grid-template-columns:repeat(2,minmax(0,1fr))}
+  figure.phone figcaption{grid-column:1/-1}
+  header h1{font-size:24px}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>CSM Playground: screen mockups</h1>
+    <p>Phase 0 of the Customer Service Management practice app, a core-banking back office. These mockups set the layout, fields and states for sign-off before any code is written. Click any screen to see it full size.</p>
+    <div class="meta"><span>9 desktop screens · 1440 × 900</span><span>2 Kannada</span><span>2 phone views</span><span>Sample data, not real customers</span></div>
+  </header>
+
+  <nav class="jump" aria-label="Sections">
+    <a href="#access">Sign in</a><a href="#customers">Customers</a><a href="#requests">Service requests</a><a href="#admin">Administration</a><a href="#kn">Kannada &amp; mobile</a>
+  </nav>
+
+  <section id="access"><h2>Sign in</h2>
+    <figure>
+      <button class="shot" type="button"><img src="01-login.png" alt="Sign-in page with staff ID, password and a lockout warning" loading="lazy"></button>
+      <figcaption><span class="id">/login</span><h3>Staff sign-in</h3>
+        <p>Shown after one failed attempt, so the warning about the remaining tries is visible.</p>
+        <ul><li>Show/hide password toggle</li><li>Remember this device</li><li>Lockout after 5 failures (OWASP A07)</li><li>English / Kannada switch before sign-in</li></ul></figcaption>
+    </figure>
+  </section>
+
+  <section id="customers"><h2>Customers</h2>
+    <figure>
+      <button class="shot" type="button"><img src="02-onboard-personal.png" alt="Onboarding wizard step 1, personal details" loading="lazy"></button>
+      <figcaption><span class="id">/customers/new · step 1</span><h3>Onboard customer: personal</h3>
+        <p>Four-step wizard that saves a draft as you go and creates a CIF number when submitted.</p>
+        <ul><li>Stepper with current, done and pending states</li><li>Radio groups, dropdowns, date field</li><li>Inline required-field error</li><li>Income slider, product tag toggles</li></ul></figcaption>
+    </figure>
+    <figure>
+      <button class="shot" type="button"><img src="03-onboard-kyc.png" alt="Onboarding wizard step 3, KYC and documents" loading="lazy"></button>
+      <figcaption><span class="id">/customers/new · step 3</span><h3>Onboard customer: KYC &amp; documents</h3>
+        <p>Answering Yes to PEP reveals the highlighted block of extra fields.</p>
+        <ul><li>Masked ID number with reveal</li><li>Cross-field rule: expiry after issue</li><li>Drag-and-drop upload: done, in progress, rejected</li><li>Conditional fields, calculated read-only field</li><li>Required declaration checkboxes</li></ul></figcaption>
+    </figure>
+    <figure>
+      <button class="shot" type="button"><img src="04-customer-search.png" alt="Customer search with filters, paginated results, a row menu and a tooltip" loading="lazy"></button>
+      <figcaption><span class="id">/customers</span><h3>Customer search</h3>
+        <p>Paging, sorting and filtering happen on the server. Page 2 of 50 is shown.</p>
+        <ul><li>Numbered pagination, rows per page, go to page</li><li>Sortable columns, status badges</li><li>Hover tooltip on the KYC icon</li><li>Row menu with an action disabled for lack of permission</li><li>Masked mobile numbers (OWASP A04)</li></ul></figcaption>
+    </figure>
+    <figure>
+      <button class="shot" type="button"><img src="05-customer-360-block.png" alt="Customer 360 view with the block request dialog open" loading="lazy"></button>
+      <figcaption><span class="id">/customers/:cif</span><h3>Customer 360 + block request</h3>
+        <p>Tabs load their data when first opened. Blocking needs a supervisor's approval (maker-checker).</p>
+        <ul><li>Tabs with counts</li><li>Modal dialog with required reason and remarks</li><li>Audit log that loads more as you scroll</li></ul></figcaption>
+    </figure>
+  </section>
+
+  <section id="requests"><h2>Service requests</h2>
+    <figure>
+      <button class="shot" type="button"><img src="06-new-service-request.png" alt="New service request form with customer typeahead open" loading="lazy"></button>
+      <figcaption><span class="id">/service-requests/new</span><h3>New service request</h3>
+        <p>The customer lookup is searching as the user types.</p>
+        <ul><li>Debounced typeahead with loading spinner</li><li>Dependent dropdown (sub-category follows category)</li><li>SLA date and time filled from priority</li><li>Character counter, attachments</li></ul></figcaption>
+    </figure>
+    <figure>
+      <button class="shot" type="button"><img src="07-request-board.png" alt="Request board with a card being dragged between columns" loading="lazy"></button>
+      <figcaption><span class="id">/service-requests</span><h3>Request board</h3>
+        <p>A card is mid-drag from Open to In progress, with the drop target outlined.</p>
+        <ul><li>Drag and drop between columns</li><li>Infinite scroll per column</li><li>Overdue SLA in red</li><li>Board / list toggle, queue filter</li><li>Closing locked without Approve</li></ul></figcaption>
+    </figure>
+  </section>
+
+  <section id="admin"><h2>Administration (admins only)</h2>
+    <figure>
+      <button class="shot" type="button"><img src="08-admin-users-access.png" alt="Users and access list with the access drawer open for one user" loading="lazy"></button>
+      <figcaption><span class="id">/admin/users</span><h3>Users &amp; access</h3>
+        <p>Signed in as an admin, so the Administration menu appears. CSR screens don't show it at all.</p>
+        <ul><li>Side drawer with a permission matrix</li><li>Role ticks in grey, per-user changes marked ●</li><li>Unlock, force reset, deactivate</li><li>Paginated user list with status badges</li></ul></figcaption>
+    </figure>
+    <figure>
+      <button class="shot" type="button"><img src="09-admin-screen-config.png" alt="Screen configuration with toggles and the edit panel for one screen" loading="lazy"></button>
+      <figcaption><span class="id">/admin/screens</span><h3>Screen configuration</h3>
+        <p>Each screen can be turned on or off, given capabilities, reordered and relabelled in both languages.</p>
+        <ul><li>Toggle switches, drag handles</li><li>Hide vs. disable for missing permissions</li><li>Page-size limits the API enforces</li><li>Warning before a change that affects users</li></ul></figcaption>
+    </figure>
+  </section>
+
+  <section id="kn"><h2>Kannada &amp; mobile</h2>
+    <figure>
+      <button class="shot" type="button"><img src="11-customer-search-kn.png" alt="Customer search with the interface in Kannada" loading="lazy"></button>
+      <figcaption><span class="id">?lang=kn</span><h3>Customer search in Kannada</h3>
+        <p>Menus, labels, status badges and paging text are translated. Customer data such as names and CIF numbers stays as entered.</p>
+        <ul><li>Locators don't change with language</li><li>Kannada labels run longer, so layouts must not clip</li><li>Language choice is remembered per user</li></ul></figcaption>
+    </figure>
+    <figure>
+      <button class="shot" type="button"><img src="10-login-kn.png" alt="Sign-in page in Kannada" loading="lazy"></button>
+      <figcaption><span class="id">?lang=kn</span><h3>Sign-in in Kannada</h3><p>Same page and states as the English sign-in.</p></figcaption>
+    </figure>
+    <figure class="phone">
+      <button class="shot" type="button"><img src="12-mobile-search.png" alt="Customer search on a phone, as cards" loading="lazy"></button>
+      <button class="shot" type="button"><img src="13-mobile-onboard.png" alt="Onboarding step 1 on a phone" loading="lazy"></button>
+      <figcaption><span class="id">390 px wide</span><h3>Phone layouts</h3>
+        <p>On phones the table becomes cards that load more as you scroll, and the wizard stacks to one column with a progress bar.</p></figcaption>
+    </figure>
+  </section>
+
+  <footer>Mockup source: <code>docs/mockups/src/mockups.html</code>, rendered with Playwright. Names, numbers and IDs are sample data.</footer>
+</div>
+
+<div class="lb" id="lb" hidden><img id="lbimg" alt=""></div>
+<script>
+const lb = document.getElementById('lb'), li = document.getElementById('lbimg')
+document.querySelectorAll('.shot').forEach(b => b.addEventListener('click', () => {
+  const img = b.querySelector('img'); li.src = img.src; li.alt = img.alt; lb.hidden = false
+}))
+lb.addEventListener('click', () => { lb.hidden = true })
+document.addEventListener('keydown', e => { if (e.key === 'Escape') lb.hidden = true })
+</script>
