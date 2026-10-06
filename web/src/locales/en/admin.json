@@ -1,0 +1,119 @@
+{
+  "nav": {
+    "admin": "Administration"
+  },
+  "users": {
+    "title": "Users & access",
+    "subtitle": "Each user gets their role's access, plus any changes you make for them.",
+    "search": "Search",
+    "searchPlaceholder": "Name or staff ID",
+    "allRoles": "All roles",
+    "empty": "No users match.",
+    "actionsLabel": "User actions",
+    "editAccess": "Edit access",
+    "changes_one": "+{{count}} change",
+    "changes_other": "+{{count}} changes",
+    "lastLogin": "Last signed in {{date}}",
+    "fields": {
+      "staffId": "Staff ID",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "branch": "Branch",
+      "status": "Status",
+      "lastLogin": "Last sign-in"
+    },
+    "new": {
+      "button": "New user",
+      "title": "New staff user",
+      "create": "Create user",
+      "created": "{{staffId}} created."
+    },
+    "otp": {
+      "title": "One-time password for {{staffId}}",
+      "message": "Give this password to the user. It's shown only once; they must choose their own at first sign-in.",
+      "label": "One-time password",
+      "copy": "Copy",
+      "copied": "Copied",
+      "done": "Done"
+    },
+    "access": {
+      "saved": "Access for {{staffId}} saved.",
+      "unsaved": "Unsaved changes",
+      "save": "Save access",
+      "selfRole": "You can't change your own role.",
+      "screenAccess": "Screen access",
+      "legend": "Light ticks come from the role. Ticks marked ● are changes for this user only.",
+      "screen": "Screen",
+      "notOffered": "Not offered by this screen",
+      "override": "Changed for this user",
+      "applies": "Changes apply on {{name}}'s next request. If signed in, their menu updates within 30 seconds.",
+      "selfDeactivate": "You can't deactivate yourself."
+    },
+    "actions": {
+      "unlock": "Unlock account",
+      "reset": "Force password reset",
+      "activate": "Reactivate",
+      "deactivate": "Deactivate",
+      "done": {
+        "unlock": "{{staffId}} unlocked.",
+        "activate": "{{staffId}} reactivated.",
+        "deactivate": "{{staffId}} deactivated and signed out."
+      },
+      "confirm": {
+        "reset": {
+          "title": "Reset the password for {{name}}?",
+          "message": "They are signed out everywhere and get a one-time password to choose a new one."
+        },
+        "deactivate": {
+          "title": "Deactivate {{name}}?",
+          "message": "They are signed out everywhere and can't sign in until reactivated."
+        },
+        "activate": {
+          "title": "Reactivate {{name}}?",
+          "message": "They can sign in again with their existing password."
+        }
+      }
+    }
+  },
+  "screens": {
+    "title": "Screen configuration",
+    "subtitle": "Turn screens on or off, choose what each one allows, and set their order in the menu.",
+    "list": "Screens",
+    "dragHint": "drag ⠿ to reorder the menu",
+    "order": "Order",
+    "moveUp": "Move {{name}} up",
+    "toggle": "Turn {{name}} on or off",
+    "adminOnly": "Admin screens are always on and only for administrators.",
+    "legend": "V view · C create · E edit · D delete · A approve · X export · P view PII",
+    "noGroup": "No group (top level)",
+    "saved": "{{name}} saved.",
+    "reordered": "Menu order saved.",
+    "enabled": "{{name}} turned on.",
+    "disabled": "{{name}} turned off.",
+    "disableTitle": "Turn off {{name}}?",
+    "disableMessage_one": "It disappears from the menu for {{count}} user and its API starts returning 403.",
+    "disableMessage_other": "It disappears from the menu for {{count}} users and its API starts returning 403.",
+    "disableConfirm": "Turn off",
+    "maxHelp": "The API never returns more rows than this",
+    "lastChanged": "Last changed {{date}}",
+    "save": "Save changes",
+    "modes": {
+      "hide": "Hide the action",
+      "disable": "Show it disabled, with the reason"
+    },
+    "fields": {
+      "screen": "Screen",
+      "group": "Menu group",
+      "capabilities": "Capabilities offered",
+      "enabled": "On",
+      "labelEn": "Menu label (English)",
+      "labelKn": "Menu label (Kannada)",
+      "route": "Route",
+      "mode": "When a user lacks a capability",
+      "defaultSize": "Default page size",
+      "maxSize": "Maximum page size",
+      "roles": "Roles with access"
+    }
+  }
+}

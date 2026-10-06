@@ -10,24 +10,34 @@
 
 ## Server layers
 
-Each area lives in `server/src/modules/<area>/` and follows the same layering as it grows:
+Each area lives in `server/src/modules/<area>/`:
 
 ```
-routes.ts      HTTP only: paths, middleware (validate, requireCapability), status codes
-controller.ts  maps the request to a service call and the result to a response
-service.ts     business rules: permissions on records, state transitions, audit entries
-repository.ts  database queries, projections, pagination
+routes.ts      HTTP only: paths, the capability each route needs, validation, status codes
+service.ts     business rules: branch scope, state transitions, maker-checker, audit entries, queries
+dto.ts         what the API returns (masking PII), where a module has more than one shape
 *.model.ts     Mongoose schema and indexes
 ```
 
-Rules live in services only, so the same rule applies whichever route calls it. Cross-cutting pieces sit in `lib/` (crypto, pagination, audit, errors) and `middleware/`.
+Rules live in services only, so the same rule applies whichever route calls it. The modules are small enough that queries stay in the services; a separate repository layer can be split out when a module grows. Cross-cutting pieces sit in `lib/` (crypto, sessions, pagination, uploads, CSV, audit, errors) and `middleware/` (auth, CSRF, rate limits, idempotency).
+
+## Web app
+
+```
+app/          AuthProvider (/auth/me, refreshed every 30 s), useCan / useAction, AppShell, IdleWatcher, guards
+components/   form fields and the locator contract, dialogs, drawer, toasts, tabs, stepper, pagination, typeahead
+modules/      one folder per area; each route is a lazy-loaded chunk
+locales/      en/ and kn/, one JSON per module, loaded on first use
+```
+
+Server state lives in TanStack Query (caching, page-number and infinite queries, request cancellation). Forms use react-hook-form with the same zod schemas the API uses; validation messages are codes translated per language.
 
 ## Request pipeline
 
 ```
 request id → logging → security headers → CORS → rate limit → no-store
-  → JSON body (100 KB max) → cookies → reject $/dotted keys → CSRF
-  → routes (validate → handler) → 404 → problem+json error handler
+  → JSON body (100 KB max) → cookies → reject $/dotted keys → load session → CSRF
+  → routes (capability → validate → service) → 404 → problem+json error handler
 ```
 
 ## Data

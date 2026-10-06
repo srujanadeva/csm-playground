@@ -1,7 +1,9 @@
+import { readdir, unlink } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import mongoose from 'mongoose'
 import { BRANCHES, ROLES, SCREENS, type LookupType } from '@csm/shared'
 import { connectDB, disconnectDB, redactUri } from '../db.ts'
-import { loadEnvConfig } from '../env.ts'
+import { SERVER_DIR, loadEnvConfig } from '../env.ts'
 import { hashPassword, oneTimePassword } from '../lib/password.ts'
 import { LookupModel } from '../modules/lookups/lookup.model.ts'
 import { ScreenModel } from '../modules/admin/screen.model.ts'
@@ -130,7 +132,13 @@ async function seedBusinessData() {
     ]) {
       await (m as mongoose.Model<unknown>).deleteMany({})
     }
-    log('--fresh: removed customers, service requests, comments, approvals, audit log and counters')
+    // Uploaded documents belonged to the removed records.
+    const dir = resolve(SERVER_DIR, config.UPLOAD_DIR)
+    const files = await readdir(dir).catch(() => [] as string[])
+    await Promise.all(files.map((f) => unlink(resolve(dir, f)).catch(() => undefined)))
+    log(
+      `--fresh: removed customers, service requests, comments, approvals, audit log, counters and ${files.length} uploaded files`,
+    )
   }
   if ((await CustomerModel.estimatedDocumentCount()) > 0) {
     log('Customers and service requests: already present, left as is (use --fresh to regenerate)')

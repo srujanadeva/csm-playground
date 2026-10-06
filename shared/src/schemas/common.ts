@@ -43,7 +43,10 @@ export interface Problem {
   detail?: string
   instance?: string
   requestId?: string
-  errors?: { path: string; message: string }[]
+  errors?: { path: string; code?: string; message: string }[]
+  /** Machine-readable reason, e.g. "account_locked", "password_change_required", "stale_version". */
+  code?: string
+  attemptsLeft?: number
 }
 
 /** Search text: trimmed, length-capped, so it can't be used for expensive regex scans. */

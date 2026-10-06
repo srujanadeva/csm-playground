@@ -38,6 +38,14 @@ const schema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   /** Express `trust proxy` setting; only loopback by default so X-Forwarded-For can't be spoofed. */
   TRUST_PROXY: z.string().default('loopback'),
+  /** Sign-out after this many minutes without a request (OWASP A07). */
+  SESSION_IDLE_MINUTES: z.coerce.number().int().min(1).max(120).default(15),
+  /** Sign-out after this many hours, however active the session is. */
+  SESSION_ABSOLUTE_HOURS: z.coerce.number().int().min(1).max(24).default(8),
+  /** Consecutive failed sign-ins before an account locks until an admin unlocks it. */
+  LOCKOUT_THRESHOLD: z.coerce.number().int().min(3).max(20).default(5),
+  /** Where uploaded documents are stored, relative to server/. Outside any web root. */
+  UPLOAD_DIR: z.string().default('uploads'),
 })
 
 export type Config = z.infer<typeof schema> & { isProd: boolean }

@@ -1,0 +1,301 @@
+{
+  "nav": {
+    "customers": "Customers"
+  },
+  "fields": {
+    "name": "Name",
+    "customerType": "Customer type",
+    "segment": "Segment",
+    "title": "Title",
+    "firstName": "First name",
+    "middleName": "Middle name",
+    "lastName": "Last name",
+    "fatherOrSpouseName": "Father's / spouse name",
+    "dob": "Date of birth",
+    "gender": "Gender",
+    "nationality": "Nationality",
+    "countryOfBirth": "Country of birth",
+    "maritalStatus": "Marital status",
+    "dependants": "Dependants",
+    "occupation": "Occupation",
+    "employer": "Employer",
+    "monthlyIncome": "Monthly income",
+    "productsOfInterest": "Products of interest",
+    "preferredLanguage": "Preferred language",
+    "mobile": "Mobile",
+    "altMobile": "Alternate mobile",
+    "email": "Email",
+    "commPrefs": "Contact the customer by",
+    "line1": "Address line 1",
+    "line2": "Address line 2",
+    "locality": "Locality",
+    "city": "City",
+    "state": "State",
+    "pincode": "PIN code",
+    "idType": "ID type",
+    "idNumber": "ID number",
+    "issueDate": "Issue date",
+    "expiryDate": "Expiry date",
+    "pep": "Is the customer a politically exposed person (PEP)?",
+    "riskRating": "Risk rating",
+    "fatca": "FATCA / CRS",
+    "pepPosition": "PEP position",
+    "pepCountry": "Country",
+    "pepSince": "Since (year)",
+    "sourceOfWealth": "Source of wealth",
+    "documents": "Documents",
+    "mailing": "Mailing address",
+    "permanent": "Permanent address"
+  },
+  "values": {
+    "customerType": {
+      "individual": "Individual",
+      "corporate": "Corporate"
+    },
+    "segment": {
+      "retail": "Retail",
+      "premier": "Premier",
+      "private": "Private"
+    },
+    "gender": {
+      "female": "Female",
+      "male": "Male",
+      "other": "Other"
+    },
+    "maritalStatus": {
+      "single": "Single",
+      "married": "Married",
+      "divorced": "Divorced",
+      "widowed": "Widowed"
+    },
+    "commPrefs": {
+      "sms": "SMS",
+      "email": "Email",
+      "post": "Post"
+    },
+    "idType": {
+      "passport": "Passport",
+      "pan": "PAN card",
+      "voter_id": "Voter ID",
+      "driving_licence": "Driving licence"
+    }
+  },
+  "onboard": {
+    "title": "Onboard customer",
+    "subtitle": "Creates a CIF when submitted",
+    "draft": "draft",
+    "savedAt": "Draft saved {{time}}",
+    "saveDraft": "Save draft",
+    "draftSaved": "Draft saved.",
+    "stale": "Someone else changed this draft. It has been reloaded; check your changes and try again.",
+    "submitted": "{{cif}} sent for supervisor approval.",
+    "alreadySubmitted": "This customer has already been submitted as {{cif}}.",
+    "viewCustomer": "View customer",
+    "noDraft": "Start with step 1 to create the draft.",
+    "requiredHint": "Fields marked * are required",
+    "stepOf": "Step {{n}} of {{total}}",
+    "nextTo": "Next: {{step}}",
+    "steps": {
+      "personal": "Personal",
+      "contact": "Contact & address",
+      "kyc": "KYC & documents",
+      "review": "Review & submit"
+    },
+    "hints": {
+      "personal": "Identity and profile",
+      "contact": "Phone, email, addresses",
+      "kyc": "ID, PEP, uploads",
+      "review": "Check and confirm"
+    },
+    "success": {
+      "badge": "Sent for approval",
+      "title": "Customer created:",
+      "message": "A supervisor in your branch must approve the customer before they can transact.",
+      "another": "Onboard another customer"
+    },
+    "leave": {
+      "title": "Leave onboarding?",
+      "withDraft": "Changes on this step since the last save will be lost. Draft {{draftNo}} stays saved and you can resume it later.",
+      "noDraft": "Nothing has been saved yet, so what you entered will be lost.",
+      "confirm": "Leave"
+    },
+    "personal": {
+      "profile": "Customer profile",
+      "employment": "Employment & income",
+      "dobHelp": "The customer must be 18 or older",
+      "perMonth": "a month"
+    },
+    "contact": {
+      "title": "Contact details",
+      "mobileHelp": "10 digits, without +91",
+      "permanent": "Permanent address",
+      "mailing": "Mailing address",
+      "mailingSame": "Mailing address is the same as the permanent address"
+    },
+    "kyc": {
+      "identity": "Identity document",
+      "dueDiligence": "Due diligence",
+      "riskHint": "The risk rating updates from these answers",
+      "idFormat": {
+        "passport": "One letter and 7 digits, e.g. W1234567",
+        "pan": "Five letters, four digits, one letter, e.g. ABCPK1234F",
+        "voter_id": "Three letters and 7 digits, e.g. ABC1234567",
+        "driving_licence": "KA and 13 digits, e.g. KA0120181234567"
+      },
+      "idHidden": "Hidden as you type · use the eye to show it",
+      "noExpiry": "Doesn't expire",
+      "calculated": "calculated",
+      "usTaxResident": "US tax resident"
+    },
+    "review": {
+      "incomplete": "Some steps aren't complete yet:",
+      "sameAsPermanent": "Same as permanent address",
+      "declarations": "Declarations",
+      "idVerified": "I have seen the original ID document and checked that the photo matches the customer.",
+      "termsAccepted": "The customer agrees to the account terms and the privacy notice.",
+      "submit": "Submit for approval",
+      "confirmTitle": "Submit this customer?",
+      "confirmMessage": "A CIF number is assigned now. The customer becomes active once a supervisor approves."
+    }
+  },
+  "docs": {
+    "title": "Documents",
+    "kind": "Document type",
+    "kinds": {
+      "id_front": "ID front",
+      "id_back": "ID back",
+      "photo": "Photo",
+      "address_proof": "Address proof",
+      "other": "Other"
+    },
+    "drop": "Drop files here or browse",
+    "hint": "JPG, PNG or PDF · up to 2 MB each",
+    "uploaded": "Uploaded",
+    "remove": "Remove {{name}}",
+    "none": "No documents yet.",
+    "count_one": "{{count}} document",
+    "count_other": "{{count}} documents"
+  },
+  "search": {
+    "title": "Customer search",
+    "subtitle": "Search by any field. Your filters are kept in the address bar.",
+    "onboard": "Onboard customer",
+    "criteria": "Search criteria",
+    "fields": {
+      "cif": "CIF number",
+      "name": "Name",
+      "mobile": "Mobile",
+      "idNumber": "ID number",
+      "status": "Status",
+      "kyc": "KYC",
+      "from": "Onboarded from",
+      "to": "Onboarded to"
+    },
+    "placeholders": {
+      "cif": "e.g. CIF-000124",
+      "name": "First or last name",
+      "mobile": "Digits, e.g. 98450",
+      "idNumber": "Exact ID number"
+    },
+    "reset": "Reset",
+    "submit": "Search",
+    "total_one": "{{formatted}} customer",
+    "total_other": "{{formatted}} customers",
+    "searching": "Searching…",
+    "rowsPerPage": "Rows per page",
+    "export": "Export CSV",
+    "empty": "No customers match",
+    "emptyHint": "Try fewer filters, or a shorter name or number.",
+    "columns": {
+      "cif": "CIF",
+      "name": "Name",
+      "mobile": "Mobile",
+      "status": "Status",
+      "kyc": "KYC",
+      "onboarded": "Onboarded",
+      "actions": "Actions"
+    },
+    "kycExpired": "ID expired {{date}} · re-KYC required",
+    "kycExpires": "ID expires {{date}}",
+    "kycInfo": "KYC details",
+    "menu": {
+      "resume": "Resume draft",
+      "view": "View customer 360",
+      "request": "New service request",
+      "block": "Request block",
+      "onlyActive": "only active customers"
+    }
+  },
+  "c360": {
+    "since": "Customer since",
+    "piiMasked": "Contact details are partly hidden. You need the View PII permission to see them in full.",
+    "reveal": "Show",
+    "kycStatus": "KYC status",
+    "noRequests": "No service requests for this customer.",
+    "noAudit": "No changes recorded yet.",
+    "notFound": "Customer not found, or not in your branch.",
+    "back": "Back to results",
+    "approved": "Approved.",
+    "rejected": "Rejected.",
+    "ownRequest": "You raised this request, so another supervisor must decide it.",
+    "alreadyPending": "A request is already waiting for approval",
+    "newRequest": "Service request",
+    "sentForApproval": "Request sent for supervisor approval.",
+    "reason": "Reason",
+    "remarks": "Remarks",
+    "pending": {
+      "customer": {
+        "activate": "Waiting for activation approval · submitted by {{by}} on {{date}}",
+        "block": "Block request waiting for approval · requested by {{by}} on {{date}}",
+        "unblock": "Unblock request waiting for approval · requested by {{by}} on {{date}}"
+      }
+    },
+    "tabs": {
+      "overview": "Overview",
+      "contact": "Contact",
+      "kyc": "KYC & documents",
+      "requests": "Service requests",
+      "audit": "Audit log"
+    },
+    "block": {
+      "title": "Request to block this customer",
+      "message": "A supervisor must approve the block before it takes effect. The customer can't transact once it's approved.",
+      "button": "Request block"
+    },
+    "unblock": {
+      "title": "Request to unblock this customer",
+      "message": "A supervisor must approve before the customer can transact again.",
+      "button": "Request unblock"
+    },
+    "edit": {
+      "title": "Edit customer",
+      "unsaved": "Unsaved changes",
+      "saved": "Customer details saved."
+    },
+    "sendForApproval": "Send for approval"
+  },
+  "audit": {
+    "customer": {
+      "created": "Customer created",
+      "submitted": "Submitted for approval",
+      "activated": "Activated",
+      "blocked": "Blocked",
+      "unblocked": "Unblocked",
+      "updated": "Details changed",
+      "exported": "Exported",
+      "pii": {
+        "viewed": "ID number viewed"
+      },
+      "document": {
+        "added": "Document added",
+        "removed": "Document removed"
+      },
+      "block": {
+        "requested": "Block requested"
+      },
+      "unblock": {
+        "requested": "Unblock requested"
+      }
+    }
+  }
+}

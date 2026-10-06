@@ -1,7 +1,8 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express'
 import { ZodError } from 'zod'
 import mongoose from 'mongoose'
-import type { Problem } from '@csm/shared'
+import multer from 'multer'
+import { validationMessage, type Problem } from '@csm/shared'
 import { AppError, notFound } from '../lib/errors.ts'
 
 // Every error leaves as RFC 9457 problem+json with the request id (OWASP A10). Expected
@@ -22,6 +23,7 @@ function toProblem(err: unknown): Problem {
       status: err.status,
       ...(err.detail ? { detail: err.detail } : {}),
       ...(err.errors ? { errors: err.errors } : {}),
+      ...err.extras,
     }
   }
   if (err instanceof ZodError) {
@@ -30,8 +32,27 @@ function toProblem(err: unknown): Problem {
       title: 'Validation failed',
       status: 400,
       detail: 'Some fields are missing or invalid.',
-      errors: err.issues.map((i) => ({ path: i.path.join('.') || '(root)', message: i.message })),
+      errors: err.issues.map((i) => ({
+        path: i.path.join('.') || '(root)',
+        code: i.message,
+        message: validationMessage(i.message),
+      })),
     }
+  }
+  if (err instanceof multer.MulterError) {
+    return err.code === 'LIMIT_FILE_SIZE'
+      ? {
+          type: TYPE_BASE + 'payload-too-large',
+          title: 'Payload too large',
+          status: 413,
+          detail: 'Files can be at most 2 MB.',
+        }
+      : {
+          type: TYPE_BASE + 'bad-request',
+          title: 'Bad request',
+          status: 400,
+          detail: 'Upload one file in the "file" field.',
+        }
   }
   if (err instanceof mongoose.Error.CastError) {
     return {
@@ -86,6 +107,7 @@ function toProblem(err: unknown): Problem {
   }
 }
 
+/** Turns any thrown error into a problem+json response and logs it. */
 export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   if (res.headersSent) return next(err)
   const problem = toProblem(err)

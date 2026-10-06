@@ -6,9 +6,7 @@ It is the next step after [test-playground](../test-playground): the same kinds 
 
 The sample data is set in Bengaluru: Indian names, +91 mobile numbers, amounts in ₹, and three branches (MG Road, Jayanagar, Whitefield). The interface is in **English and Kannada**.
 
-> **Status: phase 1 of 7.** The project skeleton, security baseline, data models and seed data are in place. The web app currently shows a system status page. Sign-in and the app shell arrive in phase 2, then the admin screens and the three CSM screens. See [Roadmap](#roadmap).
-
-Screen mockups for every planned screen are in [docs/mockups](docs/mockups).
+> **Status:** every screen from the [mockups](docs/mockups) is built and saves to MongoDB. Next up: written practice exercises and a Playwright E2E suite. See [Roadmap](#roadmap).
 
 ---
 
@@ -78,6 +76,46 @@ If MongoDB is already running, `npm run dev` starts just the API and web app.
 | `csr003`   | Harish Kumar    | Customer service rep                               | 0007 Whitefield |
 | `csr004`   | Deepa Bhat      | Customer service rep, **deactivated**              | 0007 Whitefield |
 
+| Role       | Can                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------ |
+| CSR        | Onboard, search (PII masked), view and edit customers, request block/unblock, create and work requests |
+| Supervisor | Everything a CSR can, plus approve/reject, see PII, close requests, export                             |
+| Admin      | Everything, in every branch, plus Users & access and Screen configuration                              |
+
+Admins can change any of this per user or per screen; changes reach signed-in users within 30 seconds.
+
+## Screens
+
+| Screen               | Route                   | Who sees it                    | What to practise                                                                                                                                                                                  |
+| -------------------- | ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign in              | `/login`                | everyone                       | lockout countdown, show/hide password, "remember this device", language switch                                                                                                                    |
+| Change password      | `/change-password`      | users with a one-time password | password rules, server-side "too common" check                                                                                                                                                    |
+| Dashboard            | `/dashboard`            | all roles                      | tiles, approval queue with confirm dialogs, paginated lists                                                                                                                                       |
+| Onboard customer     | `/customers/new`        | CSR, supervisor, admin         | 4-step wizard, draft save and resume (`?draft=`), radios, date inputs, slider + number input, toggle tags, conditional fields, masked ID with show/hide, uploads with progress, submit validation |
+| Customer search      | `/customers`            | all roles                      | filters kept in the URL, sortable columns, page numbers and "go to page", rows per page, tooltips, row menus with disabled items, CSV export                                                      |
+| Customer 360         | `/customers/:cif`       | all roles                      | tabs that load on first open, infinite-scroll audit log, edit drawer, block/unblock (maker-checker), approve from the banner, audited ID reveal                                                   |
+| New request          | `/service-requests/new` | CSR, supervisor, admin         | debounced typeahead, dependent dropdowns, SLA set from priority, character counter, queued attachments, idempotent submit                                                                         |
+| Request board        | `/service-requests`     | CSR, supervisor, admin         | drag and drop between columns, per-column infinite scroll, resolve dialog, "closing needs Approve", list view with paging                                                                         |
+| Users & access       | `/admin/users`          | admin only                     | permission matrix (role vs per-user), unlock, one-time password reset, deactivate, new user                                                                                                       |
+| Screen configuration | `/admin/screens`        | admin only                     | drag to reorder the menu, on/off switches with impact warning, capabilities, hide-vs-disable, page-size limits, roles with access                                                                 |
+
+Screens a user can't open aren't in their menu, and their URLs show Not Found. The browser only downloads the code for screens the user opens.
+
+### Locators
+
+Every control follows one contract, so tests don't depend on text or language:
+
+| Thing                    | Locator                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Inputs, selects, buttons | `id` = `data-testid` = `<screen>-<section>-<field>`, e.g. `onb-personal-first-name`, `search-submit` |
+| Field errors             | `<id>-error` with `role="alert"`, e.g. `onb-kyc-expiry-date-error`                                   |
+| Radio / checkbox options | `<group-id>-<value>`, e.g. `onb-personal-gender-female`, `sr-new-priority-high`                      |
+| Table rows               | `data-testid="<table>-row"` plus `data-row-id` (CIF, SR number or staff ID)                          |
+| Async areas              | `data-state` = `loading`, `loaded`, `empty` or `error`; paged tables also expose `data-page`         |
+| Board                    | columns `board-column-<status>`, cards `board-card` with `data-sr-no` and `data-status`              |
+| Menu                     | `nav-<screenKey>`, e.g. `nav-customers.search`                                                       |
+| Toasts and dialogs       | `toast` (with `data-kind`), dialogs by their `data-testid` with `-confirm` / `-cancel` buttons       |
+
 ## Sample data
 
 The seed is deterministic: every machine gets the same customers, so exercises can name specific records.
@@ -98,42 +136,47 @@ Reset the business data at any time (staff, screens and roles are kept):
 npm run seed -- --fresh
 ```
 
-## API (phase 1)
+## API
 
-Every error is returned as `application/problem+json` with a `requestId` you can match to the server log.
+All paths are under `https://localhost:4001/api/v1`. Every error is `application/problem+json` with a `requestId`; field errors carry a translatable `code` and an English `message`. State-changing requests need the `X-CSRF-Token` header (from `GET /auth/csrf`, also returned by sign-in), and create endpoints accept an `Idempotency-Key` header.
 
-| Method & path           | Purpose                                                                                             |
-| ----------------------- | --------------------------------------------------------------------------------------------------- |
-| `GET /api/v1/health`    | Liveness: the API is up                                                                             |
-| `GET /api/v1/ready`     | Readiness: 200 when MongoDB answers, otherwise 503                                                  |
-| `GET /api/v1/auth/csrf` | Issues a CSRF token (cookie + body). Send it in `X-CSRF-Token` on every POST, PUT, PATCH and DELETE |
+| Area                       | Endpoints                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System                     | `GET /health`, `GET /ready`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Auth                       | `GET /auth/csrf`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/change-password`, `PUT /auth/me/language`                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Lookups                    | `GET /lookups/:type?parent=`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Customers                  | `GET /customers` (filters, `page`, `pageSize`, `sort`), `GET /customers/export.csv`, `GET /customers/typeahead?q=`, `POST /customers` (new draft), `GET /customers/:ref/form`, `PATCH /customers/:ref/draft`, `POST /customers/:ref/submit`, `GET /customers/:ref`, `PATCH /customers/:ref`, `POST /customers/:ref/reveal-id`, `GET /customers/:ref/audit` and `/service-requests` (cursor), `POST /customers/:ref/block-requests` and `/unblock-requests`, `POST /customers/:ref/documents`, `GET /customers/:ref/documents/:id/content` |
+| Approvals                  | `GET /approvals`, `POST /approvals/:id/approve`, `POST /approvals/:id/reject`                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Service requests           | `GET /service-requests/assignees`, `POST /service-requests`, `GET /service-requests/board?status=` (cursor), `GET /service-requests` (pages), `GET /service-requests/export.csv`, `GET /service-requests/:srNo`, `PATCH /service-requests/:srNo/status`, `GET` and `POST /service-requests/:srNo/comments`, `POST /service-requests/:srNo/attachments`                                                                                                                                                                                    |
+| Admin (404 for non-admins) | `GET` and `POST /admin/users`, `GET` and `PATCH /admin/users/:staffId`, `POST /admin/users/:staffId/unlock`, `/reset-password`, `/deactivate`, `/activate`, `GET /admin/screens`, `PATCH /admin/screens/:key`, `PUT /admin/screens/order`, `PUT /admin/screens/:key/roles`, `GET /admin/screens/:key/impact`, `GET /admin/roles`                                                                                                                                                                                                          |
+| Dashboard                  | `GET /dashboard/summary`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
-Things you can already test against the API are listed in [docs/security.md](docs/security.md#what-you-can-test-today).
+[docs/security.md](docs/security.md) lists the security controls and ready-made negative tests.
 
 ## Quality checks
 
 ```bash
-npm run check   # lint, format, type-check, unit and API tests, dependency audit
+npm run check   # lint, format, type-check, tests, dependency audit
 ```
 
-| Script                 | What it runs                                                                              |
-| ---------------------- | ----------------------------------------------------------------------------------------- |
-| `npm run lint`         | ESLint (TypeScript, React hooks, bans `eval` and `dangerouslySetInnerHTML`)               |
-| `npm run format:check` | Prettier                                                                                  |
-| `npm run typecheck`    | `tsc` in every workspace                                                                  |
-| `npm test`             | Vitest: permission rules, masking, config, encryption, pagination, and API security tests |
-| `npm run audit:deps`   | `npm audit` for high-severity issues in runtime dependencies                              |
+| Script                 | What it runs                                                                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run lint`         | ESLint (TypeScript, React hooks, bans `eval` and `dangerouslySetInnerHTML`)                                                                          |
+| `npm run format:check` | Prettier                                                                                                                                             |
+| `npm run typecheck`    | `tsc` in every workspace                                                                                                                             |
+| `npm test`             | Vitest: shared rules (permissions, KYC, risk), server units, and API integration tests against MongoDB (`csm_playground_test`, skipped if it's down) |
+| `npm run audit:deps`   | `npm audit` for high-severity issues in runtime dependencies                                                                                         |
 
 ## Tech stack
 
-| Layer    | Technology                                                                                                     |
-| -------- | -------------------------------------------------------------------------------------------------------------- |
-| Web      | React 19, TypeScript, Vite (React Router, TanStack Query, react-hook-form and react-i18next arrive in phase 2) |
-| API      | Express 5, TypeScript (run with `tsx`), Mongoose 9, zod 4                                                      |
-| Security | helmet, signed double-submit CSRF, express-rate-limit, bcrypt, AES-256-GCM field encryption                    |
-| Logging  | pino with redaction                                                                                            |
-| Tests    | Vitest, Supertest (Playwright E2E in phase 7)                                                                  |
-| Database | MongoDB, database `csm_playground`                                                                             |
+| Layer    | Technology                                                                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web      | React 19, TypeScript, Vite, React Router, TanStack Query, react-hook-form + zod, react-i18next, self-hosted IBM Plex and Noto Sans Kannada fonts |
+| API      | Express 5, TypeScript (run with `tsx`), Mongoose 9, zod 4, multer                                                                                |
+| Security | helmet, signed double-submit CSRF, express-rate-limit, bcrypt, AES-256-GCM field encryption                                                      |
+| Logging  | pino with redaction                                                                                                                              |
+| Tests    | Vitest, Supertest (Playwright E2E suite next)                                                                                                    |
+| Database | MongoDB, database `csm_playground`                                                                                                               |
 
 No UI component library: every control is native or hand-built, so locators stay predictable.
 
@@ -141,33 +184,34 @@ No UI component library: every control is native or hand-built, so locators stay
 
 ```
 csm-playground/
-  shared/          zod schemas, enums, screen and role definitions, permission resolver, masking
+  shared/          zod schemas, enums, screen/role definitions, permission resolver, risk rating, masking, response types
   server/
     src/
       app.ts       Express app: security middleware, routes, error handling
       config.ts    settings validated at startup
-      lib/         crypto, pagination, audit, logger, passwords, errors
-      middleware/  request id, CSRF, rate limits, operator rejection, error handler
-      modules/     one folder per area: auth, admin, customers, serviceRequests, approvals, lookups, audit, system
+      lib/         crypto, sessions, pagination, uploads, CSV, audit, logger, passwords, errors
+      middleware/  auth (session, capability checks), CSRF, rate limits, idempotency, operator rejection, errors
+      modules/     one folder per area: auth, admin, customers, serviceRequests, approvals, lookups, dashboard, audit, system
       seed/        deterministic sample data
-    test/          unit and API tests
-  web/             React + Vite app
+    test/          unit and API integration tests
+  web/
+    src/
+      app/         auth context, permission hooks, shell, idle timeout, route guards
+      components/  form fields, dialogs, drawer, toasts, tabs, stepper, pagination, typeahead, drop zone
+      modules/     auth, dashboard, customers (onboard, search, c360), requests, admin
+      locales/     en/ and kn/ JSON, one file per module
   scripts/         setup / start / stop for macOS (.sh) and Windows (.ps1)
   docs/            security.md, architecture.md, mockups/
 ```
 
 ## Roadmap
 
-| Phase | Scope                                                                            | Status   |
-| ----- | -------------------------------------------------------------------------------- | -------- |
-| 0     | Image mockups                                                                    | Done     |
-| 1     | Project skeleton, security baseline, models, seed, scripts                       | **Done** |
-| 2     | Sign-in, lockout, sessions, `/auth/me`, permission-driven shell, English/Kannada | Next     |
-| 3     | Admin: users & access, screen configuration                                      |          |
-| 4     | Onboard customer wizard                                                          |          |
-| 5     | Customer search, Customer 360, maker-checker block                               |          |
-| 6     | Service requests: new request, board and list                                    |          |
-| 7     | Docs, practice exercises, Playwright E2E and security tests                      |          |
+| Phase | Scope                                                                                                                      | Status   |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 0     | Image mockups                                                                                                              | Done     |
+| 1     | Project skeleton, security baseline, models, seed, scripts                                                                 | Done     |
+| 2     | All mockup screens and their APIs: sign-in, sessions, permission-driven shell, English/Kannada, every CSM and admin screen | **Done** |
+| 3     | Practice exercises (beginner → advanced), Playwright E2E and security test suite, CI                                       | Next     |
 
 ## Troubleshooting
 
@@ -175,6 +219,8 @@ csm-playground/
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `Invalid server configuration` on start | A secret in `server/.env` is missing or still `change-me`. Run `npm run setup`; it only fills in what's missing. |
 | `Dev TLS certs are missing`             | Run `npm run setup`, or delete `certs/` and run it again to make new ones.                                       |
-| Status page shows Database **Down**     | MongoDB isn't running: `npm run start:all` starts it.                                                            |
+| "Can't reach the server" on sign-in     | The API or MongoDB isn't running: `npm run start:all` starts both.                                               |
 | Browser warns about the certificate     | Expected for the self-signed dev cert; accept it for `localhost`.                                                |
+| Account locked during practice          | Sign in as `admin001` and use **Unlock account**, or run `npm run seed -- --reset-passwords --demo`.             |
+| Signed out after 15 minutes             | That's the idle timeout. Set `SESSION_IDLE_MINUTES` in `server/.env` (1–120) to change it.                       |
 | Lost the one-time passwords             | `npm run seed -- --reset-passwords` prints new ones (add `--demo` for the known password).                       |
