@@ -1,0 +1,56 @@
+{
+  "title": "Dashboard",
+  "greeting": "Good to see you, {{name}}",
+  "subtitle": "Your workload and what's waiting for you.",
+  "passwordChanged": "Your password was changed. Your other sessions were signed out.",
+  "tiles": {
+    "myOpen": "Open requests assigned to you",
+    "overdue": "Overdue requests in your branch",
+    "approvals": "Requests waiting for approval",
+    "customers": "Customers you can see",
+    "drafts": "Your onboarding drafts"
+  },
+  "approvals": {
+    "title": "Waiting for your approval",
+    "hint": "Raised by other staff in your branch. You can't decide your own requests.",
+    "empty": "Nothing is waiting for approval.",
+    "request": "Request",
+    "customer": "Customer",
+    "reason": "Reason",
+    "requestedBy": "Requested by",
+    "date": "Requested",
+    "approveAction": "Approve",
+    "rejectAction": "Reject",
+    "own": "You raised this request, so someone else must decide it.",
+    "approved": "Approved. {{cif}} is updated.",
+    "rejected": "Rejected. {{cif}} is unchanged.",
+    "confirmApproveTitle": "Approve this request?",
+    "confirmRejectTitle": "Reject this request?",
+    "confirmMessage": {
+      "customer": {
+        "activate": "{{name}} ({{cif}}) will become an active customer.",
+        "block": "{{name}} ({{cif}}) will be blocked and can't transact.",
+        "unblock": "{{name}} ({{cif}}) will be active again."
+      }
+    },
+    "type": {
+      "customer": {
+        "activate": "Activate customer",
+        "block": "Block customer",
+        "unblock": "Unblock customer"
+      }
+    }
+  },
+  "drafts": {
+    "title": "Onboarding drafts",
+    "hint": "Drafts in your branch, newest first.",
+    "empty": "No drafts. Start one from Onboard customer.",
+    "resume": "Resume"
+  },
+  "requests": {
+    "title": "Your open requests",
+    "hint": "Soonest SLA first.",
+    "openBoard": "Open the board",
+    "empty": "No open requests are assigned to you."
+  }
+}

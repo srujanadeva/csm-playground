@@ -28,7 +28,7 @@ export function csrfProtection(secret: string, allowedOrigins: string[]): Reques
 
     const origin = req.get('origin')
     if (origin && !allowedOrigins.includes(origin)) {
-      throw forbidden('This request came from a site that is not allowed.')
+      throw forbidden('This request came from a site that is not allowed.', { code: 'origin_not_allowed' })
     }
 
     const header = req.get(CSRF_HEADER) ?? ''
@@ -42,6 +42,7 @@ export function csrfProtection(secret: string, allowedOrigins: string[]): Reques
     if (!valid) {
       throw forbidden(
         'Missing or invalid CSRF token. Fetch one from /api/v1/auth/csrf and send it in X-CSRF-Token.',
+        { code: 'csrf_invalid' },
       )
     }
     next()

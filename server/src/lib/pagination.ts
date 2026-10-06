@@ -1,5 +1,6 @@
 import { Types } from 'mongoose'
 import { badRequest } from './errors.ts'
+import { op } from './query.ts'
 
 // Shared pagination helpers so no list endpoint can return an unbounded result.
 
@@ -42,7 +43,7 @@ export function decodeCursor(cursor: string): Types.ObjectId {
  * Callers pass a query already filtered by `_id < cursor` via `cursorFilter`.
  */
 export function cursorFilter(cursor: string | undefined): Record<string, unknown> {
-  return cursor ? { _id: { $lt: decodeCursor(cursor) } } : {}
+  return cursor ? { _id: op({ $lt: decodeCursor(cursor) }) } : {}
 }
 
 export function toCursorPage<T extends { _id: Types.ObjectId }>(rows: T[], limit: number) {

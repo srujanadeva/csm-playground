@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "requests": "Service requests"
+  },
+  "fields": {
+    "srNo": "SR number",
+    "customer": "Customer",
+    "channel": "Channel",
+    "category": "Category",
+    "subCategory": "Sub-category",
+    "priority": "Priority",
+    "slaDate": "SLA due date",
+    "slaTime": "SLA due time",
+    "slaDue": "SLA due",
+    "assignee": "Assigned to",
+    "subject": "Subject",
+    "description": "Description",
+    "attachments": "Attachments",
+    "notifications": "Notifications",
+    "status": "Status"
+  },
+  "channel": {
+    "branch": "Branch",
+    "phone": "Phone",
+    "email": "Email",
+    "mobile_app": "Mobile app"
+  },
+  "new": {
+    "title": "New service request",
+    "subtitle": "The SLA due date is set from the priority. You can change it.",
+    "customer": "Customer",
+    "details": "Request details",
+    "customerPlaceholder": "Name, CIF or mobile",
+    "customerHelp": "Type at least 2 characters",
+    "noMatches": "No active customers match. Check the spelling or search by CIF.",
+    "subCategoryHelp": "The options depend on the category",
+    "chooseCategoryFirst": "Choose a category first",
+    "slaHelp": "{{priority}} priority · {{hours}} hours",
+    "me": "Me ({{name}})",
+    "drop": "Drop files or browse",
+    "dropHint": "JPG, PNG or PDF · up to {{max}} files, 2 MB each",
+    "uploadsAfter": "uploads when you create the request",
+    "notifySms": "Send the customer an SMS with the request number",
+    "notifyEmail": "Email the customer when the request is resolved",
+    "submit": "Create request",
+    "created": "{{srNo}} created.",
+    "createdWithFailures": "{{srNo}} created, but these files didn't upload: {{files}}"
+  },
+  "board": {
+    "title": "Request board",
+    "subtitle": "Drag a card to change its status. Each column loads more as you scroll.",
+    "listSubtitle": "Sort and page through requests.",
+    "view": "View",
+    "views": { "board": "Board", "list": "List" },
+    "queue": "Queue",
+    "queues": { "mine": "My queue", "branch": "Branch queue", "all": "All branches" },
+    "anyPriority": "Any priority",
+    "searchLabel": "Search requests",
+    "searchPlaceholder": "SR number, customer or subject",
+    "emptyColumn": "No requests",
+    "closeNeedsApprove": "Closing needs Approve",
+    "noEdit": "You can't change request status.",
+    "invalidMove": "A request can't move from {{from}} to {{to}}.",
+    "moved": "{{srNo}} moved to {{status}}.",
+    "export": "Export CSV",
+    "noResults": "No requests match these filters."
+  },
+  "drawer": {
+    "comments": "Comments",
+    "addComment": "Add comment",
+    "commentPlaceholder": "What happened, what's next?",
+    "noComments": "No comments yet.",
+    "moveTo": "Move to",
+    "created": "Created",
+    "resolution": "Resolution notes"
+  },
+  "resolve": {
+    "title": "Resolve {{srNo}}",
+    "message": "Say what was done for the customer. The notes are kept with the request.",
+    "notes": "Resolution notes",
+    "confirm": "Resolve request"
+  }
+}

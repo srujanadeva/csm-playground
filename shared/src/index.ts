@@ -1,5 +1,13 @@
+/** Public entry of @csm/shared. `validation.ts` comes first: it registers zod's error codes. */
+export * from './validation.ts'
 export * from './permissions.ts'
 export * from './enums.ts'
 export * from './mask.ts'
+export * from './risk.ts'
+export * from './types.ts'
 export * from './schemas/common.ts'
 export * from './schemas/password.ts'
+export * from './schemas/auth.ts'
+export * from './schemas/customer.ts'
+export * from './schemas/serviceRequest.ts'
+export * from './schemas/admin.ts'

@@ -1,0 +1,115 @@
+{
+  "appName": "CSM Playground Bank",
+  "appTagline": "Customer service",
+  "loading": "Loading…",
+  "loadingMore": "Loading more…",
+  "loadMore": "Load more",
+  "close": "Close",
+  "cancel": "Cancel",
+  "dismiss": "Dismiss",
+  "show": "Show",
+  "hide": "Hide",
+  "clear": "Clear",
+  "remove": "Remove",
+  "save": "Save",
+  "edit": "Edit",
+  "back": "Back",
+  "discard": "Discard",
+  "select": "Select…",
+  "all": "All",
+  "yes": "Yes",
+  "no": "No",
+  "signOut": "Sign out",
+  "language": "Language",
+  "breadcrumb": "Breadcrumb",
+  "noPermission": "You don't have the {{capability}} permission here.",
+  "capability": {
+    "view": "View",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "approve": "Approve",
+    "export": "Export",
+    "viewPII": "View PII"
+  },
+  "nav": {
+    "label": "Main menu",
+    "open": "Open menu",
+    "myOpen": "Open requests assigned to you"
+  },
+  "navGroup": {
+    "customers": "Customers",
+    "serviceRequests": "Service requests",
+    "admin": "Administration",
+    "accounts": "Accounts",
+    "cards": "Cards"
+  },
+  "role": {
+    "admin": "Administrator",
+    "supervisor": "Supervisor",
+    "csr": "Customer service rep"
+  },
+  "status": {
+    "draft": "Draft",
+    "pending_approval": "Pending approval",
+    "active": "Active",
+    "blocked": "Blocked",
+    "closed": "Closed",
+    "pending": "Pending",
+    "verified": "Verified",
+    "due": "Due soon",
+    "expired": "Expired",
+    "open": "Open",
+    "in_progress": "In progress",
+    "resolved": "Resolved",
+    "locked": "Locked",
+    "deactivated": "Deactivated",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "sla": {
+    "met": "met",
+    "hours_one": "{{count}} h",
+    "hours_other": "{{count}} h",
+    "days_one": "{{count}} d",
+    "days_other": "{{count}} d",
+    "overdue": "{{amount}} overdue"
+  },
+  "pagination": {
+    "showing": "Showing {{from}}–{{to}} of {{total}}",
+    "label": "Pages",
+    "first": "First page",
+    "previous": "Previous page",
+    "next": "Next page",
+    "last": "Last page",
+    "goTo": "Go to page"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "message": "This page doesn't exist, or you don't have access to it.",
+    "home": "Go to the dashboard"
+  },
+  "idle": {
+    "title": "You'll be signed out soon",
+    "message": "You haven't used the app for a while. For security, you'll be signed out in",
+    "stay": "Stay signed in"
+  },
+  "upload": {
+    "badType": "This file type isn't accepted. Use JPG, PNG or PDF.",
+    "tooLarge": "This file is larger than 2 MB.",
+    "chooseFiles": "Choose files to upload"
+  },
+  "error": {
+    "generic": "Something went wrong. Try again.",
+    "network": "Can't reach the server. Check your connection and try again."
+  }
+}

@@ -9,7 +9,7 @@ export async function nextSeq(key: string): Promise<number> {
   const doc = await CounterModel.findOneAndUpdate(
     { _id: key },
     { $inc: { seq: 1 } },
-    { upsert: true, new: true },
+    { upsert: true, returnDocument: 'after' },
   )
   return doc.seq
 }
