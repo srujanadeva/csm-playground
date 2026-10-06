@@ -75,8 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await api('/auth/logout', { method: 'POST' })
       } finally {
         setCsrfToken(null)
-        qc.clear()
+        // Null `me` in place rather than qc.clear(): clearing removes the query the mounted
+        // useQuery is observing, so it would keep showing the old user until its next refetch.
         qc.setQueryData(['me'], null)
+        qc.removeQueries({ predicate: (q) => q.queryKey[0] !== 'me' })
       }
     },
   }
