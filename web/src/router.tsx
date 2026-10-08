@@ -15,6 +15,8 @@ const CustomerSearchPage = lazy(() => import('./modules/customers/search/Custome
 const Customer360Page = lazy(() => import('./modules/customers/c360/Customer360Page.tsx'))
 const NewRequestPage = lazy(() => import('./modules/requests/NewRequestPage.tsx'))
 const RequestBoardPage = lazy(() => import('./modules/requests/RequestBoardPage.tsx'))
+const TellerCounterPage = lazy(() => import('./modules/teller/TellerCounterPage.tsx'))
+const CashDrawerPage = lazy(() => import('./modules/teller/CashDrawerPage.tsx'))
 const UsersPage = lazy(() => import('./modules/admin/UsersPage.tsx'))
 const ScreensPage = lazy(() => import('./modules/admin/ScreensPage.tsx'))
 
@@ -40,6 +42,8 @@ export const router = createBrowserRouter([
       { path: 'customers/:ref', element: screen('customers.360', <Customer360Page />) },
       { path: 'service-requests/new', element: screen('serviceRequests.new', <NewRequestPage />) },
       { path: 'service-requests', element: screen('serviceRequests.board', <RequestBoardPage />) },
+      { path: 'teller', element: screen('teller.counter', <TellerCounterPage />) },
+      { path: 'teller/drawer', element: screen('teller.drawer', <CashDrawerPage />) },
       { path: 'admin/users', element: screen('admin.users', <UsersPage />) },
       { path: 'admin/screens', element: screen('admin.screens', <ScreensPage />) },
       { path: '*', element: <NotFound /> },

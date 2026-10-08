@@ -12,6 +12,8 @@ const PATHS: Record<string, string> = {
   sliders: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M16 4v4M10 10v4M18 16v4',
   wallet: 'M3 7h18v12H3zM16 13h2M3 7l12-4v4',
   card: 'M3 6h18v12H3zM3 10h18',
+  cash: 'M2 7h20v10H2zM12 15a3 3 0 100-6 3 3 0 000 6zM5 10v4M19 10v4',
+  drawer: 'M3 4h18v16H3zM3 12h18M10 8h4M10 16h4',
   check: 'M5 12l5 5 9-10',
   bell: 'M6 16V11a6 6 0 0112 0v5l2 2H4zM10 21h4',
   globe: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',

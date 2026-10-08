@@ -4,7 +4,7 @@
 export const CAPABILITIES = ['view', 'create', 'edit', 'delete', 'approve', 'export', 'viewPII'] as const
 export type Capability = (typeof CAPABILITIES)[number]
 
-export const NAV_GROUPS = ['customers', 'serviceRequests', 'admin', 'accounts', 'cards'] as const
+export const NAV_GROUPS = ['customers', 'serviceRequests', 'teller', 'admin', 'accounts', 'cards'] as const
 export type NavGroup = (typeof NAV_GROUPS)[number]
 
 export interface ScreenDefinition {
@@ -117,6 +117,36 @@ export const SCREENS: ScreenDefinition[] = [
     maxPageSize: 100,
   },
   {
+    key: 'teller.counter',
+    route: '/teller',
+    navGroup: 'teller',
+    labels: { en: 'Teller counter', kn: 'ಕ್ಯಾಷ್ ಕೌಂಟರ್' },
+    icon: 'cash',
+    order: 64,
+    inNav: true,
+    adminOnly: false,
+    enabled: true,
+    capabilities: ['view', 'create', 'approve', 'viewPII'],
+    unauthorisedMode: 'hide',
+    defaultPageSize: 25,
+    maxPageSize: 100,
+  },
+  {
+    key: 'teller.drawer',
+    route: '/teller/drawer',
+    navGroup: 'teller',
+    labels: { en: 'Cash drawer', kn: 'ನಗದು ಪೆಟ್ಟಿಗೆ' },
+    icon: 'drawer',
+    order: 66,
+    inNav: true,
+    adminOnly: false,
+    enabled: true,
+    capabilities: ['view', 'create', 'edit', 'approve'],
+    unauthorisedMode: 'hide',
+    defaultPageSize: 25,
+    maxPageSize: 100,
+  },
+  {
     key: 'admin.users',
     route: '/admin/users',
     navGroup: 'admin',
@@ -179,7 +209,7 @@ export const SCREENS: ScreenDefinition[] = [
   },
 ]
 
-export type RoleKey = 'admin' | 'supervisor' | 'csr'
+export type RoleKey = 'admin' | 'supervisor' | 'csr' | 'teller'
 
 export interface Grant {
   screenKey: string
@@ -218,6 +248,17 @@ export const ROLES: RoleDefinition[] = [
       { screenKey: 'customers.360', capabilities: ['view', 'edit'] },
       { screenKey: 'serviceRequests.new', capabilities: ['view', 'create'] },
       { screenKey: 'serviceRequests.board', capabilities: ['view', 'edit'] },
+    ],
+  },
+  {
+    key: 'teller',
+    names: { en: 'Teller', kn: 'ಕ್ಯಾಷಿಯರ್' },
+    grants: [
+      { screenKey: 'dashboard', capabilities: ['view'] },
+      { screenKey: 'customers.search', capabilities: ['view'] },
+      { screenKey: 'customers.360', capabilities: ['view'] },
+      { screenKey: 'teller.counter', capabilities: ['view', 'create'] },
+      { screenKey: 'teller.drawer', capabilities: ['view', 'create', 'edit'] },
     ],
   },
 ]

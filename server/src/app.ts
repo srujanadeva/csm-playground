@@ -22,6 +22,7 @@ import { approvalRoutes } from './modules/approvals/routes.ts'
 import { serviceRequestRoutes } from './modules/serviceRequests/routes.ts'
 import { adminRoutes } from './modules/admin/routes.ts'
 import { dashboardRoutes } from './modules/dashboard/routes.ts'
+import { tellerRoutes } from './modules/teller/routes.ts'
 
 const WEB_DIST = resolve(dirname(fileURLToPath(import.meta.url)), '../../web/dist')
 
@@ -111,6 +112,7 @@ export function createApp(config: Config, logger: Logger, options: AppOptions = 
   app.use('/api/v1/service-requests', serviceRequestRoutes(config))
   app.use('/api/v1/admin', adminRoutes())
   app.use('/api/v1/dashboard', dashboardRoutes())
+  app.use('/api/v1/teller', tellerRoutes())
   app.use('/api', notFoundHandler)
 
   // Production: serve the built SPA, with client-side routes falling back to index.html.

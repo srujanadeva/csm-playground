@@ -32,5 +32,15 @@
   "labelLength": "Use 2 to 40 characters.",
   "pageSizeOrder": "The default page size can't be more than the maximum.",
   "viewRequired": "Every screen must offer View.",
-  "currentPasswordWrong": "Your current password is incorrect."
+  "currentPasswordWrong": "Your current password is incorrect.",
+  "accountQuery": "Enter an account number (at least 4 digits) or a CIF.",
+  "amountRange": "Enter an amount between ₹1 and ₹5,00,000.",
+  "wholeRupees": "Cash amounts must be in whole rupees.",
+  "denominationMismatch": "The notes and coins don't add up to the amount.",
+  "panFormat": "Enter a PAN like ABCPE1234F.",
+  "panRequired": "Cash deposits of ₹50,000 or more need the depositor’s PAN.",
+  "decisionNoteRequired": "Enter at least 10 characters explaining the rejection.",
+  "floatRange": "The opening float can't be more than ₹5,00,000.",
+  "signOffNoteRequired": "Enter at least 10 characters on how the difference was handled.",
+  "varianceReasonRequired": "The count doesn't match the expected cash. Explain the difference."
 }

@@ -33,6 +33,8 @@ const ICONS: Record<string, string> = {
   sliders: 'sliders',
   wallet: 'wallet',
   card: 'card',
+  cash: 'cash',
+  drawer: 'drawer',
 }
 
 const CrumbContext = createContext<(crumb: ReactNode[]) => void>(() => undefined)

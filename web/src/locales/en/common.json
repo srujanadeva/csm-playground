@@ -42,12 +42,14 @@
     "serviceRequests": "Service requests",
     "admin": "Administration",
     "accounts": "Accounts",
-    "cards": "Cards"
+    "cards": "Cards",
+    "teller": "Teller"
   },
   "role": {
     "admin": "Administrator",
     "supervisor": "Supervisor",
-    "csr": "Customer service rep"
+    "csr": "Customer service rep",
+    "teller": "Teller"
   },
   "status": {
     "draft": "Draft",
@@ -68,7 +70,12 @@
     "rejected": "Rejected",
     "low": "Low",
     "medium": "Medium",
-    "high": "High"
+    "high": "High",
+    "posted": "Posted",
+    "pending_authorisation": "Awaiting authorisation",
+    "signed_off": "Signed off",
+    "dormant": "Dormant",
+    "frozen": "Frozen"
   },
   "priority": {
     "low": "Low",

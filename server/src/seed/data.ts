@@ -137,6 +137,9 @@ export const STAFF: SeedStaff[] = [
   { staffId: 'csr002', name: 'Arun Shetty', roleKey: 'csr', branchCode: '0004' },
   { staffId: 'csr003', name: 'Harish Kumar', roleKey: 'csr', branchCode: '0007' },
   { staffId: 'csr004', name: 'Deepa Bhat', roleKey: 'csr', branchCode: '0007', status: 'deactivated' },
+  { staffId: 'tel001', name: 'Meghana Kulkarni', roleKey: 'teller', branchCode: '0001' },
+  { staffId: 'tel002', name: 'Ramesh Naik', roleKey: 'teller', branchCode: '0004' },
+  { staffId: 'tel003', name: 'Shilpa Joshi', roleKey: 'teller', branchCode: '0007' },
 ]
 
 /** Known password for practice (`npm run seed -- --demo`). Never used unless asked for. */

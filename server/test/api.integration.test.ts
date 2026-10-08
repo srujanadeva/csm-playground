@@ -4,7 +4,6 @@
  * maker-checker, the request state machine, idempotency, screen switches and sessions.
  * Skipped automatically when MongoDB isn't reachable.
  */
-import { createConnection } from 'node:net'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
 import mongoose from 'mongoose'
@@ -22,59 +21,17 @@ import { CustomerModel } from '../src/modules/customers/customer.model.ts'
 import { LookupModel } from '../src/modules/lookups/lookup.model.ts'
 import { ServiceRequestModel } from '../src/modules/serviceRequests/serviceRequest.model.ts'
 import { AuditLogModel } from '../src/modules/audit/auditLog.model.ts'
-import { validEnv } from './helpers.ts'
+import { makeClient, mongoReachable, validEnv } from './helpers.ts'
 
 const MONGO_URI = process.env.MONGO_URI_TEST ?? 'mongodb://127.0.0.1:27017/csm_playground_test'
 const PASSWORD = 'Correct-Horse-Battery-77'
 
-const mongoUp = await new Promise<boolean>((resolve) => {
-  const socket = createConnection({ host: '127.0.0.1', port: 27017 })
-  socket.setTimeout(800)
-  socket.on('connect', () => (socket.destroy(), resolve(true)))
-  socket.on('error', () => resolve(false))
-  socket.on('timeout', () => (socket.destroy(), resolve(false)))
-})
+const mongoUp = await mongoReachable()
 
 const config = loadConfig({ ...validEnv, MONGO_URI })
 const app = createApp(config, pino({ level: 'silent' }), { apiRateLimit: 10_000, authRateLimit: 10_000 })
 
-/** A signed-in client: keeps cookies (Secure cookies included) and sends the CSRF token. */
-function client() {
-  const jar = new Map<string, string>()
-  let csrf = ''
-  const cookie = () => [...jar].map(([k, v]) => `${k}=${v}`).join('; ')
-  const keep = (res: request.Response) => {
-    for (const c of ([] as string[]).concat(res.headers['set-cookie'] ?? [])) {
-      const [pair] = c.split(';')
-      const i = pair!.indexOf('=')
-      const v = pair!.slice(i + 1)
-      if (v) jar.set(pair!.slice(0, i), v)
-      else jar.delete(pair!.slice(0, i))
-    }
-    if (res.body?.csrfToken) csrf = res.body.csrfToken
-    return res
-  }
-  const send = async (
-    method: 'get' | 'post' | 'patch' | 'put' | 'delete',
-    path: string,
-    body?: unknown,
-    headers: Record<string, string> = {},
-  ) => {
-    if (method !== 'get' && !csrf) keep(await request(app).get('/api/v1/auth/csrf').set('Cookie', cookie()))
-    let req = request(app)[method](`/api/v1${path}`).set('Cookie', cookie())
-    if (method !== 'get') req = req.set('X-CSRF-Token', csrf)
-    for (const [k, v] of Object.entries(headers)) req = req.set(k, v)
-    return keep(await (body === undefined ? req : req.send(body as object)))
-  }
-  return {
-    get: (p: string) => send('get', p),
-    post: (p: string, b?: unknown, h?: Record<string, string>) => send('post', p, b ?? {}, h),
-    patch: (p: string, b: unknown) => send('patch', p, b),
-    put: (p: string, b: unknown) => send('put', p, b),
-    login: async (staffId: string, password = PASSWORD) => send('post', '/auth/login', { staffId, password }),
-    cookie,
-  }
-}
+const client = () => makeClient(app, PASSWORD)
 
 async function signedIn(staffId: string) {
   const c = client()

@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import mongoose from 'mongoose'
 import { BRANCHES, ROLES, SCREENS, type LookupType } from '@csm/shared'
 import { connectDB, disconnectDB, redactUri } from '../db.ts'
+import { op } from '../lib/query.ts'
 import { SERVER_DIR, loadEnvConfig } from '../env.ts'
 import { hashPassword, oneTimePassword } from '../lib/password.ts'
 import { LookupModel } from '../modules/lookups/lookup.model.ts'
@@ -15,18 +16,23 @@ import { ApprovalModel } from '../modules/approvals/approval.model.ts'
 import { AuditLogModel } from '../modules/audit/auditLog.model.ts'
 import { CounterModel, ensureSeqAtLeast } from '../modules/system/counter.model.ts'
 import { DEMO_PASSWORD, LOOKUPS, STAFF } from './data.ts'
-import { generateCustomers, generateServiceRequests, mulberry32 } from './generate.ts'
+import { generateCustomers, generateServiceRequests, generateTellerData, mulberry32 } from './generate.ts'
+import { AccountModel } from '../modules/teller/account.model.ts'
+import { DrawerModel } from '../modules/teller/drawer.model.ts'
+import { TransactionModel } from '../modules/teller/transaction.model.ts'
 
 // Seeds what's missing and leaves everything that exists alone, like the setup scripts.
 //
 //   npm run seed                       create anything missing; new users get one-time passwords
 //   npm run seed -- --demo             new users get the known practice password instead
 //   npm run seed -- --reset-passwords  give every seeded user a new password (add --demo for the known one)
-//   npm run seed -- --fresh            delete customers, requests, approvals and audit log, then regenerate
+//   npm run seed -- --fresh            delete customers, requests, accounts, cash transactions, drawers,
+//                                      approvals and audit log, then regenerate
 
 const CUSTOMER_COUNT = 1200
 const SR_COUNT = 300
 const RNG_SEED = 20261005
+const TELLER_RNG_SEED = 20261008
 
 const args = new Set(process.argv.slice(2))
 const demo = args.has('--demo')
@@ -64,9 +70,11 @@ async function seedReferenceData() {
   log(`Lookups: ${added ? `${added} added` : 'all present'}`)
 
   added = 0
+  const newScreens: string[] = []
   for (const screen of SCREENS) {
     const res = await ScreenModel.updateOne({ key: screen.key }, { $setOnInsert: screen }, { upsert: true })
     added += res.upsertedCount
+    if (res.upsertedCount) newScreens.push(screen.key)
   }
   log(`Screens: ${added ? `${added} added` : 'all present (admin changes kept)'}`)
 
@@ -80,6 +88,20 @@ async function seedReferenceData() {
     added += res.upsertedCount
   }
   log(`Roles: ${added ? `${added} added` : 'all present (admin changes kept)'}`)
+
+  // Roles that already existed don't know about screens added since; give them the template's
+  // grants for those screens only, so admin edits to other screens are kept.
+  let granted = 0
+  for (const role of ROLES) {
+    for (const grant of role.grants.filter((g) => newScreens.includes(g.screenKey))) {
+      const res = await RoleModel.updateOne(
+        { key: role.key, 'grants.screenKey': op({ $ne: grant.screenKey }) },
+        { $push: { grants: grant } },
+      )
+      granted += res.modifiedCount
+    }
+  }
+  if (granted) log(`Role grants: ${granted} added for new screens`)
 }
 
 async function seedStaff(): Promise<[string, string, string][]> {
@@ -123,6 +145,9 @@ async function seedStaff(): Promise<[string, string, string][]> {
 async function seedBusinessData() {
   if (fresh) {
     for (const m of [
+      AccountModel,
+      TransactionModel,
+      DrawerModel,
       CustomerModel,
       ServiceRequestModel,
       SrCommentModel,
@@ -137,7 +162,7 @@ async function seedBusinessData() {
     const files = await readdir(dir).catch(() => [] as string[])
     await Promise.all(files.map((f) => unlink(resolve(dir, f)).catch(() => undefined)))
     log(
-      `--fresh: removed customers, service requests, comments, approvals, audit log, counters and ${files.length} uploaded files`,
+      `--fresh: removed customers, accounts, cash transactions, drawers, service requests, comments, approvals, audit log, counters and ${files.length} uploaded files`,
     )
   }
   if ((await CustomerModel.estimatedDocumentCount()) > 0) {
@@ -185,6 +210,52 @@ async function seedBusinessData() {
   log(`Audit entries: ${c.audit.length + s.audit.length} added`)
 }
 
+/** Accounts and counter history, generated from the customers in the database. */
+async function seedTellerData() {
+  if ((await AccountModel.estimatedDocumentCount()) > 0) {
+    log('Accounts and cash transactions: already present, left as is (use --fresh to regenerate)')
+    return
+  }
+  const rows = await CustomerModel.find({
+    cif: op({ $exists: true }),
+    status: op({ $in: ['active', 'blocked', 'closed'] }),
+  })
+    .select('cif status branchCode segment personal.firstName personal.lastName createdAt')
+    .lean()
+  const customers = rows.map((c) => ({
+    cif: c.cif!,
+    status: c.status,
+    branchCode: c.branchCode,
+    segment: c.segment,
+    name: [c.personal?.firstName, c.personal?.lastName].filter(Boolean).join(' '),
+    createdAt: c.createdAt,
+  }))
+  const t = generateTellerData(mulberry32(TELLER_RNG_SEED), customers, new Date())
+  const check = async (model: mongoose.Model<any>, docs: object[]) => {
+    for (const doc of docs) {
+      try {
+        await new model(doc).validate()
+      } catch (err) {
+        throw new Error(`Generated ${model.modelName} failed validation: ${(err as Error).message}`, {
+          cause: err,
+        })
+      }
+    }
+  }
+  await check(AccountModel, t.accounts)
+  await check(TransactionModel, t.transactions)
+  await check(DrawerModel, t.drawers)
+  await AccountModel.collection.insertMany(t.accounts)
+  if (t.transactions.length) await TransactionModel.collection.insertMany(t.transactions)
+  if (t.drawers.length) await DrawerModel.collection.insertMany(t.drawers)
+  if (t.audit.length) await AuditLogModel.collection.insertMany(t.audit)
+  for (const [key, value] of Object.entries(t.counters)) await ensureSeqAtLeast(key, value)
+  log(`Accounts: ${t.accounts.length} added`)
+  log(
+    `Cash transactions: ${t.transactions.length} added over ${new Set(t.drawers.map((d) => d.businessDate)).size} business days, ${t.drawers.length} drawers`,
+  )
+}
+
 async function main() {
   await connectDB(config.MONGO_URI)
   console.log(`==> Seeding ${redactUri(config.MONGO_URI)}`)
@@ -200,12 +271,16 @@ async function main() {
       SrCommentModel,
       ApprovalModel,
       AuditLogModel,
+      AccountModel,
+      TransactionModel,
+      DrawerModel,
     ].map((m) => (m as mongoose.Model<unknown>).init()),
   )
 
   await seedReferenceData()
   const credentials = await seedStaff()
   await seedBusinessData()
+  await seedTellerData()
 
   if (credentials.length) {
     console.log('\n==> Sign-in details (shown once; they are stored only as bcrypt hashes)')

@@ -6,7 +6,7 @@ import { offsetQuery } from './common.ts'
 import { staffIdSchema } from './password.ts'
 
 const emptyToUndefined = (v: unknown) => (v === '' || v === null ? undefined : v)
-export const ROLE_KEYS = ['admin', 'supervisor', 'csr'] as const
+export const ROLE_KEYS = ['admin', 'supervisor', 'csr', 'teller'] as const
 
 const personName = z
   .string()

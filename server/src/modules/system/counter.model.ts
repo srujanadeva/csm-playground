@@ -21,3 +21,7 @@ export async function ensureSeqAtLeast(key: string, value: number): Promise<void
 
 export const formatCif = (n: number) => `CIF-${String(n).padStart(6, '0')}`
 export const formatSrNo = (year: number, n: number) => `SR-${year}-${String(n).padStart(6, '0')}`
+export const formatTxnNo = (year: number, n: number) => `TXN-${year}-${String(n).padStart(6, '0')}`
+/** Branch + type code (10 savings, 20 current) + running number per branch and type. */
+export const formatAccountNo = (branch: string, type: 'savings' | 'current', n: number) =>
+  `${branch}${type === 'savings' ? '10' : '20'}${String(n).padStart(6, '0')}`

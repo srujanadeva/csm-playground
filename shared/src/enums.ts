@@ -74,3 +74,18 @@ export const LOOKUP_TYPES = [
   'products',
 ] as const
 export type LookupType = (typeof LOOKUP_TYPES)[number]
+
+export const ACCOUNT_TYPES = ['savings', 'current'] as const
+export type AccountType = (typeof ACCOUNT_TYPES)[number]
+export const ACCOUNT_STATUS = ['active', 'dormant', 'frozen', 'closed'] as const
+export type AccountStatus = (typeof ACCOUNT_STATUS)[number]
+
+export const TXN_TYPES = ['cash_deposit', 'cash_withdrawal'] as const
+export type TxnType = (typeof TXN_TYPES)[number]
+/** Withdrawals over the authorisation limit wait for a supervisor; everything else posts at once. */
+export const TXN_STATUS = ['posted', 'pending_authorisation', 'rejected'] as const
+export type TxnStatus = (typeof TXN_STATUS)[number]
+
+/** A teller's till for one business day: opened with a float, closed with a count, signed off. */
+export const DRAWER_STATUS = ['open', 'closed', 'signed_off'] as const
+export type DrawerStatus = (typeof DRAWER_STATUS)[number]

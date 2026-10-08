@@ -87,3 +87,14 @@ export function toLocalInputs(d: Date): { date: string; time: string } {
     time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
   }
 }
+
+/** Paise → "₹1,84,250.75" (balances keep paise; cash amounts show ".00"). */
+export function formatPaise(paise: number | null | undefined, lang = 'en'): string {
+  if (paise === null || paise === undefined) return '—'
+  return new Intl.NumberFormat(locale(lang), {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(paise / 100)
+}

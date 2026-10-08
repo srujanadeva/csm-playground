@@ -1,5 +1,16 @@
 import { Types } from 'mongoose'
-import { SLA_HOURS, type BranchCode, type IdType, type SrPriority, type SrStatus } from '@csm/shared'
+import {
+  CASH_WITHDRAWAL_AUTH_LIMIT,
+  SLA_HOURS,
+  businessDate,
+  denominationTotal,
+  rupees,
+  suggestDenominations,
+  type BranchCode,
+  type IdType,
+  type SrPriority,
+  type SrStatus,
+} from '@csm/shared'
 import { blindIndex, encryptField } from '../lib/crypto.ts'
 import {
   COMMENTS,
@@ -670,4 +681,220 @@ export function generateServiceRequests(rng: Rng, count: number, customers: Doc[
   }
 
   return { requests, comments, audit, counters }
+}
+
+// ── Teller data ──────────────────────────────────────────────────────────────
+
+/** The customer fields the teller generator needs (read back from the database). */
+export interface TellerSeedCustomer {
+  cif: string
+  status: string
+  branchCode: BranchCode
+  segment?: string
+  name: string
+  createdAt: Date
+}
+
+export interface GeneratedTellerData {
+  accounts: Doc[]
+  transactions: Doc[]
+  drawers: Doc[]
+  audit: Doc[]
+  counters: Record<string, number>
+}
+
+const IST_OFFSET = 5.5 * 3_600_000
+/** "2026-10-05" + IST hour → UTC Date. */
+const istAt = (day: string, hour: number) =>
+  new Date(Date.parse(`${day}T00:00:00Z`) + hour * 3_600_000 - IST_OFFSET)
+
+/**
+ * Accounts for every customer with a CIF, then 30 days of counter history per teller:
+ * a drawer per business day (Mon–Sat), cash deposits and withdrawals, a few large
+ * withdrawals authorised (or rejected) by the branch supervisor, one drawer that closed
+ * ₹500 short, and the last day's drawers closed but not yet signed off. Today has no drawer,
+ * so each teller starts by opening one.
+ */
+export function generateTellerData(
+  rng: Rng,
+  customers: TellerSeedCustomer[],
+  now: Date,
+): GeneratedTellerData {
+  const accounts: Doc[] = []
+  const transactions: Doc[] = []
+  const drawers: Doc[] = []
+  const audit: Doc[] = []
+  const counters: Record<string, number> = {}
+
+  for (const c of [...customers].sort((a, b) => a.cif.localeCompare(b.cif))) {
+    const n = c.status === 'active' && chance(rng, 0.25) ? 2 : 1
+    for (let k = 0; k < n; k++) {
+      const type = k === 0 && chance(rng, 0.92) ? 'savings' : 'current'
+      const key = `acct-${c.branchCode}-${type}`
+      counters[key] = (counters[key] ?? 0) + 1
+      const status =
+        c.status === 'blocked'
+          ? 'frozen'
+          : c.status === 'closed'
+            ? 'closed'
+            : weighted(rng, [
+                ['active', 90],
+                ['dormant', 7],
+                ['frozen', 3],
+              ] as const)
+      const [lo, hi] =
+        c.segment === 'private'
+          ? [5_00_000, 1_00_00_000]
+          : c.segment === 'premier'
+            ? [50_000, 15_00_000]
+            : [2_000, 2_00_000]
+      const openedAt = new Date(
+        Math.min(now.getTime() - 40 * DAY, c.createdAt.getTime() + int(rng, 1, 30) * DAY),
+      )
+      accounts.push({
+        _id: oidAt(openedAt, rng),
+        accountNo: `${c.branchCode}${type === 'savings' ? '10' : '20'}${String(counters[key]).padStart(6, '0')}`,
+        cif: c.cif,
+        customerName: c.name,
+        branchCode: c.branchCode,
+        type,
+        status,
+        balance: status === 'closed' ? 0 : rupees(int(rng, lo, hi)) + int(rng, 0, 99),
+        openedAt,
+        createdAt: openedAt,
+        updatedAt: openedAt,
+        __v: 0,
+      })
+    }
+  }
+
+  const tellers = STAFF.filter((s) => s.roleKey === 'teller' && s.status !== 'deactivated')
+  const today = businessDate(now)
+  const days: string[] = []
+  for (let i = 30; i >= 1; i--) {
+    const day = businessDate(new Date(now.getTime() - i * DAY))
+    if (new Date(`${day}T12:00:00Z`).getUTCDay() !== 0 && day !== today && !days.includes(day)) days.push(day)
+  }
+  const lastDay = days.at(-1)
+  const shortDay = days.at(-6)
+
+  for (const day of days) {
+    for (const teller of tellers) {
+      const supervisor = supervisorFor(teller.branchCode).staffId
+      const usable = accounts.filter((a) => a.branchCode === teller.branchCode && a.status === 'active')
+      const drawerId = oidAt(istAt(day, 9.5), rng)
+      const openingAmount = rupees(int(rng, 10, 20) * 10_000)
+      let cashIn = 0
+      let cashOut = 0
+      const openedAt = istAt(day, 9.5)
+      const count = int(rng, 8, 20)
+      const times = Array.from({ length: count }, () => 10 + rng() * 6).sort((a, b) => a - b)
+      for (const hour of times) {
+        const account = pick(rng, usable)
+        const at = istAt(day, hour)
+        const year = Number(day.slice(0, 4))
+        const deposit = chance(rng, 0.55)
+        const large = !deposit && chance(rng, 0.06)
+        const amountRupees = large
+          ? int(rng, 51, 120) * 1_000
+          : int(rng, 5, 450) * 100 + (chance(rng, 0.2) ? 50 : 0)
+        const amount = rupees(amountRupees)
+        const cash = openingAmount + cashIn - cashOut
+        if (!deposit && (amount > (account.balance as number) || amount > cash)) continue
+        const rejected = large && chance(rng, 0.3)
+        counters[`txn-${year}`] = (counters[`txn-${year}`] ?? 0) + 1
+        const txnNo = `TXN-${year}-${String(counters[`txn-${year}`]).padStart(6, '0')}`
+        let balanceAfter: number | undefined
+        if (!rejected) {
+          account.balance = (account.balance as number) + (deposit ? amount : -amount)
+          balanceAfter = account.balance as number
+          if (deposit) cashIn += amount
+          else cashOut += amount
+        }
+        const decided = amount > CASH_WITHDRAWAL_AUTH_LIMIT && !deposit
+        transactions.push({
+          _id: oidAt(at, rng),
+          txnNo,
+          accountNo: account.accountNo,
+          cif: account.cif,
+          customerName: account.customerName,
+          branchCode: teller.branchCode,
+          type: deposit ? 'cash_deposit' : 'cash_withdrawal',
+          amount,
+          denominations: suggestDenominations(amountRupees),
+          narration: deposit
+            ? pick(rng, ['Self deposit', 'Shop takings', 'Rent received', '']) || undefined
+            : undefined,
+          status: rejected ? 'rejected' : 'posted',
+          tellerId: teller.staffId,
+          drawerId,
+          businessDate: day,
+          ...(balanceAfter !== undefined ? { balanceAfter } : {}),
+          ...(decided
+            ? {
+                decidedBy: supervisor,
+                decidedAt: new Date(at.getTime() + 8 * 60_000),
+                ...(rejected ? { decisionNote: 'Signature on the withdrawal slip does not match.' } : {}),
+              }
+            : {}),
+          createdAt: at,
+          updatedAt: at,
+          __v: 0,
+        })
+      }
+
+      const expected = openingAmount + cashIn - cashOut
+      const short = day === shortDay && teller.staffId === 'tel001'
+      const countedAmount = short ? expected - rupees(500) : expected
+      const closedAt = istAt(day, 16.5)
+      const signed = day !== lastDay
+      drawers.push({
+        _id: drawerId,
+        tellerId: teller.staffId,
+        branchCode: teller.branchCode,
+        businessDate: day,
+        status: signed ? 'signed_off' : 'closed',
+        opening: suggestDenominations(openingAmount / 100),
+        openingAmount,
+        cashIn,
+        cashOut,
+        counted: suggestDenominations(countedAmount / 100),
+        countedAmount,
+        variance: countedAmount - expected,
+        ...(short ? { varianceReason: 'Short by one ₹500 note. Reported to the branch manager.' } : {}),
+        openedAt,
+        closedAt,
+        ...(signed
+          ? {
+              signedOffBy: supervisor,
+              signedOffAt: istAt(day, 17),
+              ...(short ? { signOffNote: 'Shortage recovered from the teller as per branch policy.' } : {}),
+            }
+          : {}),
+        createdAt: openedAt,
+        updatedAt: closedAt,
+        __v: signed ? 2 : 1,
+      })
+      for (const [action, at, who] of [
+        ['drawer.opened', openedAt, teller.staffId],
+        ['drawer.closed', closedAt, teller.staffId],
+        ...(signed ? [['drawer.signedOff', istAt(day, 17), supervisor]] : []),
+      ] as [string, Date, string][]) {
+        audit.push({
+          _id: oidAt(at, rng),
+          category: 'data',
+          action,
+          actor: who,
+          entityType: 'drawer',
+          entityId: String(drawerId),
+          outcome: 'success',
+          createdAt: at,
+        })
+      }
+      if (denominationTotal(suggestDenominations(countedAmount / 100)) !== countedAmount)
+        throw new Error('breakdown mismatch')
+    }
+  }
+
+  return { accounts, transactions, drawers, audit, counters }
 }

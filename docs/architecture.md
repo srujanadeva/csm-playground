@@ -50,10 +50,23 @@ request id → logging → security headers → CORS → rate limit → no-store
 | `servicerequests`, `srcomments` | Comments are separate so they can be cursor-paginated                                                                 |
 | `approvals`                     | Maker-checker requests                                                                                                |
 | `auditlogs`                     | Append-only; data, security and admin events                                                                          |
-| `counters`                      | Atomic sequences for `CIF-000124`, `SR-2026-000031`, draft numbers                                                    |
+| `accounts`                      | Deposit accounts (`0001 10 000123`: branch, type, number); balance in paise, never negative                           |
+| `transactions`                  | Cash deposits and withdrawals; `pending_authorisation` until a supervisor decides                                     |
+| `drawers`                       | One per teller per business day (IST): float, cash in/out, physical count, variance, sign-off                         |
+| `counters`                      | Atomic sequences for `CIF-000124`, `SR-2026-000031`, `TXN-2026-000001`, account and draft numbers                     |
 | `lookups`                       | Dropdown values with English and Kannada labels; `parent` links dependent lists                                       |
 
 Seeded `_id`s carry the record's original creation time, so newest-first cursor paging (`_id < cursor`) matches creation order.
+
+### Moving money without multi-document transactions
+
+The local MongoDB is standalone, so it has no multi-document transactions. A cash posting changes two documents (the account and the teller's drawer) with conditional atomic updates instead:
+
+1. Withdrawal: `$inc` the balance down only where `balance >= amount`, then `$inc` the drawer's `cashOut` only where it is open and holds enough cash (`$expr`). Deposit: the drawer first (stays under its ₹5,00,000 limit), then the account (still active).
+2. If the second update matches nothing, the first is reversed and the request fails with a 409 and a `code` (`insufficient_funds`, `insufficient_cash`, `drawer_limit`, `account_not_active`).
+3. Authorising a held withdrawal first flips it to `posted` with a conditional update, so two supervisors can't both pay it out; if the money can't move, the status flips back.
+
+Closing a drawer matches on its `cashIn`/`cashOut` as well as its version, so a transaction posted at the same moment makes the close fail as stale instead of being left out of the count. All amounts are integer paise.
 
 ## Pagination
 

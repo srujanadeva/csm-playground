@@ -3,16 +3,22 @@
  * models; the web app reads them. Keeping them here makes contract changes a type error.
  */
 import type { Capability, EffectivePermissions, NavGroup } from './permissions.ts'
+import type { Denominations } from './teller.ts'
 import type {
+  AccountStatus,
+  AccountType,
   BranchCode,
   CustomerStatus,
   IdType,
   KycStatus,
+  DrawerStatus,
   Language,
   RiskRating,
   SrPriority,
   SrStatus,
   StaffStatus,
+  TxnStatus,
+  TxnType,
 } from './enums.ts'
 
 export interface Labels {
@@ -242,4 +248,73 @@ export interface DashboardSummary {
   pendingApprovals: number | null
   customersInScope: number
   draftsByMe: number
+}
+
+// ── Teller (all amounts in paise) ───────────────────────────────────────────────
+
+export interface AccountSearchItem {
+  accountNo: string
+  type: AccountType
+  status: AccountStatus
+  cif: string
+  customerName: string
+  branchCode: BranchCode
+}
+
+export interface AccountDTO extends AccountSearchItem {
+  balance: number
+  customerStatus: CustomerStatus
+  kycStatus: KycStatus
+  mobile: string
+  /** The customer's KYC ID is a PAN, so large deposits don't need one entered. */
+  panOnFile: boolean
+  openedAt: string
+  piiMasked: boolean
+}
+
+export interface TransactionDTO {
+  txnNo: string
+  accountNo: string
+  cif: string
+  customerName: string
+  type: TxnType
+  amount: number
+  denominations: Denominations
+  narration: string | null
+  /** Last 4 characters of a PAN entered at the counter. */
+  panLast4: string | null
+  status: TxnStatus
+  tellerId: string
+  branchCode: BranchCode
+  balanceAfter: number | null
+  decidedBy: string | null
+  decidedAt: string | null
+  decisionNote: string | null
+  createdAt: string
+}
+
+export interface DrawerDTO {
+  id: string
+  tellerId: string
+  tellerName: string
+  branchCode: BranchCode
+  businessDate: string
+  status: DrawerStatus
+  opening: Denominations
+  openingAmount: number
+  cashIn: number
+  cashOut: number
+  expected: number
+  counted: Denominations | null
+  countedAmount: number | null
+  variance: number | null
+  varianceReason: string | null
+  postedCount: number
+  pendingCount: number
+  openedAt: string
+  closedAt: string | null
+  signedOffBy: string | null
+  signedOffAt: string | null
+  signOffNote: string | null
+  version: number
 }

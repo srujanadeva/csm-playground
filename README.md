@@ -30,15 +30,15 @@ npm run setup:win    # Windows (PowerShell)
 
 Setup follows one rule for every step: **if it's already there, use it; if it's missing, create it.** Nothing existing is replaced, and it is safe to re-run.
 
-| Step                     | Already there                        | Missing                                                                            |
-| ------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------- |
-| Node.js 20+              | Used as is                           | Installed (Homebrew / winget)                                                      |
-| npm dependencies         | `npm ci` from the lockfile           | Installed                                                                          |
-| Dev TLS certs (`certs/`) | Kept                                 | Self-signed `localhost` cert generated                                             |
-| `server/.env`            | Kept; only missing secrets are added | Created from `.env.example` with random `JWT_SECRET`, `CSRF_SECRET`, `PII_ENC_KEY` |
-| MongoDB                  | Used as is (any version)             | MongoDB 8.0 installed                                                              |
-| MongoDB running          | Used as is                           | Started                                                                            |
-| Seed data                | Left as is                           | Screens, roles, staff users, 1,200 customers, 300 service requests                 |
+| Step                     | Already there                        | Missing                                                                                                            |
+| ------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Node.js 20+              | Used as is                           | Installed (Homebrew / winget)                                                                                      |
+| npm dependencies         | `npm ci` from the lockfile           | Installed                                                                                                          |
+| Dev TLS certs (`certs/`) | Kept                                 | Self-signed `localhost` cert generated                                                                             |
+| `server/.env`            | Kept; only missing secrets are added | Created from `.env.example` with random `JWT_SECRET`, `CSRF_SECRET`, `PII_ENC_KEY`                                 |
+| MongoDB                  | Used as is (any version)             | MongoDB 8.0 installed                                                                                              |
+| MongoDB running          | Used as is                           | Started                                                                                                            |
+| Seed data                | Left as is                           | Screens, roles, staff users, 1,200 customers, 300 service requests, ~1,400 accounts with 30 days of teller history |
 
 At the end, the seed prints **one-time passwords** for the staff users. They are shown once and stored only as bcrypt hashes; each user must choose a new password at first sign-in. To use a known practice password instead:
 
@@ -65,39 +65,45 @@ If MongoDB is already running, `npm run dev` starts just the API and web app.
 
 ## Staff users
 
-| Staff ID   | Name            | Role                                               | Branch          |
-| ---------- | --------------- | -------------------------------------------------- | --------------- |
-| `admin001` | Raghavendra Rao | Administrator                                      | 0001 MG Road    |
-| `sup001`   | Naveen Gowda    | Supervisor                                         | 0001 MG Road    |
-| `sup002`   | Sowmya Murthy   | Supervisor                                         | 0004 Jayanagar  |
-| `sup003`   | Prasanna Kamath | Supervisor                                         | 0007 Whitefield |
-| `csr001`   | Kavya Hegde     | Customer service rep (+ Export on Customer search) | 0001 MG Road    |
-| `csr002`   | Arun Shetty     | Customer service rep                               | 0004 Jayanagar  |
-| `csr003`   | Harish Kumar    | Customer service rep                               | 0007 Whitefield |
-| `csr004`   | Deepa Bhat      | Customer service rep, **deactivated**              | 0007 Whitefield |
+| Staff ID   | Name             | Role                                               | Branch          |
+| ---------- | ---------------- | -------------------------------------------------- | --------------- |
+| `admin001` | Raghavendra Rao  | Administrator                                      | 0001 MG Road    |
+| `sup001`   | Naveen Gowda     | Supervisor                                         | 0001 MG Road    |
+| `sup002`   | Sowmya Murthy    | Supervisor                                         | 0004 Jayanagar  |
+| `sup003`   | Prasanna Kamath  | Supervisor                                         | 0007 Whitefield |
+| `csr001`   | Kavya Hegde      | Customer service rep (+ Export on Customer search) | 0001 MG Road    |
+| `csr002`   | Arun Shetty      | Customer service rep                               | 0004 Jayanagar  |
+| `csr003`   | Harish Kumar     | Customer service rep                               | 0007 Whitefield |
+| `csr004`   | Deepa Bhat       | Customer service rep, **deactivated**              | 0007 Whitefield |
+| `tel001`   | Meghana Kulkarni | Teller                                             | 0001 MG Road    |
+| `tel002`   | Ramesh Naik      | Teller                                             | 0004 Jayanagar  |
+| `tel003`   | Shilpa Joshi     | Teller                                             | 0007 Whitefield |
 
-| Role       | Can                                                                                                    |
-| ---------- | ------------------------------------------------------------------------------------------------------ |
-| CSR        | Onboard, search (PII masked), view and edit customers, request block/unblock, create and work requests |
-| Supervisor | Everything a CSR can, plus approve/reject, see PII, close requests, export                             |
-| Admin      | Everything, in every branch, plus Users & access and Screen configuration                              |
+| Role       | Can                                                                                                                                    |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| CSR        | Onboard, search (PII masked), view and edit customers, request block/unblock, create and work requests                                 |
+| Teller     | Search and view customers, post cash deposits and withdrawals, open and close their own cash drawer                                    |
+| Supervisor | Everything a CSR and a teller can, plus approve/reject, authorise large withdrawals, sign off drawers, see PII, close requests, export |
+| Admin      | Everything, in every branch, plus Users & access and Screen configuration                                                              |
 
 Admins can change any of this per user or per screen; changes reach signed-in users within 30 seconds.
 
 ## Screens
 
-| Screen               | Route                   | Who sees it                    | What to practise                                                                                                                                                                                  |
-| -------------------- | ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sign in              | `/login`                | everyone                       | lockout countdown, show/hide password, "remember this device", language switch                                                                                                                    |
-| Change password      | `/change-password`      | users with a one-time password | password rules, server-side "too common" check                                                                                                                                                    |
-| Dashboard            | `/dashboard`            | all roles                      | tiles, approval queue with confirm dialogs, paginated lists                                                                                                                                       |
-| Onboard customer     | `/customers/new`        | CSR, supervisor, admin         | 4-step wizard, draft save and resume (`?draft=`), radios, date inputs, slider + number input, toggle tags, conditional fields, masked ID with show/hide, uploads with progress, submit validation |
-| Customer search      | `/customers`            | all roles                      | filters kept in the URL, sortable columns, page numbers and "go to page", rows per page, tooltips, row menus with disabled items, CSV export                                                      |
-| Customer 360         | `/customers/:cif`       | all roles                      | tabs that load on first open, infinite-scroll audit log, edit drawer, block/unblock (maker-checker), approve from the banner, audited ID reveal                                                   |
-| New request          | `/service-requests/new` | CSR, supervisor, admin         | debounced typeahead, dependent dropdowns, SLA set from priority, character counter, queued attachments, idempotent submit                                                                         |
-| Request board        | `/service-requests`     | CSR, supervisor, admin         | drag and drop between columns, per-column infinite scroll, resolve dialog, "closing needs Approve", list view with paging                                                                         |
-| Users & access       | `/admin/users`          | admin only                     | permission matrix (role vs per-user), unlock, one-time password reset, deactivate, new user                                                                                                       |
-| Screen configuration | `/admin/screens`        | admin only                     | drag to reorder the menu, on/off switches with impact warning, capabilities, hide-vs-disable, page-size limits, roles with access                                                                 |
+| Screen               | Route                   | Who sees it                    | What to practise                                                                                                                                                                                              |
+| -------------------- | ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign in              | `/login`                | everyone                       | lockout countdown, show/hide password, "remember this device", language switch                                                                                                                                |
+| Change password      | `/change-password`      | users with a one-time password | password rules, server-side "too common" check                                                                                                                                                                |
+| Dashboard            | `/dashboard`            | all roles                      | tiles, approval queue with confirm dialogs, paginated lists                                                                                                                                                   |
+| Onboard customer     | `/customers/new`        | CSR, supervisor, admin         | 4-step wizard, draft save and resume (`?draft=`), radios, date inputs, slider + number input, toggle tags, conditional fields, masked ID with show/hide, uploads with progress, submit validation             |
+| Customer search      | `/customers`            | all roles                      | filters kept in the URL, sortable columns, page numbers and "go to page", rows per page, tooltips, row menus with disabled items, CSV export                                                                  |
+| Customer 360         | `/customers/:cif`       | all roles                      | tabs that load on first open, infinite-scroll audit log, edit drawer, block/unblock (maker-checker), approve from the banner, audited ID reveal                                                               |
+| New request          | `/service-requests/new` | CSR, supervisor, admin         | debounced typeahead, dependent dropdowns, SLA set from priority, character counter, queued attachments, idempotent submit                                                                                     |
+| Request board        | `/service-requests`     | CSR, supervisor, admin         | drag and drop between columns, per-column infinite scroll, resolve dialog, "closing needs Approve", list view with paging                                                                                     |
+| Teller counter       | `/teller`               | teller, supervisor, admin      | account lookup, holder card with masked PII, note-count grid that must add up, conditional PAN field (deposits ≥ ₹50,000), withdrawals over ₹50,000 held for authorisation, idempotent post, supervisor queue |
+| Cash drawer          | `/teller/drawer`        | teller, supervisor, admin      | open with a counted float, live cash in/out/expected, close with a count and a reason for any difference, close blocked while withdrawals are pending, supervisor sign-off                                    |
+| Users & access       | `/admin/users`          | admin only                     | permission matrix (role vs per-user), unlock, one-time password reset, deactivate, new user                                                                                                                   |
+| Screen configuration | `/admin/screens`        | admin only                     | drag to reorder the menu, on/off switches with impact warning, capabilities, hide-vs-disable, page-size limits, roles with access                                                                             |
 
 Screens a user can't open aren't in their menu, and their URLs show Not Found. The browser only downloads the code for screens the user opens.
 
@@ -198,7 +204,7 @@ csm-playground/
     src/
       app/         auth context, permission hooks, shell, idle timeout, route guards
       components/  form fields, dialogs, drawer, toasts, tabs, stepper, pagination, typeahead, drop zone
-      modules/     auth, dashboard, customers (onboard, search, c360), requests, admin
+      modules/     auth, dashboard, customers (onboard, search, c360), requests, teller, admin
       locales/     en/ and kn/ JSON, one file per module
   scripts/         setup / start / stop for macOS (.sh) and Windows (.ps1)
   docs/            security.md, architecture.md, mockups/
@@ -211,6 +217,7 @@ csm-playground/
 | 0     | Image mockups                                                                                                              | Done     |
 | 1     | Project skeleton, security baseline, models, seed, scripts                                                                 | Done     |
 | 2     | All mockup screens and their APIs: sign-in, sessions, permission-driven shell, English/Kannada, every CSM and admin screen | **Done** |
+| 2.1   | Teller module: teller role, Teller counter and Cash drawer screens, accounts and cash transactions                         | **Done** |
 | 3     | Practice exercises (beginner → advanced), Playwright E2E and security test suite, CI                                       | Next     |
 
 ## Troubleshooting
