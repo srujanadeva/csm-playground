@@ -15,6 +15,7 @@ import {
 import { requireAdmin, requireCapability } from '../../middleware/auth.ts'
 import { idempotent } from '../../middleware/idempotency.ts'
 import { validate } from '../../lib/validate.ts'
+import { accessRequestAdminRoutes } from '../accessRequests/routes.ts'
 import * as admin from './service.ts'
 
 const staffId = (p: unknown) => String((p as { staffId: string }).staffId).toLowerCase()
@@ -29,6 +30,7 @@ export function adminRoutes(): Router {
   const usersEdit = requireCapability('admin.users', 'edit')
   const screensView = requireCapability('admin.screens', 'view')
   const screensEdit = requireCapability('admin.screens', 'edit')
+  router.use('/access-requests', accessRequestAdminRoutes())
 
   router.get('/users', usersView, validate('query', userListQuery), async (req, res) => {
     res.json(await admin.listUsers(req.valid!.query as z.infer<typeof userListQuery>))

@@ -1,0 +1,102 @@
+/* Signed-in shell additions: collapsible nav groups, announcement bar, palette trigger. */
+button.navg,
+.navsub-toggle {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+  border-radius: 4px;
+}
+button.navg {
+  margin: 10px 0 4px;
+  padding: 2px 10px;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--side-dim);
+}
+.navsub-toggle {
+  padding: 6px 10px 4px 14px;
+  font-size: 12px;
+  color: var(--side-dim);
+}
+button.navg:hover,
+.navsub-toggle:hover {
+  color: var(--side-fg);
+}
+button.navg:focus-visible,
+.navsub-toggle:focus-visible {
+  outline: 2px solid var(--brass);
+}
+.navg .chev,
+.navsub-toggle .chev {
+  transition: transform 0.15s;
+}
+[aria-expanded='false'] > .chev {
+  transform: rotate(-90deg);
+}
+.navsub > div > a {
+  padding-inline-start: 22px;
+}
+
+.ann-bar {
+  display: flex;
+  flex-direction: column;
+}
+.ann {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 24px;
+  font-size: 13px;
+  border-inline-start: 4px solid var(--info);
+  background: var(--info-weak);
+  border-bottom: 1px solid var(--line);
+}
+.ann-warning {
+  background: var(--warn-weak);
+}
+.ann-critical {
+  background: var(--bad-weak);
+}
+.ann-title {
+  white-space: nowrap;
+}
+.ann-body {
+  flex: 1;
+  min-width: 0;
+}
+.ann-body p {
+  margin: 0;
+}
+.ann-close {
+  all: unset;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0 4px;
+}
+.ann-close:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.palette-trigger {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+}
+.palette-trigger kbd {
+  font: 500 10.5px var(--mono);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 0 4px;
+  background: var(--surface);
+}
+@media (max-width: 760px) {
+  .palette-trigger span,
+  .palette-trigger kbd {
+    display: none;
+  }
+}

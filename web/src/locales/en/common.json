@@ -43,7 +43,8 @@
     "admin": "Administration",
     "accounts": "Accounts",
     "cards": "Cards",
-    "teller": "Teller"
+    "teller": "Teller",
+    "pages": "Pages"
   },
   "role": {
     "admin": "Administrator",
@@ -118,5 +119,26 @@
   "error": {
     "generic": "Something went wrong. Try again.",
     "network": "Can't reach the server. Check your connection and try again."
+  },
+  "navSubGroup": {
+    "access": "Access",
+    "counter": "Counter",
+    "cash": "Cash"
+  },
+  "pages": {
+    "devInbox": "Dev inbox"
+  },
+  "palette": {
+    "open": "Search commands",
+    "trigger": "Search",
+    "goTo": "Go to",
+    "actions": "Actions",
+    "language": "Switch language to {{lang}}",
+    "openCif": "Open customer {{cif}}",
+    "none": "No matching commands. Type a CIF to open a customer."
+  },
+  "announcements": {
+    "label": "Announcements",
+    "dismiss": "Dismiss announcement"
   }
 }

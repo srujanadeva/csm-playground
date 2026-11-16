@@ -9,6 +9,9 @@ import { NotFound, RequireAuth, RequireScreen } from './app/guards.tsx'
 
 const LoginPage = lazy(() => import('./modules/auth/LoginPage.tsx'))
 const ChangePasswordPage = lazy(() => import('./modules/auth/ChangePasswordPage.tsx'))
+const ForgotPasswordPage = lazy(() => import('./modules/auth/ForgotPasswordPage.tsx'))
+const RequestAccessPage = lazy(() => import('./modules/auth/RequestAccessPage.tsx'))
+const DevInboxPage = lazy(() => import('./modules/devInbox/DevInboxPage.tsx'))
 const DashboardPage = lazy(() => import('./modules/dashboard/DashboardPage.tsx'))
 const OnboardWizard = lazy(() => import('./modules/customers/onboard/OnboardWizard.tsx'))
 const CustomerSearchPage = lazy(() => import('./modules/customers/search/CustomerSearchPage.tsx'))
@@ -27,6 +30,9 @@ const screen = (key: string, element: React.ReactNode) => (
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/change-password', element: <ChangePasswordPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  { path: '/request-access', element: <RequestAccessPage /> },
+  { path: '/dev/inbox', element: <DevInboxPage /> },
   {
     path: '/',
     element: (

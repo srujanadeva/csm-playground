@@ -7,6 +7,17 @@ export type Capability = (typeof CAPABILITIES)[number]
 export const NAV_GROUPS = ['customers', 'serviceRequests', 'teller', 'admin', 'accounts', 'cards'] as const
 export type NavGroup = (typeof NAV_GROUPS)[number]
 
+/**
+ * Sub-groups inside a nav group, keyed by screen. Kept here rather than on the stored screens so
+ * existing databases get the nesting without a reseed; screens not listed sit directly in their group.
+ */
+export const NAV_SUBGROUPS: Record<string, string> = {
+  'admin.users': 'access',
+  'admin.screens': 'access',
+  'teller.counter': 'counter',
+  'teller.drawer': 'cash',
+}
+
 export interface ScreenDefinition {
   key: string
   route: string

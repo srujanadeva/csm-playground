@@ -1,0 +1,228 @@
+{
+  "title": "User guide",
+  "intro": "Step-by-step flows for each kind of user. Every element you meet is listed with the way it is meant to be located, so you can practise each locator style on purpose.",
+  "gettingStarted": {
+    "title": "Getting started",
+    "steps": [
+      "Start everything with npm run start:all (Windows: npm run start:all:win) and open https://localhost:3001. Accept the self-signed certificate once.",
+      "For known passwords, run npm run seed -- --reset-passwords --demo. Every demo user then signs in with Namma-Bengaluru-2026.",
+      "Codes and notices the app sends (SMS and e-mail) appear in the dev inbox at /dev/inbox.",
+      "Add ?hints=1 to any URL to show which locator style each practice element uses."
+    ]
+  },
+  "labels": {
+    "who": "Who",
+    "start": "Start at",
+    "signIn": "Sign in as",
+    "notSignedIn": "Not signed in",
+    "steps": "Steps",
+    "expected": "What you should see",
+    "elements": "Elements practised",
+    "element": "Element",
+    "locator": "Locator style",
+    "hint": "How to find it",
+    "samples": "Sample files",
+    "personas": "Personas",
+    "locatorStyles": "Locator styles"
+  },
+  "personas": {
+    "visitor": {
+      "name": "Visitor (not signed in)",
+      "intro": "Someone without a session: a new joiner, or staff who forgot their password."
+    },
+    "csr": {
+      "name": "Customer service rep",
+      "intro": "Onboards customers, works service requests."
+    },
+    "teller": {
+      "name": "Teller",
+      "intro": "Runs the cash counter and their drawer."
+    },
+    "supervisor": {
+      "name": "Supervisor",
+      "intro": "Approves, authorises and signs off."
+    },
+    "admin": {
+      "name": "Administrator",
+      "intro": "Manages users, access and content."
+    },
+    "everyone": {
+      "name": "Every signed-in user",
+      "intro": "Parts of the app every role sees."
+    }
+  },
+  "flows": {
+    "cookieConsent": {
+      "title": "Accept or refuse cookies",
+      "summary": "The sign-in page is blocked until you answer the cookie banner.",
+      "steps": [
+        "Open /login in a fresh browser profile (or clear site data).",
+        "Try to click the Staff ID field: nothing happens, because the page behind the banner is inert.",
+        "Click Choose cookies, tick Analytics, and click Save choices. Or click Accept all or Reject non-essential.",
+        "Reload the page: the banner doesn't come back. Click Cookie settings (bottom left) to change your answer."
+      ],
+      "expected": "The banner closes and the sign-in form works. The choice is stored in localStorage as csm.cookieConsent."
+    },
+    "requestAccess": {
+      "title": "Request staff access",
+      "summary": "A new joiner asks for an account; an administrator decides.",
+      "steps": [
+        "On the sign-in page, click New here? Request access.",
+        "Click Send request straight away to see every inline error.",
+        "Fill in the form. Mobile formats itself as you type (98450 12345); employee numbers look like E10234.",
+        "Open the acceptable use policy and privacy notice links: each opens a dialog.",
+        "Tick both consent boxes (the training e-mails box is optional) and click Send request.",
+        "Send the same form again: it's refused while the first request is pending."
+      ],
+      "expected": "A confirmation with a request number like AR-2026-000003. A receipt e-mail appears in the dev inbox."
+    },
+    "forgotPassword": {
+      "title": "Reset a forgotten password",
+      "summary": "Staff ID, then a 6-digit code from the dev inbox, then a new password.",
+      "steps": [
+        "On the sign-in page, click Forgot your password? and enter a staff ID such as csr002.",
+        "Click Send code. The page says where the code went. It says the same for IDs that don't exist.",
+        "Open the dev inbox in another tab and copy the 6-digit code from the newest SMS.",
+        "Type a wrong code first: you're told how many attempts are left. Then paste the right code into any box; all six fill in and it checks itself.",
+        "Watch Send a new code: it's disabled with a countdown for 30 seconds, and the code expires after 5 minutes.",
+        "Choose a new password (at least 12 characters, not a common one) and confirm it. Use the eye button to show it."
+      ],
+      "expected": "Your password was changed. Sign in with the new password; a locked account is unlocked too. A \"password changed\" e-mail appears in the dev inbox."
+    },
+    "devInbox": {
+      "title": "Read messages in the dev inbox",
+      "summary": "Every SMS and e-mail the practice environment sent.",
+      "steps": [
+        "Open /dev/inbox (or Pages → Dev inbox in the sidebar).",
+        "Filter by staff ID (e.g. csr002) and channel.",
+        "Leave Refresh every 5 s ticked: new messages appear on their own. Set ?inboxInterval=1000 to refresh faster.",
+        "Clear inbox deletes everything, after a confirmation."
+      ],
+      "expected": "Newest first. The code is in the Message column of the SMS row."
+    },
+    "decideAccessRequest": {
+      "title": "Approve or reject an access request",
+      "summary": "Administrators turn requests into staff users.",
+      "steps": [
+        "Sign in as admin001 and open Administration → Access → Users & access.",
+        "Scroll to Access requests. Two seeded requests are pending.",
+        "Click Reject on one, give a reason, and confirm.",
+        "Click Approve on the other. Change the suggested staff ID, role or branch if you want, then confirm.",
+        "Copy the one-time password from the dialog. Switch Show to Approved to see the decided request."
+      ],
+      "expected": "A new staff user exists; they must choose their own password at first sign-in. The applicant gets an e-mail in the dev inbox."
+    },
+    "commandPalette": {
+      "title": "Jump anywhere with the command palette",
+      "summary": "Ctrl+K (⌘K on a Mac) opens a searchable list of screens and actions.",
+      "steps": [
+        "Press Ctrl+K anywhere, including inside a text field, or click Search in the top bar.",
+        "Type part of a screen name (e.g. board) and press Enter.",
+        "Open it again and type the number of a customer from your branch (copy one from Customer search), e.g. 124 or CIF-000124, then press Enter to open that customer.",
+        "Use ↑/↓ to move, Esc to close. Switch language and Sign out are also listed."
+      ],
+      "expected": "The palette closes and the chosen screen opens. Focus returns to where it was when you press Esc."
+    },
+    "sidebar": {
+      "title": "Collapse and expand the menu",
+      "summary": "Menu groups and sub-groups fold away and stay folded.",
+      "steps": [
+        "Click a group heading such as Customers: its links disappear. Click it again to show them.",
+        "As admin001, Administration has an Access sub-group. Collapse it on its own.",
+        "Reload the page: collapsed groups stay collapsed.",
+        "The Pages group holds utility pages such as the dev inbox."
+      ],
+      "expected": "Each heading's aria-expanded changes, and links inside a collapsed group are hidden (not just scrolled away)."
+    },
+    "announcements": {
+      "title": "Read and dismiss announcements",
+      "summary": "Notices from administrators across the top of every page.",
+      "steps": [
+        "Sign in as csr001 (MG Road): you see two announcements. csr002 (Jayanagar) sees only the one for all branches.",
+        "Dismiss one with ✕. It stays dismissed after a reload.",
+        "To see it again, clear csm.dismissedAnnouncements in localStorage."
+      ],
+      "expected": "The bar shows the most severe notice first. Critical notices have no ✕."
+    },
+    "breadcrumbs": {
+      "title": "Go back with breadcrumbs",
+      "summary": "Earlier parts of the breadcrumb are links.",
+      "steps": [
+        "Open Customer search and click any customer to open Customer 360.",
+        "In the top bar the breadcrumb reads Customers / Customer search / CIF-…",
+        "Click Customer search to go back to the search."
+      ],
+      "expected": "Only parts with a page behind them are links; the current page is bold and marked aria-current=\"page\"."
+    }
+  },
+  "elements": {
+    "cookieBanner": {
+      "name": "Blocking cookie banner",
+      "hint": "Buttons by text only: //button[normalize-space()='Accept all']. The page behind is inert until you answer."
+    },
+    "signupForm": {
+      "name": "Sign-up form",
+      "hint": "Controls by name: input[name='fullName'], select[name='branchCode'], input[name='roleRequested'][value='teller']."
+    },
+    "termsCheckboxes": {
+      "name": "Terms and privacy checkboxes",
+      "hint": "input[name='acceptTerms'], input[name='acceptPrivacy'] (required), input[name='subscribeUpdates'] (optional)."
+    },
+    "maskedMobile": {
+      "name": "Masked mobile input",
+      "hint": "input[name='mobile']; the raw digits are in data-raw."
+    },
+    "termsModal": {
+      "name": "Policy dialogs",
+      "hint": "Open from the links by text; the dialog is role=dialog with the policy title."
+    },
+    "forgotForm": {
+      "name": "Forgot-password fields",
+      "hint": "By label: getByLabel('Staff ID'), getByLabel('New password'). Ids are generated by React and change."
+    },
+    "otpBoxes": {
+      "name": "Six-box code input",
+      "hint": "Ids like otp-3fa9c1-0 change on every load: input[id^='otp-'], or the group by its label 'Verification code'."
+    },
+    "countdown": {
+      "name": "Expiry and resend countdowns",
+      "hint": "Text such as 'Send a new code in 0:24'; wait for the button to become enabled."
+    },
+    "passwordToggle": {
+      "name": "Show/hide password",
+      "hint": "getByRole('button', { name: 'Show' }); aria-pressed reflects the state."
+    },
+    "inboxTable": {
+      "name": "Inbox table",
+      "hint": "No ids or classes on rows: //table/tbody/tr[td[2]='sms'][1]/td[5]."
+    },
+    "requestRows": {
+      "name": "Access request rows",
+      "hint": "tr[data-request-no='AR-2026-000001'] and its button[data-action='approve']."
+    },
+    "decisionModal": {
+      "name": "Approve/reject dialog",
+      "hint": "Fields by data-field (staffId, role, branch, note); confirm with button[data-action='confirm-approve']."
+    },
+    "palette": {
+      "name": "Command palette",
+      "hint": "getByRole('dialog', { name: 'Command palette' }) with a combobox and listbox of options."
+    },
+    "navGroups": {
+      "name": "Collapsible menu groups",
+      "hint": "getByRole('button', { name: 'Customers' }) with aria-expanded; the sub-group is a nested button."
+    },
+    "pagesGroup": {
+      "name": "Pages group",
+      "hint": "getByRole('link', { name: 'Dev inbox' })."
+    },
+    "announcementBar": {
+      "name": "Announcement bar",
+      "hint": "Classes only: .ann-bar .ann, .ann-critical, .ann-close."
+    },
+    "breadcrumbLinks": {
+      "name": "Breadcrumb links",
+      "hint": "No class or id: //nav[@aria-label='Breadcrumb']//a[1]."
+    }
+  }
+}

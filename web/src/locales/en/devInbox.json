@@ -1,0 +1,22 @@
+{
+  "title": "Dev inbox",
+  "subtitle": "SMS and e-mail the app sent in this practice environment, newest first. Messages are kept for a day.",
+  "unavailable": "The dev inbox is only available in development.",
+  "toSignIn": "Sign in",
+  "staffId": "Staff ID",
+  "channel": "Channel",
+  "all": "All",
+  "email": "E-mail",
+  "autoRefresh": "Refresh every {{seconds}} s",
+  "refresh": "Refresh",
+  "clear": "Clear inbox",
+  "badStaffId": "Staff IDs look like csr001.",
+  "when": "Sent",
+  "to": "To",
+  "subject": "Subject",
+  "message": "Message",
+  "empty": "No messages.",
+  "updated": "Updated {{time}}",
+  "clearTitle": "Clear the inbox?",
+  "clearMessage": "Every message is deleted, for every user. Codes already sent still work."
+}

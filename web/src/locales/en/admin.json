@@ -115,5 +115,20 @@
       "maxSize": "Maximum page size",
       "roles": "Roles with access"
     }
+  },
+  "requests": {
+    "title": "Access requests",
+    "show": "Show",
+    "empty": "No requests here.",
+    "no": "Request",
+    "role": "Access needed",
+    "reason": "Reason",
+    "received": "Received",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveTitle": "Approve {{no}}",
+    "rejectTitle": "Reject {{no}}",
+    "note": "Reason for the applicant",
+    "rejected": "{{no}} rejected."
   }
 }

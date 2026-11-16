@@ -33,6 +33,9 @@ and the existing app styles.
 - **A screen:** add it to `SCREENS` and the role grants in `shared/src/permissions.ts`, the route
   in `web/src/router.tsx`, a `locales/en/<area>.json` (and an empty `{}` `kn` file until Kannada
   is filled in), seed data, and its user-guide entries.
+- **A user flow:** add it to `web/src/modules/help/guide/flows.ts` and its text to
+  `locales/en/help.json` (`flows.<id>`, `elements.<key>`), then run `npm run guide:md` to rebuild
+  `docs/user-guide.md`. `npm run check` fails while the generated guide is stale.
 - **A practice element:** give it one locator style from plan §3 and show it with
   `<LocatorBadge style="…" />` (visible only with `?hints=1`). Existing screens keep the
   `data-testid` contract; new elements deliberately don't all have one.

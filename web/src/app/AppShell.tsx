@@ -1,115 +1,40 @@
 /**
- * The signed-in layout: sidebar built from the user's menu (/auth/me `nav`), top bar with
- * breadcrumb, branch, language and user, and the page outlet. Screens the user can't open are
- * never rendered in the menu at all.
+ * The signed-in layout: sidebar built from the user's menu (/auth/me `nav`), announcement bar, top
+ * bar with breadcrumb, command palette button, branch, language and user, and the page outlet.
+ * Screens the user can't open are never rendered in the menu at all.
  */
-import { createContext, Suspense, useContext, useEffect, useState, type ReactNode } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { createContext, Suspense, useContext, useEffect, useState } from 'react'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import {
-  BRANCHES,
-  NAV_GROUPS,
-  type DashboardSummary,
-  type Language,
-  type MeResponse,
-  type NavItem,
-} from '@csm/shared'
+import { BRANCHES, type Language, type MeResponse } from '@csm/shared'
 import { api } from '../api/client.ts'
 import { Icon } from '../components/Icon.tsx'
 import { Loading } from '../components/Widgets.tsx'
 import { initials, label } from '../lib/format.ts'
-import { useAuth, useCan, useMe } from './auth.tsx'
+import { useAuth, useMe } from './auth.tsx'
 import { IdleWatcher } from './IdleWatcher.tsx'
+import { AnnouncementBar } from './shell/AnnouncementBar.tsx'
+import { AppCommandPalette } from './shell/AppCommandPalette.tsx'
+import { Sidebar } from './shell/Sidebar.tsx'
 
-const ICONS: Record<string, string> = {
-  home: 'home',
-  'user-plus': 'user-plus',
-  search: 'search',
-  user: 'user',
-  plus: 'plus',
-  board: 'board',
-  users: 'users',
-  sliders: 'sliders',
-  wallet: 'wallet',
-  card: 'card',
-  cash: 'cash',
-  drawer: 'drawer',
-}
+/** A breadcrumb part: plain text, or a link to an earlier page. */
+export type Crumb = string | { label: string; to: string }
 
-const CrumbContext = createContext<(crumb: ReactNode[]) => void>(() => undefined)
+const crumbLabel = (c: Crumb) => (typeof c === 'string' ? c : c.label)
+
+const CrumbContext = createContext<(crumb: Crumb[]) => void>(() => undefined)
 
 /** Sets the breadcrumb (and browser tab title) for the current page. */
-export function useCrumb(parts: string[]) {
+export function useCrumb(parts: Crumb[]) {
   const set = useContext(CrumbContext)
-  const key = parts.join('›')
+  const key = parts.map((p) => (typeof p === 'string' ? p : `${p.label}@${p.to}`)).join('›')
   useEffect(() => {
     set(parts)
-    document.title = `${parts.at(-1) ?? ''} · CSM Playground`
+    document.title = `${crumbLabel(parts.at(-1) ?? '')} · CSM Playground`
     // `key` captures the content of `parts`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, set])
-}
-
-function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
-  const me = useMe()
-  const { t, i18n } = useTranslation()
-  const canDashboard = useCan('dashboard', 'view')
-  const { data: summary } = useQuery({
-    queryKey: ['dashboard-summary'],
-    queryFn: () => api<DashboardSummary>('/dashboard/summary'),
-    enabled: canDashboard,
-    staleTime: 60_000,
-  })
-  const groups = [null, ...NAV_GROUPS].map((g) => ({
-    group: g,
-    items: me.nav.filter((n) => n.navGroup === g),
-  }))
-  const branch = BRANCHES.find((b) => b.code === me.user.branchCode)
-  const item = (n: NavItem) => (
-    <NavLink
-      key={n.key}
-      to={n.route}
-      end
-      id={`nav-${n.key}`}
-      data-testid={`nav-${n.key}`}
-      onClick={onNavigate}
-      className={({ isActive }) => (isActive ? 'active' : undefined)}
-    >
-      <Icon name={ICONS[n.icon] ?? 'file'} />
-      {label(n.labels, i18n.language)}
-      {n.key === 'serviceRequests.board' && summary ? (
-        <span className="cnt" data-testid="nav-board-count" title={t('nav.myOpen')}>
-          {summary.myOpenRequests}
-        </span>
-      ) : null}
-    </NavLink>
-  )
-  return (
-    <aside className={`side ${open ? 'open' : ''}`} data-testid="sidebar">
-      <NavLink to="/dashboard" className="brand" data-testid="brand">
-        <span className="mark">CSM</span>
-        <span>
-          <b>{t('appName')}</b>
-          <span className="tagline">{t('appTagline')}</span>
-        </span>
-      </NavLink>
-      <nav className="nav" aria-label={t('nav.label')} data-testid="nav">
-        {groups.map(({ group, items }) =>
-          items.length === 0 ? null : (
-            <div key={group ?? 'root'} data-testid={`nav-group-${group ?? 'root'}`}>
-              {group ? <div className="navg">{t(`navGroup.${group}`)}</div> : null}
-              {items.map(item)}
-            </div>
-          ),
-        )}
-      </nav>
-      <div className="side-foot">
-        <b>{me.user.name}</b>
-        {me.user.staffId} · {branch ? label(branch.name, i18n.language) : me.user.branchCode}
-      </div>
-    </aside>
-  )
 }
 
 function LanguageSelect() {
@@ -138,7 +63,7 @@ function LanguageSelect() {
   )
 }
 
-function TopBar({ crumb, onMenu }: { crumb: ReactNode[]; onMenu: () => void }) {
+function TopBar({ crumb, onMenu, onPalette }: { crumb: Crumb[]; onMenu: () => void; onPalette: () => void }) {
   const me = useMe()
   const { signOut } = useAuth()
   const navigate = useNavigate()
@@ -163,11 +88,29 @@ function TopBar({ crumb, onMenu }: { crumb: ReactNode[]; onMenu: () => void }) {
                 /
               </span>
             ) : null}
-            {i === crumb.length - 1 ? <b aria-current="page">{c}</b> : <span>{c}</span>}
+            {/* Earlier parts with a target are bare links (no class or id): find them by position. */}
+            {i === crumb.length - 1 ? (
+              <b aria-current="page">{crumbLabel(c)}</b>
+            ) : typeof c === 'string' ? (
+              <span>{c}</span>
+            ) : (
+              <Link to={c.to}>{c.label}</Link>
+            )}
           </span>
         ))}
       </nav>
       <div className="grow" />
+      <button
+        type="button"
+        className="chip palette-trigger"
+        aria-label={t('palette.open')}
+        aria-keyshortcuts="Control+K Meta+K"
+        onClick={onPalette}
+      >
+        <Icon name="search" />
+        <span>{t('palette.trigger')}</span>
+        <kbd>Ctrl K</kbd>
+      </button>
       <span className="chip branch" data-testid="topbar-branch">
         <Icon name="home" />
         {branch ? label(branch.name, i18n.language) : ''} · {me.user.branchCode}
@@ -195,7 +138,8 @@ function TopBar({ crumb, onMenu }: { crumb: ReactNode[]; onMenu: () => void }) {
 
 /** Layout for every signed-in page. */
 export function AppShell() {
-  const [crumb, setCrumb] = useState<ReactNode[]>([])
+  const [crumb, setCrumb] = useState<Crumb[]>([])
+  const [palette, setPalette] = useState(false)
   const location = useLocation()
   // The mobile menu closes whenever the page changes: it's only open for the path it was opened on.
   const [menuFor, setMenuFor] = useState<string | null>(null)
@@ -207,7 +151,8 @@ export function AppShell() {
       <div className="app">
         <Sidebar open={menuOpen} onNavigate={() => setMenuOpen(false)} />
         <div className="main">
-          <TopBar crumb={crumb} onMenu={() => setMenuOpen((o) => !o)} />
+          <AnnouncementBar />
+          <TopBar crumb={crumb} onMenu={() => setMenuOpen((o) => !o)} onPalette={() => setPalette(true)} />
           <main className="work" id="main" data-testid="main">
             <Suspense fallback={<Loading testId="page-loading" />}>
               <Outlet />
@@ -216,6 +161,7 @@ export function AppShell() {
         </div>
       </div>
       <IdleWatcher />
+      <AppCommandPalette open={palette} setOpen={setPalette} />
     </CrumbContext.Provider>
   )
 }

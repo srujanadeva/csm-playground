@@ -1,6 +1,6 @@
 # Plan: practice UI elements inside the banking app
 
-Status: **in progress** (Phase 0 done) · Last updated: 2026-11-16
+Status: **in progress** (Phases 0–1 done) · Last updated: 2026-11-16
 
 This plan adds the UI elements the app is missing, so testers can practise automating them.
 Every element is built into a real banking flow, such as KYC, teller, service requests or
@@ -146,7 +146,11 @@ reversed. Replace the first-load spinners on the Dashboard and Customer 360 with
 | Breadcrumbs (extend)            | Earlier parts of the trail become clickable links                                                           | XP      |
 
 Server: new `notifications` module (outbox + dev inbox), `otp` service (hashed codes, TTL,
-attempt limit, rate limit), `accessRequests` hooked into `approvals`.
+attempt limit, rate limit), `accessRequests` module decided by admins (the existing `approvals`
+module is customer-specific, so access requests have their own), `announcements` (read-only until
+Phase 7). Sidebar sub-groups come from `NAV_SUBGROUPS` in shared, so existing databases need no
+reseed. Breadcrumb links: Customer 360 → Customer search, New request → Request board, Cash
+drawer → Teller counter.
 
 ### Phase 2 — Onboarding and KYC
 

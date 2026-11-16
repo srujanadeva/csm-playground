@@ -318,3 +318,47 @@ export interface DrawerDTO {
   signOffNote: string | null
   version: number
 }
+
+/** A message the app "sent" (SMS or e-mail), as shown in the development inbox. */
+export interface InboxMessageDTO {
+  id: string
+  channel: 'sms' | 'email'
+  to: string
+  staffId: string | null
+  subject: string
+  body: string
+  purpose: string
+  createdAt: string
+}
+
+export interface AccessRequestDTO {
+  id: string
+  requestNo: string
+  fullName: string
+  email: string
+  mobile: string
+  employeeNo: string
+  branchCode: BranchCode
+  roleRequested: string
+  managerEmail: string | null
+  reason: string
+  subscribeUpdates: boolean
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: string
+  decidedBy: string | null
+  decidedAt: string | null
+  decisionNote: string | null
+  staffId: string | null
+}
+
+export interface AnnouncementDTO {
+  id: string
+  title: string
+  /** Sanitised HTML (b, i, u, lists, paragraphs only). */
+  bodyHtml: string
+  severity: 'info' | 'warning' | 'critical'
+  color: string
+  dismissible: boolean
+  startsAt: string
+  endsAt: string | null
+}

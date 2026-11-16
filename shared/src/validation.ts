@@ -52,6 +52,12 @@ export const VALIDATION_MESSAGES = {
   floatRange: "The opening float can't be more than ₹5,00,000.",
   signOffNoteRequired: 'Enter at least 10 characters on how the difference was handled.',
   varianceReasonRequired: "The count doesn't match the expected cash. Explain the difference.",
+  otpFormat: 'Enter the 6-digit code.',
+  otpWrong: 'That code is incorrect.',
+  otpExpired: 'This code has expired. Request a new one.',
+  employeeNoFormat: 'Employee numbers look like E10234.',
+  reasonShort: 'Write at least 10 characters.',
+  mustAccept: 'Tick this box to continue.',
 } as const
 
 export type ValidationCode = keyof typeof VALIDATION_MESSAGES

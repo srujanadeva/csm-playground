@@ -43,7 +43,7 @@ export default function CashDrawerPage() {
   const { t, i18n } = useTranslation('teller')
   const lang = i18n.language
   const canSignOff = useCan('teller.drawer', 'approve')
-  useCrumb([t('nav.teller'), t('drawer.title')])
+  useCrumb([t('nav.teller'), { label: t('counter.title'), to: '/teller' }, t('drawer.title')])
 
   const mine = useQuery({ queryKey: ['teller-drawer'], queryFn: () => api<MyDrawer>('/teller/drawer') })
   const drawer = mine.data?.drawer ?? null

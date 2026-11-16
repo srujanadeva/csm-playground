@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import request from 'supertest'
-import { testApp } from './helpers.ts'
+import { pino } from 'pino'
+import { createApp } from '../src/app.ts'
+import { loadConfig } from '../src/config.ts'
+import { testApp, validEnv } from './helpers.ts'
 
 // These run without MongoDB: they cover the security baseline every route inherits.
 
@@ -157,5 +160,13 @@ describe('input handling', () => {
     const res = await request(limited).get('/api/v1/health')
     expect(res.status).toBe(429)
     expect(res.headers['ratelimit-policy']).toBeDefined()
+  })
+})
+
+describe('development-only routes', () => {
+  it('does not expose the dev inbox in production', async () => {
+    const prod = createApp(loadConfig({ ...validEnv, NODE_ENV: 'production' }), pino({ level: 'silent' }))
+    const res = await request(prod).get('/api/v1/dev/inbox')
+    expect(res.status).toBe(404)
   })
 })

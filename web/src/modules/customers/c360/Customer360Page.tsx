@@ -97,7 +97,7 @@ export default function Customer360Page() {
     queryFn: () => api<CustomerDetail>(`/customers/${ref}`),
   })
   const name = c ? [c.personal.firstName, c.personal.lastName].filter(Boolean).join(' ') : ''
-  useCrumb([t('nav.customers'), t('search.title'), ref])
+  useCrumb([t('nav.customers'), { label: t('search.title'), to: '/customers' }, ref])
 
   // Tabs load on first open and stay mounted afterwards (also when changed via the URL).
   if (!visited.has(tab)) setVisited(new Set(visited).add(tab))

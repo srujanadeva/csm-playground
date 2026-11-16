@@ -33,6 +33,8 @@ import { ConfirmDialog, Drawer, Modal } from '../../components/Overlay.tsx'
 import { useToast } from '../../components/Toast.tsx'
 import { EmptyState, KebabMenu, Loading, Pagination } from '../../components/Widgets.tsx'
 import { useDebounce } from '../../hooks/useDebounce.ts'
+import { AccessRequestsPanel } from './AccessRequestsPanel.tsx'
+import { PasswordModal } from './PasswordModal.tsx'
 import { formatDateTime, initials, label } from '../../lib/format.ts'
 
 type Override = { screenKey: string; grant: Capability[]; revoke: Capability[] }
@@ -40,59 +42,6 @@ interface UserDetail {
   user: StaffUserDTO
   roleGrants: { screenKey: string; capabilities: Capability[] }[]
   effective: EffectivePermissions
-}
-
-/** Shows a one-time password once, with a copy button. */
-function PasswordModal({
-  staffId,
-  password,
-  onClose,
-}: {
-  staffId: string
-  password: string
-  onClose: () => void
-}) {
-  const { t } = useTranslation('admin')
-  const [copied, setCopied] = useState(false)
-  return (
-    <Modal
-      testId="admin-otp"
-      title={t('users.otp.title', { staffId })}
-      onClose={onClose}
-      footer={
-        <button
-          type="button"
-          className="btn pri"
-          data-testid="admin-otp-done"
-          onClick={onClose}
-          data-autofocus
-        >
-          {t('users.otp.done')}
-        </button>
-      }
-    >
-      <span>{t('users.otp.message')}</span>
-      <div className="affix">
-        <input
-          className="in mono"
-          readOnly
-          value={password}
-          data-testid="admin-otp-value"
-          aria-label={t('users.otp.label')}
-          onFocus={(e) => e.target.select()}
-        />
-        <button
-          type="button"
-          data-testid="admin-otp-copy"
-          onClick={() => {
-            void navigator.clipboard?.writeText(password).then(() => setCopied(true))
-          }}
-        >
-          {copied ? t('users.otp.copied') : t('users.otp.copy')}
-        </button>
-      </div>
-    </Modal>
-  )
 }
 
 function NewUserModal({
@@ -748,6 +697,7 @@ export default function UsersPage() {
           />
         ) : null}
       </section>
+      <AccessRequestsPanel />
       {openUser ? (
         <AccessDrawer
           key={openUser}

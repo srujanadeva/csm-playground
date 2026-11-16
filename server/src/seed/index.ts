@@ -20,6 +20,8 @@ import { generateCustomers, generateServiceRequests, generateTellerData, mulberr
 import { AccountModel } from '../modules/teller/account.model.ts'
 import { DrawerModel } from '../modules/teller/drawer.model.ts'
 import { TransactionModel } from '../modules/teller/transaction.model.ts'
+import { AnnouncementModel } from '../modules/announcements/announcement.model.ts'
+import { AccessRequestModel } from '../modules/accessRequests/accessRequest.model.ts'
 
 // Seeds what's missing and leaves everything that exists alone, like the setup scripts.
 //
@@ -256,6 +258,74 @@ async function seedTellerData() {
   )
 }
 
+/** Announcements and access requests for practice, added only when there are none. */
+async function seedSelfServiceData() {
+  if (!(await AnnouncementModel.exists({}))) {
+    const day = 24 * 60 * 60_000
+    await AnnouncementModel.insertMany([
+      {
+        title: 'Core banking maintenance on Sunday',
+        bodyHtml:
+          '<p>Teller posting will be <b>unavailable from 01:00 to 04:00 IST</b> on Sunday. Close your drawer before 00:45.</p>',
+        severity: 'warning',
+        color: '#a86a12',
+        dismissible: true,
+        startsAt: new Date(Date.now() - day),
+        endsAt: new Date(Date.now() + 30 * day),
+        createdBy: 'admin001',
+      },
+      {
+        title: 'New KYC re-verification drive',
+        bodyHtml: '<p>Customers with KYC older than 2 years: offer re-verification at the counter.</p>',
+        severity: 'info',
+        color: '#2560a0',
+        dismissible: true,
+        startsAt: new Date(Date.now() - day),
+        endsAt: null,
+        branchCodes: ['0001'],
+        createdBy: 'admin001',
+      },
+    ])
+    log('Announcements: 2 added')
+  } else log('Announcements: already present, left as is')
+
+  if (!(await AccessRequestModel.exists({}))) {
+    const year = new Date().getFullYear()
+    const base = {
+      acceptedTermsAt: new Date(),
+      subscribeUpdates: false,
+      managerEmail: null,
+    }
+    await AccessRequestModel.insertMany([
+      {
+        ...base,
+        requestNo: `AR-${year}-000001`,
+        fullName: 'Nikhil Acharya',
+        email: 'nikhil.acharya@csmbank.test',
+        mobile: '9845011223',
+        employeeNo: 'E10231',
+        branchCode: '0001',
+        roleRequested: 'csr',
+        reason: 'Joined the MG Road branch as a customer service officer this week.',
+      },
+      {
+        ...base,
+        requestNo: `AR-${year}-000002`,
+        fullName: 'Pooja Rao',
+        email: 'pooja.rao@csmbank.test',
+        mobile: '9740055667',
+        employeeNo: 'E10232',
+        branchCode: '0004',
+        roleRequested: 'teller',
+        reason: 'Transferred from the Mysuru branch to Jayanagar as a cash teller.',
+        subscribeUpdates: true,
+      },
+    ])
+    await ensureSeqAtLeast(`accessRequest:${year}`, 2)
+    log('Access requests: 2 pending added')
+  } else log('Access requests: already present, left as is')
+}
+
 async function main() {
   await connectDB(config.MONGO_URI)
   console.log(`==> Seeding ${redactUri(config.MONGO_URI)}`)
@@ -274,6 +344,8 @@ async function main() {
       AccountModel,
       TransactionModel,
       DrawerModel,
+      AnnouncementModel,
+      AccessRequestModel,
     ].map((m) => (m as mongoose.Model<unknown>).init()),
   )
 
@@ -281,6 +353,7 @@ async function main() {
   const credentials = await seedStaff()
   await seedBusinessData()
   await seedTellerData()
+  await seedSelfServiceData()
 
   if (credentials.length) {
     console.log('\n==> Sign-in details (shown once; they are stored only as bcrypt hashes)')

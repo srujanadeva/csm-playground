@@ -65,7 +65,7 @@ export default function NewRequestPage() {
   const [files, setFiles] = useState<{ file: File; error?: string }[]>([])
   const slaTouched = useRef(false)
   const idemKey = useRef(newIdempotencyKey())
-  useCrumb([t('nav.requests'), t('new.title')])
+  useCrumb([t('nav.requests'), { label: t('board.title'), to: '/service-requests' }, t('new.title')])
 
   const categories = useLookups('srCategories')
   const assignees = useQuery({

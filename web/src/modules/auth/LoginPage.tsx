@@ -1,9 +1,10 @@
 /**
  * Sign-in. Shows the server's lockout countdown ("2 attempts left"), a locked-account
- * message, and why the user was signed out (idle timeout, expired session).
+ * message, and why the user was signed out (idle timeout, expired session). Sits behind the
+ * cookie-consent banner and links to forgot password and request access.
  */
 import { useState } from 'react'
-import { Navigate, matchRoutes, useNavigate, useSearchParams } from 'react-router'
+import { Link, Navigate, matchRoutes, useNavigate, useSearchParams } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +15,7 @@ import { useAuth } from '../../app/auth.tsx'
 import { Field, MaskedInput, controlProps } from '../../components/Field.tsx'
 import { Icon } from '../../components/Icon.tsx'
 import { Loading } from '../../components/Widgets.tsx'
+import { CookieConsent } from '../../app/CookieConsent.tsx'
 
 type Form = z.input<typeof loginSchema>
 
@@ -143,67 +145,72 @@ export default function LoginPage() {
   })
 
   return (
-    <div className="login">
-      <AuthAside />
-      <div className="lform">
-        <form className="lcard" onSubmit={onSubmit} noValidate data-testid="login-form">
-          <h2>{t('login.title')}</h2>
-          <p className="sub">{t('login.subtitle')}</p>
-          {reason === 'idle' || reason === 'expired' ? (
-            <div className="note info" role="status" data-testid="login-reason">
-              <Icon name="info" />
-              <span>{t(reason === 'idle' ? 'login.signedOutIdle' : 'login.signedOutExpired')}</span>
+    <CookieConsent>
+      <div className="login">
+        <AuthAside />
+        <div className="lform">
+          <form className="lcard" onSubmit={onSubmit} noValidate data-testid="login-form">
+            <h2>{t('login.title')}</h2>
+            <p className="sub">{t('login.subtitle')}</p>
+            {reason === 'idle' || reason === 'expired' ? (
+              <div className="note info" role="status" data-testid="login-reason">
+                <Icon name="info" />
+                <span>{t(reason === 'idle' ? 'login.signedOutIdle' : 'login.signedOutExpired')}</span>
+              </div>
+            ) : null}
+            {problem ? (
+              <div className="note bad" role="alert" data-testid="login-error" data-code={problem.code}>
+                <Icon name="warn" />
+                <span>{problem.message}</span>
+              </div>
+            ) : null}
+            <Field id="login-staff-id" label={t('login.staffId')} error={errors.staffId?.message}>
+              <input
+                {...register('staffId')}
+                {...controlProps('login-staff-id', errors.staffId?.message)}
+                className="in"
+                autoComplete="username"
+                placeholder="csr001"
+                autoFocus
+              />
+            </Field>
+            <Field id="login-password" label={t('login.password')} error={errors.password?.message}>
+              <MaskedInput
+                {...register('password')}
+                id="login-password"
+                error={errors.password?.message}
+                autoComplete="current-password"
+              />
+            </Field>
+            <label className="choice">
+              <input
+                type="checkbox"
+                {...register('remember')}
+                id="login-remember"
+                data-testid="login-remember"
+              />
+              <span>{t('login.remember')}</span>
+            </label>
+            <button
+              type="submit"
+              className="btn pri"
+              style={{ height: 40 }}
+              disabled={isSubmitting}
+              data-testid="login-submit"
+            >
+              {isSubmitting ? <span className="spin" /> : null}
+              {t('login.submit')}
+            </button>
+            <div className="login-links">
+              <Link to="/forgot-password" data-testid="login-forgot">
+                {t('login.forgot')}
+              </Link>
+              <Link to="/request-access">{t('login.requestAccess')}</Link>
             </div>
-          ) : null}
-          {problem ? (
-            <div className="note bad" role="alert" data-testid="login-error" data-code={problem.code}>
-              <Icon name="warn" />
-              <span>{problem.message}</span>
-            </div>
-          ) : null}
-          <Field id="login-staff-id" label={t('login.staffId')} error={errors.staffId?.message}>
-            <input
-              {...register('staffId')}
-              {...controlProps('login-staff-id', errors.staffId?.message)}
-              className="in"
-              autoComplete="username"
-              placeholder="csr001"
-              autoFocus
-            />
-          </Field>
-          <Field id="login-password" label={t('login.password')} error={errors.password?.message}>
-            <MaskedInput
-              {...register('password')}
-              id="login-password"
-              error={errors.password?.message}
-              autoComplete="current-password"
-            />
-          </Field>
-          <label className="choice">
-            <input
-              type="checkbox"
-              {...register('remember')}
-              id="login-remember"
-              data-testid="login-remember"
-            />
-            <span>{t('login.remember')}</span>
-          </label>
-          <button
-            type="submit"
-            className="btn pri"
-            style={{ height: 40 }}
-            disabled={isSubmitting}
-            data-testid="login-submit"
-          >
-            {isSubmitting ? <span className="spin" /> : null}
-            {t('login.submit')}
-          </button>
-          <p className="help" style={{ margin: 0, textAlign: 'center' }} data-testid="login-forgot">
-            {t('login.forgot')}
-          </p>
-          <LangSwitch />
-        </form>
+            <LangSwitch />
+          </form>
+        </div>
       </div>
-    </div>
+    </CookieConsent>
   )
 }
