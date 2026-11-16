@@ -1,32 +1,73 @@
 /**
- * Step 3 — KYC & documents: ID type and masked number (show/hide), issue/expiry dates (expiry
- * only for IDs that expire), document uploads with progress, PEP question that reveals extra
- * fields, FATCA, and the calculated risk rating.
+ * Step 3 — KYC & documents: read the ID card (OCR), ID type and masked number (show/hide),
+ * issue/expiry dates (expiry only for IDs that expire), document uploads with progress, the
+ * customer's photo (camera or upload), e-KYC in a cross-origin frame, PEP question that reveals
+ * extra fields, FATCA, and the calculated risk rating.
  */
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import type { z } from 'zod'
-import { ID_TYPES, calculateRisk, kycDraftSchema, kycSchema } from '@csm/shared'
+import {
+  ID_TYPES,
+  calculateRisk,
+  kycDraftSchema,
+  kycSchema,
+  type OcrFieldKey,
+  type OcrResultDTO,
+} from '@csm/shared'
+import { ApiError } from '../../../api/client.ts'
+import { LocatorBadge } from '../../../components/LocatorBadge.tsx'
+import { CameraCapture } from '../../../components/media/CameraCapture.tsx'
+import { useToast } from '../../../components/Toast.tsx'
 import { Field, FieldGroup, MaskedInput, controlProps } from '../../../components/Field.tsx'
 import { Icon } from '../../../components/Icon.tsx'
 import { StatusPill } from '../../../components/Badges.tsx'
 import { useLookups } from '../../../hooks/useLookups.ts'
 import { label } from '../../../lib/format.ts'
-import { DocumentsPanel, applyServerErrors, cleanEmpty, type StepProps } from './shared.tsx'
+import { uploadCapture } from './api.ts'
+import { EkycPanel } from './EkycPanel.tsx'
+import { EMPTY_OCR, OCR_ON_THIS_STEP, OcrPanel, unconfirmed, type OcrState } from './OcrPanel.tsx'
+import {
+  DocumentsPanel,
+  applyServerErrors,
+  cleanEmpty,
+  useReportChanges,
+  type ExtraSections,
+  type StepProps,
+} from './shared.tsx'
+import './onboard.css'
 
 type Form = z.input<typeof kycSchema>
+type OcrTarget = 'idNumber' | 'expiryDate'
+
+/** "Layla Mira Haddad" → first, middle, last. */
+function splitName(full: string) {
+  const parts = full.trim().split(/\s+/)
+  return {
+    firstName: parts[0] ?? '',
+    middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : undefined,
+    lastName: parts.length > 1 ? parts.at(-1)! : '',
+  }
+}
 
 /** Step 3 of the onboarding wizard. */
 export function KycStep({
   draft,
   save,
   bindSaveDraft,
+  setDirty,
   back,
   onDocumentsChanged,
 }: StepProps & { onDocumentsChanged: () => void }) {
   const { t, i18n } = useTranslation('customers')
+  const toast = useToast()
+  const [ocr, setOcr] = useState<OcrState>(EMPTY_OCR)
+  const [ocrBlocked, setOcrBlocked] = useState(false)
+  // The values OCR last put in this step's fields: a field still holding one wasn't edited by hand.
+  const ocrApplied = useRef<Partial<Record<OcrTarget, string>>>({})
+  const [photoBusy, setPhotoBusy] = useState(false)
   const countries = useLookups('countries')
   const saved = (draft?.kyc ?? {}) as Partial<Form>
   const {
@@ -38,6 +79,7 @@ export function KycStep({
     setError,
     clearErrors,
     unregister,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<Form>({
     resolver: zodResolver(kycSchema),
@@ -52,6 +94,7 @@ export function KycStep({
       ...(saved.pepDetails ? { pepDetails: saved.pepDetails } : {}),
     },
   })
+  useReportChanges(watch, setDirty)
   const idType = watch('idType')
   const pep = watch('pep')
   const fatca = watch('fatcaUsPerson')
@@ -79,13 +122,77 @@ export function KycStep({
     })
   }, [bindSaveDraft, getValues, save, setError, clearErrors])
 
+  /** Fills this step's fields from a new reading, keeping any the CSR typed over (FR-KYC-001). */
+  const onOcrRead = (result: OcrResultDTO) => {
+    for (const f of result.fields) {
+      if (!OCR_ON_THIS_STEP.includes(f.key)) continue
+      const key = f.key as OcrTarget
+      const current = getValues(key) ?? ''
+      if (current && current !== ocrApplied.current[key]) continue
+      setValue(key, f.value)
+      ocrApplied.current[key] = f.value
+    }
+    setOcrBlocked(false)
+    setDirty(true)
+  }
+
+  /** Earlier-step values the CSR chose to take from the card, saved with this step. */
+  const cardOverrides = (): ExtraSections => {
+    const card = (k: OcrFieldKey) => ocr.result?.fields.find((f) => f.key === k)?.value ?? ''
+    const extra: ExtraSections = {}
+    if (draft && (ocr.useCard.includes('fullName') || ocr.useCard.includes('dateOfBirth'))) {
+      extra.personal = {
+        ...draft.personal,
+        ...(ocr.useCard.includes('fullName') ? splitName(card('fullName')) : {}),
+        ...(ocr.useCard.includes('dateOfBirth') ? { dob: card('dateOfBirth') } : {}),
+      }
+    }
+    if (draft && ocr.useCard.includes('city')) {
+      const contact = draft.contact as { permanent?: Record<string, unknown> }
+      extra.contact = { ...draft.contact, permanent: { ...contact.permanent, city: card('city') } }
+    }
+    return extra
+  }
+
   const onNext = handleSubmit(async (values) => {
+    if (unconfirmed(ocr).length) {
+      setOcrBlocked(true)
+      return
+    }
     try {
-      await save('kyc', values as unknown as Record<string, unknown>, 'next')
+      await save('kyc', values as unknown as Record<string, unknown>, 'next', cardOverrides())
     } catch (err) {
       applyServerErrors(err, 'kyc', setError)
     }
   })
+
+  const onPhoto = async (photo: Blob | null) => {
+    if (!photo || !draft) return
+    setPhotoBusy(true)
+    try {
+      await uploadCapture(draft.ref, 'photo', photo)
+      onDocumentsChanged()
+      toast(t('onboard.photo.saved'))
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : t('common:error.generic'), 'error')
+    } finally {
+      setPhotoBusy(false)
+    }
+  }
+  const onEkycVerified = useCallback(() => onDocumentsChanged(), [onDocumentsChanged])
+
+  const dp = (draft?.personal ?? {}) as {
+    firstName?: string
+    middleName?: string
+    lastName?: string
+    dob?: string
+  }
+  const entered: Partial<Record<OcrFieldKey, string>> = {
+    fullName: [dp.firstName, dp.middleName, dp.lastName].filter(Boolean).join(' '),
+    dateOfBirth: dp.dob,
+    city: (draft?.contact as { permanent?: { city?: string } } | undefined)?.permanent?.city,
+  }
+  const hasPhoto = !!draft?.documents.some((d) => d.kind === 'photo')
 
   const personal = (draft?.personal ?? {}) as { nationality?: string; monthlyIncome?: number }
   const risk = calculateRisk({
@@ -99,7 +206,18 @@ export function KycStep({
 
   return (
     <form onSubmit={onNext} noValidate data-testid="onb-kyc-form">
-      <section className="panel">
+      <OcrPanel
+        state={ocr}
+        onChange={(next) => {
+          setOcr(next)
+          setOcrBlocked(false)
+        }}
+        onRead={onOcrRead}
+        entered={entered}
+        blocked={ocrBlocked}
+      />
+
+      <section className="panel" style={{ marginTop: 16 }}>
         <header>
           <h2>{t('onboard.kyc.identity')}</h2>
         </header>
@@ -174,6 +292,23 @@ export function KycStep({
           ) : null}
         </div>
       </section>
+
+      {draft ? (
+        <div className="kyc-capture">
+          <section className="panel" data-has-photo={hasPhoto}>
+            <header>
+              <h2>{t('onboard.photo.title')}</h2>
+              <LocatorBadge style="TTL" />
+              {photoBusy ? <span className="spin" /> : null}
+            </header>
+            <div className="body">
+              <CameraCapture label={t('onboard.photo.label')} onChange={(b) => void onPhoto(b)} iconOnly />
+              <p className="help">{hasPhoto ? t('onboard.photo.onFile') : t('onboard.photo.hint')}</p>
+            </div>
+          </section>
+          <EkycPanel draft={draft} onVerified={onEkycVerified} />
+        </div>
+      ) : null}
 
       <section className="panel" style={{ marginTop: 16 }}>
         <header>

@@ -23,7 +23,8 @@ export async function active(req: Request): Promise<AnnouncementDTO[]> {
       bodyHtml: a.bodyHtml,
       severity: a.severity,
       color: a.color,
-      dismissible: a.dismissible,
+      // FR-NAV-002: critical notices always stay up, whatever the stored flag says.
+      dismissible: a.severity !== 'critical' && a.dismissible,
       startsAt: a.startsAt.toISOString(),
       endsAt: a.endsAt ? a.endsAt.toISOString() : null,
     }))

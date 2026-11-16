@@ -62,6 +62,13 @@ export function makeClient(app: Express, password: string) {
     patch: (p: string, b: unknown) => send('patch', p, b),
     put: (p: string, b: unknown) => send('put', p, b),
     login: async (staffId: string, pw = password) => send('post', '/auth/login', { staffId, password: pw }),
+    /** multipart POST with one file in "file" plus text fields. */
+    upload: async (path: string, file: Buffer, fileName: string, fields: Record<string, string> = {}) => {
+      if (!csrf) keep(await request(app).get('/api/v1/auth/csrf').set('Cookie', cookie()))
+      let req = request(app).post(`/api/v1${path}`).set('Cookie', cookie()).set('X-CSRF-Token', csrf)
+      for (const [k, v] of Object.entries(fields)) req = req.field(k, v)
+      return keep(await req.attach('file', file, fileName))
+    },
     cookie,
   }
 }

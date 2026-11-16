@@ -46,6 +46,9 @@ const schema = z.object({
   LOCKOUT_THRESHOLD: z.coerce.number().int().min(3).max(20).default(5),
   /** Where uploaded documents are stored, relative to server/. Outside any web root. */
   UPLOAD_DIR: z.string().default('uploads'),
+  /** The simulated e-KYC provider listens here: a second origin, so the app talks to it by postMessage. */
+  MOCK_PROVIDER_PORT: z.coerce.number().int().min(1).max(65535).default(4002),
+  MOCK_PROVIDER_ORIGIN: z.url().default('https://localhost:4002'),
 })
 
 export type Config = z.infer<typeof schema> & { isProd: boolean }

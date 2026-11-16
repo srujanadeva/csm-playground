@@ -155,7 +155,94 @@
       "termsAccepted": "The customer agrees to the account terms and the privacy notice.",
       "submit": "Submit for approval",
       "confirmTitle": "Submit this customer?",
-      "confirmMessage": "A CIF number is assigned now. The customer becomes active once a supervisor approves."
+      "confirmMessage": "A CIF number is assigned now. The customer becomes active once a supervisor approves.",
+      "ekycNone": "Not verified",
+      "noNominee": "No nominee"
+    },
+    "ocr": {
+      "title": "Read the ID card",
+      "hint": "Fills the ID number and expiry, and checks the name, date of birth and city you entered.",
+      "choose": "Choose card image",
+      "readAnother": "Read another card",
+      "reading": "Reading the card…",
+      "badFile": "Use a JPG or PNG image of up to 2 MB.",
+      "unreadable": "We couldn't read this card. Enter the details by hand.",
+      "caption": "Details read from the card",
+      "field": "Field",
+      "value": "Read from card",
+      "confidence": "Confidence",
+      "inForm": "In the form",
+      "check": "Check",
+      "fields": {
+        "fullName": "Full name",
+        "idNumber": "ID number",
+        "dateOfBirth": "Date of birth",
+        "city": "City",
+        "expiryDate": "Expiry date"
+      },
+      "notOnCard": "Not on the card",
+      "filledHere": "Filled in below",
+      "matches": "Matches what was entered",
+      "useCard": "Use the card's value (entered: {{entered}})",
+      "confirm": "Checked against the card",
+      "confident": "Confident",
+      "pending_one": "Check {{count}} highlighted field against the card before you continue.",
+      "pending_other": "Check {{count}} highlighted fields against the card before you continue."
+    },
+    "photo": {
+      "title": "Customer photo",
+      "label": "Customer photo",
+      "hint": "Take a photo with the branch camera, or upload one.",
+      "onFile": "A photo is on file. Taking another replaces it.",
+      "saved": "Photo saved."
+    },
+    "ekyc": {
+      "title": "e-KYC",
+      "intro": "Verify the customer's identity with the e-KYC provider. The customer completes the check in the window that opens here.",
+      "start": "Verify with e-KYC",
+      "again": "Verify again",
+      "close": "Close e-KYC",
+      "frameTitle": "e-KYC provider",
+      "status": {
+        "verified": "e-KYC verified",
+        "not_verified": "Not verified",
+        "cancelled": "e-KYC was cancelled",
+        "pending": "Waiting for the provider"
+      },
+      "reference": "Reference {{ref}}",
+      "name": "Name: {{name}}",
+      "dob": "Date of birth: {{dob}}",
+      "differs": "you entered {{value}}",
+      "resolve": "The provider's details differ from the form. Correct the form, or check the customer's documents.",
+      "stored": "e-KYC verified · {{ref}}"
+    },
+    "signature": {
+      "title": "Customer signature",
+      "hint": "The customer signs in the box. Tellers compare it later.",
+      "label": "Customer signature pad",
+      "needed": "The customer must sign before you submit."
+    },
+    "nominee": {
+      "title": "Nominee",
+      "hint": "Optional. Up to 3 nominees; shares must total 100%.",
+      "add": "Add nominee",
+      "n": "Nominee {{n}}",
+      "name": "Nominee name",
+      "relationship": "Relationship",
+      "dob": "Date of birth",
+      "share": "Share (%)",
+      "guardian": "Guardian name",
+      "relationships": {
+        "spouse": "Spouse",
+        "child": "Child",
+        "parent": "Parent",
+        "sibling": "Sibling",
+        "other": "Other"
+      },
+      "remove": "Remove nominee",
+      "addAnother": "Add another nominee",
+      "max": "Up to {{max}} nominees",
+      "total": "Total {{total}}% of 100%"
     }
   },
   "docs": {
@@ -166,7 +253,8 @@
       "id_back": "ID back",
       "photo": "Photo",
       "address_proof": "Address proof",
-      "other": "Other"
+      "other": "Other",
+      "signature": "Signature"
     },
     "drop": "Drop files here or browse",
     "hint": "JPG, PNG or PDF · up to 2 MB each",
@@ -272,7 +360,10 @@
       "unsaved": "Unsaved changes",
       "saved": "Customer details saved."
     },
-    "sendForApproval": "Send for approval"
+    "sendForApproval": "Send for approval",
+    "photoOf": "Photo of {{name}}",
+    "ekycVerified": "e-KYC verified",
+    "ekycDetail": "Verified · {{ref}} · {{date}}"
   },
   "audit": {
     "customer": {

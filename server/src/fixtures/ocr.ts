@@ -2,8 +2,10 @@
 // test-playground). Uploads are matched by sha256, so the images must not be edited; any other
 // image is reported as unreadable. Confidence is 0–1; the KYC step flags fields below 0.8.
 
+import type { OcrFieldKey } from '@csm/shared'
+
 export interface OcrField {
-  key: 'fullName' | 'idNumber' | 'dateOfBirth' | 'city' | 'expiryDate'
+  key: OcrFieldKey
   value: string
   confidence: number
 }
@@ -13,9 +15,6 @@ export interface OcrResult {
   documentType: string
   fields: OcrField[]
 }
-
-/** The threshold below which a field must be confirmed by the user. */
-export const OCR_LOW_CONFIDENCE = 0.8
 
 // sha256 of the image file -> what OCR returns for it.
 export const OCR_FIXTURES: Record<string, OcrResult> = {

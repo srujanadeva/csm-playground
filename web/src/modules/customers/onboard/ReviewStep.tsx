@@ -1,6 +1,7 @@
 /**
- * Step 4 — Review & submit: read-only summary of every step with Edit links, the two
- * declarations, and Submit (with a confirmation dialog). Server-side validation problems are
+ * Step 4 — Review & submit: read-only summary of every step with Edit links, nominees, e-KYC, the
+ * customer's signature (canvas, id="customer-signature"; Submit stays disabled until it is signed),
+ * the two declarations, and Submit (with a confirmation dialog). Server-side validation problems are
  * listed with links back to the step that needs fixing.
  */
 import { useState, type ReactNode } from 'react'
@@ -11,6 +12,8 @@ import { declarationsSchema, type CustomerDraftForm } from '@csm/shared'
 import type { z } from 'zod'
 import { ApiError } from '../../../api/client.ts'
 import { useErrorText } from '../../../components/Field.tsx'
+import { LocatorBadge } from '../../../components/LocatorBadge.tsx'
+import { SignaturePad } from '../../../components/media/SignaturePad.tsx'
 import { Icon } from '../../../components/Icon.tsx'
 import { ConfirmDialog } from '../../../components/Overlay.tsx'
 import { StatusPill } from '../../../components/Badges.tsx'
@@ -73,7 +76,7 @@ export function ReviewStep({
 }: {
   draft: CustomerDraftForm
   onEdit: (step: number) => void
-  onSubmit: (declarations: Declarations) => Promise<void>
+  onSubmit: (declarations: Declarations, signature: Blob) => Promise<void>
   back: () => void
 }) {
   const { t, i18n } = useTranslation('customers')
@@ -85,6 +88,7 @@ export function ReviewStep({
   const state = useLookupLabel('states')
   const [confirming, setConfirming] = useState<Declarations | null>(null)
   const [busy, setBusy] = useState(false)
+  const [signature, setSignature] = useState<Blob | null>(null)
   const [serverErrors, setServerErrors] = useState<{ path: string; code?: string; message: string }[]>([])
   const {
     register,
@@ -100,13 +104,23 @@ export function ReviewStep({
   const k = draft.kyc as Record<string, unknown> & { pepDetails?: Record<string, string> }
   const address = (a?: Record<string, string>) =>
     a ? [a.line1, a.line2, a.locality, a.city, state(a.state), a.pincode].filter(Boolean).join(', ') : '—'
-  const stepOf = (path: string) => (path.startsWith('personal') ? 1 : path.startsWith('contact') ? 2 : 3)
+  const stepOf = (path: string) =>
+    path.startsWith('personal')
+      ? 1
+      : path.startsWith('contact') || path.startsWith('nominees')
+        ? 2
+        : path.startsWith('signature')
+          ? 4
+          : 3
+  const nominees = draft.nominees.addNominee
+    ? (draft.nominees.nominees as { name?: string; relationship?: string; share?: number }[])
+    : []
 
   const submit = async () => {
-    if (!confirming) return
+    if (!confirming || !signature) return
     setBusy(true)
     try {
-      await onSubmit(confirming)
+      await onSubmit(confirming, signature)
     } catch (err) {
       if (err instanceof ApiError && err.problem.errors) setServerErrors(err.problem.errors)
       setConfirming(null)
@@ -241,7 +255,44 @@ export function ReviewStep({
           testId="onb-review-documents"
           value={t('docs.count', { count: draft.documents.length })}
         />
+        <Item
+          label={t('onboard.ekyc.title')}
+          testId="onb-review-ekyc"
+          value={
+            draft.ekyc
+              ? t('onboard.ekyc.stored', { ref: draft.ekyc.reference })
+              : t('onboard.review.ekycNone')
+          }
+        />
+        <Item
+          label={t('onboard.nominee.title')}
+          testId="onb-review-nominees"
+          value={
+            nominees.length
+              ? nominees
+                  .map(
+                    (n) => `${n.name} (${t(`onboard.nominee.relationships.${n.relationship}`)}, ${n.share}%)`,
+                  )
+                  .join('; ')
+              : t('onboard.review.noNominee')
+          }
+        />
       </Section>
+
+      <section className="panel">
+        <header>
+          <h2>{t('onboard.signature.title')}</h2>
+          <LocatorBadge style="ID" />
+          <span className="hint">{t('onboard.signature.hint')}</span>
+        </header>
+        <div className="body">
+          <SignaturePad
+            id="customer-signature"
+            label={t('onboard.signature.label')}
+            onChange={setSignature}
+          />
+        </div>
+      </section>
 
       <section className="panel">
         <header>
@@ -283,7 +334,8 @@ export function ReviewStep({
           <Icon name="back" />
           {t('common:back')}
         </button>
-        <button type="submit" className="btn pri" data-testid="onb-submit">
+        {!signature ? <span className="help">{t('onboard.signature.needed')}</span> : null}
+        <button type="submit" className="btn pri" data-testid="onb-submit" disabled={!signature}>
           {t('onboard.review.submit')}
         </button>
       </div>

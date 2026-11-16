@@ -153,6 +153,54 @@
         "Click Customer search to go back to the search."
       ],
       "expected": "Only parts with a page behind them are links; the current page is bold and marked aria-current=\"page\"."
+    },
+    "onboardKyc": {
+      "title": "Onboard a customer with OCR, photo, e-KYC and signature",
+      "summary": "Let the app read the ID card, take the customer's photo, verify them with the e-KYC provider, and capture their signature.",
+      "steps": [
+        "Go to Customers → Onboard customer. Fill Personal details and Contact & address (Next on each), then you are on KYC & documents.",
+        "Under Read the ID card, click Choose card image and pick testresources/ocr/id-blurry.png. Highlighted rows were read with low confidence.",
+        "Tick Checked against the card on each highlighted row. Rows for the name, date of birth and city compare the card with what you entered; tick Use the card's value to take it. Next stays blocked until every highlighted row is checked.",
+        "The ID number from the sample card doesn't match any accepted format: choose an ID type and correct the number (for a PAN, ABCPE1234F).",
+        "Under Customer photo, click the camera button (title Start camera) and allow the camera, then Capture. If you refuse the camera, use the upload button (title Upload a photo) with testresources/media/testimage.jpg.",
+        "Click Verify with e-KYC. In the provider window, pick an answer under Simulate the registry's answer, tick the consent box and click Verify identity. Try Registry name differs to see the mismatch warning.",
+        "Upload at least one ID document, click Next, and on Review & submit have the customer sign in the signature box. Submit stays disabled until there is a signature. Tick both declarations and click Submit."
+      ],
+      "expected": "Fields read from the card are filled and flagged ones must be checked; the e-KYC result shows a reference (EKYC-…) and any difference from the form; the customer is submitted with a CIF, and Customer 360 shows the photo and \"e-KYC verified\"."
+    },
+    "nominees": {
+      "title": "Add nominees",
+      "summary": "Record up to three nominees whose shares add up to 100%.",
+      "steps": [
+        "On the Contact & address step, type the mobile number: it is shown as 98450 12345 while only the digits are stored.",
+        "Under Nominee, tick Add nominee. A first nominee row appears with a 100% share.",
+        "Enter a date of birth under 18 years ago: a Guardian name field appears and is required.",
+        "Click Add another nominee and split the shares (for example 60 and 40). The running total shows under the rows.",
+        "Click Next. Shares that don't total 100%, or a missing guardian, stop you with a message."
+      ],
+      "expected": "The nominees are saved with the draft and listed on Review & submit and on Customer 360 (KYC tab)."
+    },
+    "unsavedChanges": {
+      "title": "Leave a form with unsaved changes",
+      "summary": "The onboarding wizard, the Edit customer panel and New request warn before you lose unsaved work.",
+      "steps": [
+        "Start onboarding a customer and type in any field without saving.",
+        "Click another menu item (for example Dashboard). A dialog asks Leave without saving?",
+        "Click Stay on this page to keep your work, or Discard changes to leave.",
+        "Type again, then reload the browser tab: the browser shows its own Leave site? warning.",
+        "On Customer 360, click Edit, change a field and close the panel: the same dialog appears."
+      ],
+      "expected": "Nothing is lost unless you choose Discard changes. Saving (Next, Save draft, Save) clears the warning."
+    },
+    "customerPhoto": {
+      "title": "See the customer's photo",
+      "summary": "Customer 360 shows the customer's photo, or their initials when there is none or it can't be loaded.",
+      "steps": [
+        "Open a customer onboarded with a photo (see Onboard a customer with OCR, photo, e-KYC and signature).",
+        "The photo appears next to the name. Customers without a photo show their initials.",
+        "To see the fallback for a broken image, block the photo's request in the browser's developer tools and reload."
+      ],
+      "expected": "The picture is a .c360-photo element; its data-state is loaded, loading or broken."
     }
   },
   "elements": {
@@ -223,6 +271,34 @@
     "breadcrumbLinks": {
       "name": "Breadcrumb links",
       "hint": "No class or id: //nav[@aria-label='Breadcrumb']//a[1]."
+    },
+    "ocrPanel": {
+      "name": "ID-card OCR results",
+      "hint": "[data-qa='ocr-row'][data-field='idNumber']; read data-confidence and data-flagged. The file input is [data-qa='ocr-file']."
+    },
+    "cameraCapture": {
+      "name": "Camera photo with upload fallback",
+      "hint": "Icon buttons named only by title: button[title='Start camera'], [title='Capture'], [title='Retake']. State is on .camera[data-state]."
+    },
+    "ekycFrame": {
+      "name": "Cross-origin e-KYC frame",
+      "hint": "iframe[title='e-KYC provider'] from https://localhost:4002: switch into the frame first; inside, #ekyc-consent and the Verify identity button."
+    },
+    "signaturePad": {
+      "name": "Signature pad",
+      "hint": "canvas#customer-signature: draw with pointer moves; the wrapper's data-strokes and data-empty show the result."
+    },
+    "nomineeFields": {
+      "name": "Revealed nominee fields",
+      "hint": "No ids: //fieldset[legend='Nominee 1']//span[.='Share (%)']/following-sibling::input."
+    },
+    "unsavedDialog": {
+      "name": "Unsaved-changes dialog",
+      "hint": "Find it by text: the Stay on this page and Discard changes buttons."
+    },
+    "customerPhoto": {
+      "name": "Customer photo with initials fallback",
+      "hint": ".c360-photo; img inside when loaded, initials when broken (data-state)."
     }
   }
 }

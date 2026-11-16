@@ -4,6 +4,7 @@
  * due date/time (until the user changes it), subject, description with a counter, queued
  * attachments uploaded after creation, assignee, and notification checkboxes.
  * Submitting twice (double click, retry) creates one request thanks to the Idempotency-Key.
+ * Leaving with unsaved edits asks Stay / Discard (FR-ONB-012).
  */
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
@@ -30,6 +31,8 @@ import { FileDropzone, precheck } from '../../components/FileDropzone.tsx'
 import { Icon } from '../../components/Icon.tsx'
 import { CustomerTypeahead } from '../../components/Typeahead.tsx'
 import { useToast } from '../../components/Toast.tsx'
+import { UnsavedChangesDialog } from '../../components/overlays/UnsavedChangesDialog.tsx'
+import { useUnsavedGuard } from '../../hooks/useUnsavedGuard.ts'
 import { useLookups } from '../../hooks/useLookups.ts'
 import { label, toIso, toLocalInputs } from '../../lib/format.ts'
 
@@ -82,7 +85,7 @@ export default function NewRequestPage() {
     watch,
     setValue,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<Form>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -147,6 +150,13 @@ export default function NewRequestPage() {
     )
   }
 
+  // After creating, the guard must drop before navigating to the board (see the effect below).
+  const [created, setCreated] = useState<string | null>(null)
+  const blocker = useUnsavedGuard((isDirty || files.length > 0) && !created)
+  useEffect(() => {
+    if (created) navigate(`/service-requests?sr=${created}`)
+  }, [created, navigate])
+
   const submit = handleSubmit(async ({ slaDate, slaTime, ...rest }) => {
     try {
       const created = await api<ServiceRequestDetail>('/service-requests', {
@@ -171,7 +181,7 @@ export default function NewRequestPage() {
       )
       void qc.invalidateQueries({ queryKey: ['board'] })
       void qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
-      navigate(`/service-requests?sr=${created.srNo}`)
+      setCreated(created.srNo)
     } catch (err) {
       if (err instanceof ApiError && err.problem.errors) {
         err.problem.errors.forEach((e) =>
@@ -449,6 +459,9 @@ export default function NewRequestPage() {
           {t('new.submit')}
         </button>
       </div>
+      {blocker.state === 'blocked' ? (
+        <UnsavedChangesDialog onStay={() => blocker.reset()} onDiscard={() => blocker.proceed()} />
+      ) : null}
     </form>
   )
 }

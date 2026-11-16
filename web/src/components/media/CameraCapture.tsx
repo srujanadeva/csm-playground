@@ -1,8 +1,9 @@
 // Takes a photo with the device camera (getUserMedia), with a file-upload fallback when the camera
 // is unavailable or permission is refused. data-state: idle | requesting | live | captured |
 // denied | unsupported. The camera is always stopped on capture, cancel and unmount.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '../Icon.tsx'
 import './media.css'
 
 type CamState = 'idle' | 'requesting' | 'live' | 'captured' | 'denied' | 'unsupported'
@@ -13,10 +14,14 @@ interface Props {
   onChange: (photo: Blob | null) => void
   /** name on the fallback file input. */
   fallbackName?: string
+  /** Icon buttons named only by their title (and aria-label), instead of text buttons. */
+  iconOnly?: boolean
 }
 
+const ICONS = { start: 'camera', capture: 'check', cancel: 'x', retake: 'refresh', upload: 'upload' } as const
+
 /** Preview + Start camera / Capture / Retake, and the upload fallback. */
-export function CameraCapture({ label, onChange, fallbackName }: Props) {
+export function CameraCapture({ label, onChange, fallbackName, iconOnly }: Props) {
   const { t } = useTranslation('ui')
   const video = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -25,6 +30,12 @@ export function CameraCapture({ label, onChange, fallbackName }: Props) {
     typeof navigator.mediaDevices?.getUserMedia === 'function' ? 'idle' : 'unsupported',
   )
   const [preview, setPreview] = useState<string | null>(null)
+  /** Button text, or an icon with a title when iconOnly. */
+  const face = (key: keyof typeof ICONS): { content: ReactNode; title?: string; 'aria-label'?: string } =>
+    iconOnly
+      ? { content: <Icon name={ICONS[key]} />, title: t(`camera.${key}`), 'aria-label': t(`camera.${key}`) }
+      : { content: t(`camera.${key}`) }
+  const icon = iconOnly ? ' icon' : ''
 
   const stop = () => {
     stream.current?.getTracks().forEach((tr) => tr.stop())
@@ -53,7 +64,8 @@ export function CameraCapture({ label, onChange, fallbackName }: Props) {
   }
   const capture = () => {
     const v = video.current
-    if (!v) return
+    // No frame yet (the stream is still starting): a 0×0 canvas would give no photo.
+    if (!v || !v.videoWidth) return
     const c = document.createElement('canvas')
     c.width = v.videoWidth
     c.height = v.videoHeight
@@ -97,37 +109,54 @@ export function CameraCapture({ label, onChange, fallbackName }: Props) {
         {state === 'idle' || state === 'requesting' ? (
           <button
             type="button"
-            className="btn sm pri"
+            className={`btn sm pri${icon}`}
             disabled={state === 'requesting'}
+            title={face('start').title}
+            aria-label={face('start')['aria-label']}
             onClick={() => void start()}
           >
-            {t('camera.start')}
+            {face('start').content}
           </button>
         ) : null}
         {state === 'live' ? (
           <>
-            <button type="button" className="btn sm pri" onClick={capture}>
-              {t('camera.capture')}
+            <button
+              type="button"
+              className={`btn sm pri${icon}`}
+              title={face('capture').title}
+              aria-label={face('capture')['aria-label']}
+              onClick={capture}
+            >
+              {face('capture').content}
             </button>
             <button
               type="button"
-              className="btn sm"
+              className={`btn sm${icon}`}
+              title={face('cancel').title}
+              aria-label={face('cancel')['aria-label']}
               onClick={() => {
                 stop()
                 setState('idle')
               }}
             >
-              {t('camera.cancel')}
+              {face('cancel').content}
             </button>
           </>
         ) : null}
         {state === 'captured' ? (
-          <button type="button" className="btn sm" onClick={retake}>
-            {t('camera.retake')}
+          <button
+            type="button"
+            className={`btn sm${icon}`}
+            title={face('retake').title}
+            aria-label={face('retake')['aria-label']}
+            onClick={retake}
+          >
+            {face('retake').content}
           </button>
         ) : null}
-        <label className="btn sm ghost camera-upload">
-          {t('camera.upload')}
+        <label className={`btn sm ghost camera-upload${icon}`} title={face('upload').title}>
+          {face('upload').content}
+          {iconOnly ? <span className="sr-only">{t('camera.upload')}</span> : null}
           <input
             type="file"
             name={fallbackName}

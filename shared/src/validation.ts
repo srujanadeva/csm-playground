@@ -58,6 +58,12 @@ export const VALIDATION_MESSAGES = {
   employeeNoFormat: 'Employee numbers look like E10234.',
   reasonShort: 'Write at least 10 characters.',
   mustAccept: 'Tick this box to continue.',
+  nomineeShareTotal: 'Nominee shares must add up to 100%.',
+  nomineeRequired: 'Add at least one nominee, or untick "Add nominee".',
+  guardianRequired: 'The nominee is under 18. Enter a guardian name.',
+  shareRange: 'Enter a share between 1 and 100.',
+  dobNotFuture: "Date of birth can't be in the future.",
+  signatureRequired: 'The customer must sign before you submit.',
 } as const
 
 export type ValidationCode = keyof typeof VALIDATION_MESSAGES

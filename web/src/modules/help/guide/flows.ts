@@ -115,4 +115,41 @@ export const FLOWS: GuideFlow[] = [
     elements: [{ key: 'breadcrumbLinks', locator: 'XP' }],
     phase: 1,
   },
+  {
+    id: 'onboardKyc',
+    personas: ['csr'],
+    route: '/customers/new',
+    samples: ['ocr/id-clean.png', 'ocr/id-blurry.png', 'ocr/id-partial.png', 'media/testimage.jpg'],
+    elements: [
+      { key: 'ocrPanel', locator: 'DATA' },
+      { key: 'cameraCapture', locator: 'TTL' },
+      { key: 'ekycFrame', locator: 'CTX' },
+      { key: 'signaturePad', locator: 'ID' },
+    ],
+    phase: 2,
+  },
+  {
+    id: 'nominees',
+    personas: ['csr'],
+    route: '/customers/new',
+    elements: [
+      { key: 'nomineeFields', locator: 'XP' },
+      { key: 'maskedMobile', locator: 'NAME' },
+    ],
+    phase: 2,
+  },
+  {
+    id: 'unsavedChanges',
+    personas: ['csr'],
+    route: '/customers/new',
+    elements: [{ key: 'unsavedDialog', locator: 'TXT' }],
+    phase: 2,
+  },
+  {
+    id: 'customerPhoto',
+    personas: ['csr', 'supervisor'],
+    route: '/customers',
+    elements: [{ key: 'customerPhoto', locator: 'CLS' }],
+    phase: 2,
+  },
 ]

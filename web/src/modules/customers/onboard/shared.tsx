@@ -2,9 +2,9 @@
  * Helpers shared by the onboarding steps: the step contract, empty-value cleanup for draft
  * saves, server-error mapping, and the documents panel (also used by Customer 360).
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { FieldValues, Path, UseFormSetError } from 'react-hook-form'
+import type { FieldValues, Path, UseFormSetError, UseFormWatch } from 'react-hook-form'
 import type { CustomerDraftForm, DocumentDTO } from '@csm/shared'
 import { ApiError, api } from '../../../api/client.ts'
 import { uploadFile } from '../../../api/upload.ts'
@@ -13,16 +13,40 @@ import { Icon } from '../../../components/Icon.tsx'
 import { useToast } from '../../../components/Toast.tsx'
 import { formatDate } from '../../../lib/format.ts'
 
-export type Section = 'personal' | 'contact' | 'kyc'
+export type Section = 'personal' | 'contact' | 'kyc' | 'nominees'
+
+/** Other sections saved in the same request (e.g. nominees with Contact, OCR values with KYC). */
+export type ExtraSections = Partial<Record<Section, Record<string, unknown>>>
 
 /** What each step receives from the wizard. */
 export interface StepProps {
   draft: CustomerDraftForm | null
   /** Saves the step. `next` = full validation passed, move on; `draft` = partial save. */
-  save: (section: Section, data: Record<string, unknown>, mode: 'next' | 'draft') => Promise<void>
+  save: (
+    section: Section,
+    data: Record<string, unknown>,
+    mode: 'next' | 'draft',
+    extra?: ExtraSections,
+  ) => Promise<void>
   /** Registers the function the header's "Save draft" button calls. */
   bindSaveDraft: (fn: () => Promise<void>) => void
+  /** Tells the wizard whether the step has unsaved changes (FR-ONB-012). */
+  setDirty: (dirty: boolean) => void
   back: () => void
+}
+
+/** Marks the wizard dirty on any edit to a step's form; a successful save clears it again. */
+export function useReportChanges<T extends FieldValues>(
+  watch: UseFormWatch<T>,
+  setDirty: (d: boolean) => void,
+) {
+  useEffect(() => {
+    const sub = watch((_v, { type }) => {
+      // Only user edits count; values set by code (OCR, defaults) arrive without a type.
+      if (type === 'change') setDirty(true)
+    })
+    return () => sub.unsubscribe()
+  }, [watch, setDirty])
 }
 
 /** Removes "", null and empty objects so a partial draft only carries what was typed. */
@@ -143,7 +167,8 @@ export function DocumentsPanel({
               value={kind}
               onChange={(e) => setKind(e.target.value)}
             >
-              {['id_front', 'id_back', 'photo', 'address_proof', 'other'].map((k) => (
+              {/* Photo and signature are captured in their own panels, which replace earlier ones. */}
+              {['id_front', 'id_back', 'address_proof', 'other'].map((k) => (
                 <option key={k} value={k}>
                   {t(`docs.kinds.${k}`)}
                 </option>

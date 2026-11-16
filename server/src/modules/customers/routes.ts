@@ -5,6 +5,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import {
+  DOC_KINDS,
   blockRequestSchema,
   createDraftSchema,
   cursorQuery,
@@ -24,7 +25,6 @@ import { can } from '@csm/shared'
 import * as customers from './service.ts'
 
 const ref = (p: unknown) => String((p as { ref: string }).ref)
-const DOC_KINDS = ['id_front', 'id_back', 'photo', 'address_proof', 'other'] as const
 
 /** Builds the customers router. */
 export function customerRoutes(config: Config): Router {

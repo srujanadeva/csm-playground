@@ -3,7 +3,8 @@ import request from 'supertest'
 import { pino } from 'pino'
 import { createApp } from '../src/app.ts'
 import { loadConfig } from '../src/config.ts'
-import { testApp, validEnv } from './helpers.ts'
+import { createMockProviderApp } from '../src/mockProvider/app.ts'
+import { testApp, testConfig, validEnv } from './helpers.ts'
 
 // These run without MongoDB: they cover the security baseline every route inherits.
 
@@ -168,5 +169,26 @@ describe('development-only routes', () => {
     const prod = createApp(loadConfig({ ...validEnv, NODE_ENV: 'production' }), pino({ level: 'silent' }))
     const res = await request(prod).get('/api/v1/dev/inbox')
     expect(res.status).toBe(404)
+  })
+})
+
+describe('feature-specific relaxations', () => {
+  const app = testApp()
+
+  it('lets the app frame only the e-KYC provider and use the camera (FR-KYC-002/003)', async () => {
+    const res = await request(app).get('/api/v1/health')
+    expect(res.headers['content-security-policy']).toContain('frame-src https://localhost:4002')
+    expect(res.headers['content-security-policy']).toContain("media-src 'self' blob:")
+    expect(res.headers['permissions-policy']).toBe('camera=(self), microphone=(), geolocation=(), payment=()')
+  })
+
+  it('serves the provider page frameable only by the app, with a nonce-only script policy', async () => {
+    const provider = createMockProviderApp(testConfig())
+    const res = await request(provider).get('/ekyc?session=bad&parent=https://evil.test')
+    expect(res.status).toBe(404)
+    const csp = String(res.headers['content-security-policy'])
+    expect(csp).toContain('frame-ancestors https://localhost:3001')
+    expect(csp).toMatch(/script-src 'nonce-[A-Za-z0-9+/=]+'/)
+    expect(csp).not.toContain('unsafe-inline')
   })
 })

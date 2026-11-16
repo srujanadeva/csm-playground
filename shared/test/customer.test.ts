@@ -1,7 +1,7 @@
 /** Onboarding rules that span fields, and the risk-rating formula. */
 import { describe, expect, it } from 'vitest'
 import { calculateRisk } from '../src/risk.ts'
-import { contactSchema, kycSchema, personalSchema } from '../src/schemas/customer.ts'
+import { contactSchema, kycSchema, nomineesSchema, personalSchema } from '../src/schemas/customer.ts'
 import { createServiceRequestSchema } from '../src/schemas/serviceRequest.ts'
 
 const codes = (r: { success: boolean; error?: { issues: { path: PropertyKey[]; message: string }[] } }) =>
@@ -99,5 +99,32 @@ describe('calculateRisk', () => {
     expect(calculateRisk({ pep: true, nationality: 'IN' })).toBe('medium')
     expect(calculateRisk({ pep: true, fatcaUsPerson: true, nationality: 'US' })).toBe('high')
     expect(calculateRisk({ monthlyIncome: 600_000 })).toBe('medium')
+  })
+})
+
+describe('nominees', () => {
+  const adult = { name: 'Suresh Hegde', relationship: 'parent', dob: '1960-02-02', share: 40 }
+  const child = { name: 'Anika Hegde', relationship: 'child', dob: '2015-06-01', share: 60 }
+
+  it('ignores the rows when "Add nominee" is unticked', () => {
+    expect(nomineesSchema.safeParse({ addNominee: false, nominees: [] }).success).toBe(true)
+  })
+
+  it('needs a guardian for a minor and shares that total 100', () => {
+    const r = nomineesSchema.safeParse({ addNominee: true, nominees: [child, { ...adult, share: 30 }] })
+    expect(codes(r)).toEqual({ 'nominees.0.guardianName': 'guardianRequired', nominees: 'nomineeShareTotal' })
+    const ok = nomineesSchema.safeParse({
+      addNominee: true,
+      nominees: [{ ...child, guardianName: 'Suresh Hegde' }, adult],
+    })
+    expect(ok.success).toBe(true)
+  })
+
+  it('requires at least one row and at most three', () => {
+    expect(codes(nomineesSchema.safeParse({ addNominee: true, nominees: [] }))).toEqual({
+      nominees: 'nomineeRequired',
+    })
+    const four = Array.from({ length: 4 }, () => ({ ...adult, share: 25 }))
+    expect(nomineesSchema.safeParse({ addNominee: true, nominees: four }).success).toBe(false)
   })
 })

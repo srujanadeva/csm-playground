@@ -127,6 +127,103 @@ Every SMS and e-mail the practice environment sent.
 | ----------- | ------------- | ------------------------------------------------------------------ |
 | Inbox table | `XP`          | No ids or classes on rows: //table/tbody/tr[td[2]='sms'][1]/td[5]. |
 
+## Customer service rep
+
+Onboards customers, works service requests.
+
+### Onboard a customer with OCR, photo, e-KYC and signature
+
+Let the app read the ID card, take the customer's photo, verify them with the e-KYC provider, and capture their signature.
+
+- **Who:** Customer service rep
+- **Start at:** `/customers/new`
+- **Sign in as:** `csr001`
+- **Sample files:** `testresources/ocr/id-clean.png`, `testresources/ocr/id-blurry.png`, `testresources/ocr/id-partial.png`, `testresources/media/testimage.jpg`
+
+**Steps**
+
+1. Go to Customers → Onboard customer. Fill Personal details and Contact & address (Next on each), then you are on KYC & documents.
+2. Under Read the ID card, click Choose card image and pick testresources/ocr/id-blurry.png. Highlighted rows were read with low confidence.
+3. Tick Checked against the card on each highlighted row. Rows for the name, date of birth and city compare the card with what you entered; tick Use the card's value to take it. Next stays blocked until every highlighted row is checked.
+4. The ID number from the sample card doesn't match any accepted format: choose an ID type and correct the number (for a PAN, ABCPE1234F).
+5. Under Customer photo, click the camera button (title Start camera) and allow the camera, then Capture. If you refuse the camera, use the upload button (title Upload a photo) with testresources/media/testimage.jpg.
+6. Click Verify with e-KYC. In the provider window, pick an answer under Simulate the registry's answer, tick the consent box and click Verify identity. Try Registry name differs to see the mismatch warning.
+7. Upload at least one ID document, click Next, and on Review & submit have the customer sign in the signature box. Submit stays disabled until there is a signature. Tick both declarations and click Submit.
+
+**What you should see:** Fields read from the card are filled and flagged ones must be checked; the e-KYC result shows a reference (EKYC-…) and any difference from the form; the customer is submitted with a CIF, and Customer 360 shows the photo and "e-KYC verified".
+
+| Element                           | Locator style | How to find it                                                                                                                                 |
+| --------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| ID-card OCR results               | `DATA`        | [data-qa='ocr-row'][data-field='idNumber']; read data-confidence and data-flagged. The file input is [data-qa='ocr-file'].                     |
+| Camera photo with upload fallback | `TTL`         | Icon buttons named only by title: button[title='Start camera'], [title='Capture'], [title='Retake']. State is on .camera[data-state].          |
+| Cross-origin e-KYC frame          | `CTX`         | iframe[title='e-KYC provider'] from https://localhost:4002: switch into the frame first; inside, #ekyc-consent and the Verify identity button. |
+| Signature pad                     | `ID`          | canvas#customer-signature: draw with pointer moves; the wrapper's data-strokes and data-empty show the result.                                 |
+
+### Add nominees
+
+Record up to three nominees whose shares add up to 100%.
+
+- **Who:** Customer service rep
+- **Start at:** `/customers/new`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. On the Contact & address step, type the mobile number: it is shown as 98450 12345 while only the digits are stored.
+2. Under Nominee, tick Add nominee. A first nominee row appears with a 100% share.
+3. Enter a date of birth under 18 years ago: a Guardian name field appears and is required.
+4. Click Add another nominee and split the shares (for example 60 and 40). The running total shows under the rows.
+5. Click Next. Shares that don't total 100%, or a missing guardian, stop you with a message.
+
+**What you should see:** The nominees are saved with the draft and listed on Review & submit and on Customer 360 (KYC tab).
+
+| Element                 | Locator style | How to find it                                                                        |
+| ----------------------- | ------------- | ------------------------------------------------------------------------------------- |
+| Revealed nominee fields | `XP`          | No ids: //fieldset[legend='Nominee 1']//span[.='Share (%)']/following-sibling::input. |
+| Masked mobile input     | `NAME`        | input[name='mobile']; the raw digits are in data-raw.                                 |
+
+### Leave a form with unsaved changes
+
+The onboarding wizard, the Edit customer panel and New request warn before you lose unsaved work.
+
+- **Who:** Customer service rep
+- **Start at:** `/customers/new`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. Start onboarding a customer and type in any field without saving.
+2. Click another menu item (for example Dashboard). A dialog asks Leave without saving?
+3. Click Stay on this page to keep your work, or Discard changes to leave.
+4. Type again, then reload the browser tab: the browser shows its own Leave site? warning.
+5. On Customer 360, click Edit, change a field and close the panel: the same dialog appears.
+
+**What you should see:** Nothing is lost unless you choose Discard changes. Saving (Next, Save draft, Save) clears the warning.
+
+| Element                | Locator style | How to find it                                                      |
+| ---------------------- | ------------- | ------------------------------------------------------------------- |
+| Unsaved-changes dialog | `TXT`         | Find it by text: the Stay on this page and Discard changes buttons. |
+
+### See the customer's photo
+
+Customer 360 shows the customer's photo, or their initials when there is none or it can't be loaded.
+
+- **Who:** Customer service rep, Supervisor
+- **Start at:** `/customers`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. Open a customer onboarded with a photo (see Onboard a customer with OCR, photo, e-KYC and signature).
+2. The photo appears next to the name. Customers without a photo show their initials.
+3. To see the fallback for a broken image, block the photo's request in the browser's developer tools and reload.
+
+**What you should see:** The picture is a .c360-photo element; its data-state is loaded, loading or broken.
+
+| Element                               | Locator style | How to find it                                                          |
+| ------------------------------------- | ------------- | ----------------------------------------------------------------------- |
+| Customer photo with initials fallback | `CLS`         | .c360-photo; img inside when loaded, initials when broken (data-state). |
+
 ## Administrator
 
 Manages users, access and content.

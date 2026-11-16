@@ -12,6 +12,8 @@ import {
   type CustomerListItem,
   type CustomerStatus,
   type DocumentDTO,
+  type EkycOnCustomer,
+  type NomineeDTO,
   type IdType,
   type KycStatus,
   type RiskRating,
@@ -49,6 +51,33 @@ export function toDocumentDTO(d: CustomerRecord): DocumentDTO {
     size: d.size ?? 0,
     uploadedBy: d.uploadedBy ?? '',
     uploadedAt: new Date(d.uploadedAt).toISOString(),
+  }
+}
+
+/** The newest photo document's id: what Customer 360 shows as the customer's picture. */
+function latestPhotoId(c: CustomerRecord): string | null {
+  const photos = (c.documents ?? []).filter((d: CustomerRecord) => d.kind === 'photo')
+  return photos.length ? String(photos.at(-1)._id) : null
+}
+
+/** A stored nominee in form shape (dates as YYYY-MM-DD). */
+function toNomineeForm(n: CustomerRecord): NomineeDTO {
+  return {
+    name: n.name,
+    relationship: n.relationship,
+    dob: isoDay(n.dob) ?? '',
+    share: n.share,
+    ...(n.guardianName ? { guardianName: n.guardianName } : {}),
+  }
+}
+
+function toEkyc(e: CustomerRecord | undefined): EkycOnCustomer | null {
+  if (!e?.reference) return null
+  return {
+    reference: e.reference,
+    verifiedName: e.verifiedName ?? '',
+    verifiedDob: isoDay(e.verifiedDob) ?? '',
+    verifiedAt: new Date(e.verifiedAt).toISOString(),
   }
 }
 
@@ -128,7 +157,10 @@ export function toDetail(
       riskRating: k.riskRating as RiskRating | undefined,
       status: k.status as KycStatus | undefined,
       verifiedAt: k.verifiedAt ? new Date(k.verifiedAt).toISOString() : undefined,
+      ekyc: toEkyc(k.ekyc) ?? undefined,
     },
+    photoDocId: latestPhotoId(c),
+    nominees: c.addNominee ? (c.nominees ?? []).map(toNomineeForm) : [],
     documents: (c.documents ?? []).map(toDocumentDTO),
     pendingApproval,
     piiMasked: !showPII,
@@ -192,6 +224,8 @@ export function toDraftForm(c: CustomerRecord, piiKey: string): CustomerDraftFor
       pepDetails: k.pep && k.pepDetails ? strip({ ...k.pepDetails }) : undefined,
       fatcaUsPerson: k.fatcaUsPerson ?? false,
     }),
+    nominees: { addNominee: c.addNominee ?? false, nominees: (c.nominees ?? []).map(toNomineeForm) },
+    ekyc: toEkyc(k.ekyc),
     riskRating: (k.riskRating as RiskRating | undefined) ?? null,
     documents: (c.documents ?? []).map(toDocumentDTO),
     updatedAt: new Date(c.updatedAt).toISOString(),

@@ -2,7 +2,9 @@
  * Edit drawer on Customer 360: contact details, addresses and employment. Loads the real
  * (unmasked) values from /customers/:cif/form, sends full sections with the record version,
  * and every changed field lands in the audit log. KYC changes need re-KYC, so they're not here.
+ * Closing or navigating away with unsaved edits asks Stay / Discard (FR-ONB-012).
  */
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,6 +14,8 @@ import { COMM_PREFS, contactSchema, personalSchema, type CustomerDraftForm } fro
 import { ApiError, api } from '../../../api/client.ts'
 import { Field, FieldGroup, controlProps } from '../../../components/Field.tsx'
 import { Drawer } from '../../../components/Overlay.tsx'
+import { UnsavedChangesDialog } from '../../../components/overlays/UnsavedChangesDialog.tsx'
+import { useUnsavedGuard } from '../../../hooks/useUnsavedGuard.ts'
 import { Loading } from '../../../components/Widgets.tsx'
 import { useLookups } from '../../../hooks/useLookups.ts'
 import { label } from '../../../lib/format.ts'
@@ -36,11 +40,15 @@ function EditForm({
     handleSubmit,
     watch,
     setError,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting, isDirty, isSubmitSuccessful },
   } = useForm<Form>({
     resolver: zodResolver(editSchema),
     defaultValues: { personal: form.personal as Form['personal'], contact: form.contact as Form['contact'] },
   })
+  const unsaved = isDirty && !isSubmitSuccessful
+  const blocker = useUnsavedGuard(unsaved)
+  const [asking, setAsking] = useState(false)
+  const requestClose = () => (unsaved ? setAsking(true) : onClose())
   const same = watch('contact.mailingSameAsPermanent')
   const ce = errors.contact
   const pe = errors.personal
@@ -67,12 +75,12 @@ function EditForm({
       testId="c360-edit"
       title={t('c360.edit.title')}
       subtitle={<span className="mono">{form.cif}</span>}
-      onClose={onClose}
+      onClose={requestClose}
       footer={
         <>
           <span className="help">{isDirty ? t('c360.edit.unsaved') : ''}</span>
           <div className="grow" />
-          <button type="button" className="btn" data-testid="c360-edit-cancel" onClick={onClose}>
+          <button type="button" className="btn" data-testid="c360-edit-cancel" onClick={requestClose}>
             {t('common:cancel')}
           </button>
           <button
@@ -193,6 +201,19 @@ function EditForm({
           </select>
         </Field>
       </form>
+      {asking || blocker.state === 'blocked' ? (
+        <UnsavedChangesDialog
+          onStay={() => {
+            setAsking(false)
+            if (blocker.state === 'blocked') blocker.reset()
+          }}
+          onDiscard={() => {
+            setAsking(false)
+            if (blocker.state === 'blocked') blocker.proceed()
+            else onClose()
+          }}
+        />
+      ) : null}
     </Drawer>
   )
 }

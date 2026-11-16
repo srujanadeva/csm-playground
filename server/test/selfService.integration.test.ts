@@ -270,6 +270,13 @@ describe.skipIf(!mongoUp)('self-service flows (MongoDB)', () => {
       await mg.login('csr001')
       const titles = (await mg.get('/announcements/active')).body.items.map((a: { title: string }) => a.title)
       expect(titles).toEqual(['MG Road only', 'Everyone'])
+      // Critical notices can never be dismissed, whatever the stored flag (FR-NAV-002).
+      const items = (await mg.get('/announcements/active')).body.items as {
+        title: string
+        dismissible: boolean
+      }[]
+      expect(items.find((a) => a.title === 'MG Road only')?.dismissible).toBe(false)
+      expect(items.find((a) => a.title === 'Everyone')?.dismissible).toBe(true)
 
       const jayanagar = client()
       await jayanagar.login('csr002', NEW_PASSWORD)

@@ -3,11 +3,13 @@ import {
   BRANCH_CODES,
   CUSTOMER_STATUS,
   CUSTOMER_TYPES,
+  DOC_KINDS,
   GENDERS,
   ID_TYPES,
   KYC_STATUS,
   LANGUAGES,
   MARITAL_STATUS,
+  NOMINEE_RELATIONSHIPS,
   RISK_RATINGS,
   SEGMENTS,
 } from '@csm/shared'
@@ -28,7 +30,7 @@ const addressSchema = new Schema(
 
 const documentSchema = new Schema(
   {
-    kind: { type: String, enum: ['id_front', 'id_back', 'photo', 'address_proof', 'other'], required: true },
+    kind: { type: String, enum: DOC_KINDS, required: true },
     fileName: { type: String, required: true, maxlength: 120 },
     mime: { type: String, enum: ['image/jpeg', 'image/png', 'application/pdf'], required: true },
     size: { type: Number, max: 2 * 1024 * 1024 },
@@ -38,6 +40,17 @@ const documentSchema = new Schema(
     uploadedAt: { type: Date, default: Date.now },
   },
   { _id: true },
+)
+
+const nomineeSchema = new Schema(
+  {
+    name: { type: String, trim: true, maxlength: 80 },
+    relationship: { type: String, enum: NOMINEE_RELATIONSHIPS },
+    dob: Date,
+    share: { type: Number, min: 1, max: 100 },
+    guardianName: { type: String, trim: true, maxlength: 80 },
+  },
+  { _id: false },
 )
 
 const customerSchema = new Schema(
@@ -96,7 +109,17 @@ const customerSchema = new Schema(
       riskRating: { type: String, enum: RISK_RATINGS, default: 'low' },
       status: { type: String, enum: KYC_STATUS, default: 'pending' },
       verifiedAt: Date,
+      /** Set when the e-KYC provider verified the customer (FR-KYC-003). */
+      ekyc: {
+        type: new Schema(
+          { reference: String, verifiedName: String, verifiedDob: Date, verifiedAt: Date },
+          { _id: false },
+        ),
+        default: undefined,
+      },
     },
+    addNominee: { type: Boolean, default: false },
+    nominees: { type: [nomineeSchema], default: [] },
     documents: { type: [documentSchema], default: [] },
     createdBy: String,
     updatedBy: String,

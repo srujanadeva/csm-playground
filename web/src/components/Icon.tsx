@@ -22,6 +22,7 @@ const PATHS: Record<string, string> = {
   'eye-off':
     'M3 3l18 18M10.6 6.1A9.7 9.7 0 0112 6c6 0 10 6 10 6a17 17 0 01-3.2 3.8M6.6 6.6A17 17 0 002 12s4 7 10 7a9.6 9.6 0 004.4-1',
   upload: 'M12 16V4M7 9l5-5 5 5M4 16v4h16v-4',
+  camera: 'M3 8h4l2-3h6l2 3h4v11H3zM12 16a3 3 0 100-6 3 3 0 000 6z',
   download: 'M12 4v12M7 11l5 5 5-5M4 20h16',
   lock: 'M5 11h14v10H5zM8 11V7a4 4 0 018 0v4',
   shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',

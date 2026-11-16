@@ -5,8 +5,10 @@
  * editing the same draft get a conflict instead of overwriting each other). The draft number
  * and step live in the URL, so a draft can be resumed from anywhere. Submit validates all
  * steps on the server, assigns a CIF and sends the customer for supervisor approval.
+ * Unsaved edits are guarded (FR-ONB-012): in-app navigation asks Stay / Discard, and closing or
+ * reloading the tab triggers the browser's own warning.
  */
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -15,14 +17,17 @@ import { ApiError, api, newIdempotencyKey } from '../../../api/client.ts'
 import { useCrumb } from '../../../app/AppShell.tsx'
 import { Icon } from '../../../components/Icon.tsx'
 import { ConfirmDialog } from '../../../components/Overlay.tsx'
+import { UnsavedChangesDialog } from '../../../components/overlays/UnsavedChangesDialog.tsx'
+import { useUnsavedGuard } from '../../../hooks/useUnsavedGuard.ts'
 import { useToast } from '../../../components/Toast.tsx'
 import { Loading, Stepper } from '../../../components/Widgets.tsx'
 import { formatTime } from '../../../lib/format.ts'
+import { uploadCapture } from './api.ts'
 import { ContactStep } from './ContactStep.tsx'
 import { KycStep } from './KycStep.tsx'
 import { PersonalStep } from './PersonalStep.tsx'
 import { ReviewStep } from './ReviewStep.tsx'
-import type { Section } from './shared.tsx'
+import type { ExtraSections, Section } from './shared.tsx'
 
 /** /customers/new */
 export default function OnboardWizard() {
@@ -37,6 +42,9 @@ export default function OnboardWizard() {
   const [savingDraft, setSavingDraft] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [done, setDone] = useState<{ cif: string } | null>(null)
+  const [dirty, setDirty] = useState(false)
+  const [leaveNow, setLeaveNow] = useState(false)
+  const blocker = useUnsavedGuard(dirty && !done)
   const saveDraftFn = useRef<(() => Promise<void>) | null>(null)
   const submitKey = useRef(newIdempotencyKey())
   const createKey = useRef(newIdempotencyKey())
@@ -63,7 +71,12 @@ export default function OnboardWizard() {
   )
 
   const save = useCallback(
-    async (section: Section, data: Record<string, unknown>, mode: 'next' | 'draft') => {
+    async (
+      section: Section,
+      data: Record<string, unknown>,
+      mode: 'next' | 'draft',
+      extra?: ExtraSections,
+    ) => {
       try {
         let updated: CustomerDraftForm
         if (!draft) {
@@ -76,11 +89,12 @@ export default function OnboardWizard() {
         } else {
           updated = await api<CustomerDraftForm>(`/customers/${draft.ref}/draft`, {
             method: 'PATCH',
-            body: { version: draft.version, [section]: data },
+            body: { version: draft.version, ...extra, [section]: data },
           })
         }
         qc.setQueryData(['draft', updated.ref], updated)
         setSavedAt(new Date())
+        setDirty(false)
         if (mode === 'next') goTo(step + 1, updated.ref)
         else if (!draft) goTo(step, updated.ref)
       } catch (err) {
@@ -95,6 +109,11 @@ export default function OnboardWizard() {
     },
     [draft, draftQuery, goTo, qc, step, t, toast],
   )
+
+  // Leaving through Cancel already asked; wait for the guard to drop before navigating.
+  useEffect(() => {
+    if (leaveNow && !dirty) navigate('/customers')
+  }, [leaveNow, dirty, navigate])
 
   const bindSaveDraft = useCallback((fn: () => Promise<void>) => {
     saveDraftFn.current = fn
@@ -113,10 +132,13 @@ export default function OnboardWizard() {
     }
   }
 
-  const submit = async (declarations: { idVerified: true; termsAccepted: true }) => {
+  const submit = async (declarations: { idVerified: true; termsAccepted: true }, signature: Blob) => {
+    // The signature is a document; uploading it bumps the draft's version, so re-read it first.
+    await uploadCapture(draft!.ref, 'signature', signature)
+    const fresh = (await draftQuery.refetch()).data ?? draft!
     const result = await api<{ cif: string }>(`/customers/${draft!.ref}/submit`, {
       method: 'POST',
-      body: { version: draft!.version, declarations },
+      body: { version: fresh.version, declarations },
       idempotencyKey: submitKey.current,
     })
     toast(t('onboard.submitted', { cif: result.cif }))
@@ -186,7 +208,7 @@ export default function OnboardWizard() {
     title: t(`onboard.steps.${s}`),
     hint: t(`onboard.hints.${s}`),
   }))
-  const stepProps = { draft, save, bindSaveDraft, back: () => goTo(step - 1) }
+  const stepProps = { draft, save, bindSaveDraft, setDirty, back: () => goTo(step - 1) }
 
   return (
     <>
@@ -255,8 +277,14 @@ export default function OnboardWizard() {
           confirmLabel={t('onboard.leave.confirm')}
           danger
           onCancel={() => setLeaving(false)}
-          onConfirm={() => navigate('/customers')}
+          onConfirm={() => {
+            setDirty(false)
+            setLeaveNow(true)
+          }}
         />
+      ) : null}
+      {blocker.state === 'blocked' ? (
+        <UnsavedChangesDialog onStay={() => blocker.reset()} onDiscard={() => blocker.proceed()} />
       ) : null}
     </>
   )

@@ -4,6 +4,7 @@
  */
 import type { Capability, EffectivePermissions, NavGroup } from './permissions.ts'
 import type { Denominations } from './teller.ts'
+import type { EkycOnCustomer } from './schemas/kyc.ts'
 import type {
   AccountStatus,
   AccountType,
@@ -119,13 +120,25 @@ export interface CustomerDetail {
     riskRating?: RiskRating
     status?: KycStatus
     verifiedAt?: string
+    ekyc?: EkycOnCustomer
   }
+  /** Id of the customer's photo document, if they have one. */
+  photoDocId: string | null
+  nominees: NomineeDTO[]
   documents: DocumentDTO[]
   pendingApproval: { id: string; type: string; requestedBy: string; createdAt: string } | null
   piiMasked: boolean
   createdBy: string
   createdAt: string
   updatedAt: string
+}
+
+export interface NomineeDTO {
+  name: string
+  relationship: string
+  dob: string
+  share: number
+  guardianName?: string
 }
 
 /** Draft data in the wizard's own form shape, so a saved draft can be resumed exactly. */
@@ -138,6 +151,8 @@ export interface CustomerDraftForm {
   personal: Record<string, unknown>
   contact: Record<string, unknown>
   kyc: Record<string, unknown>
+  nominees: { addNominee: boolean; nominees: Record<string, unknown>[] }
+  ekyc: EkycOnCustomer | null
   /** Calculated from the answers; read-only, so it is not part of any form section. */
   riskRating: RiskRating | null
   documents: DocumentDTO[]

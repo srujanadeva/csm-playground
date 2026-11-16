@@ -49,7 +49,8 @@ function useDialogFocus(onClose: () => void) {
 }
 
 interface ModalProps {
-  testId: string
+  /** Left out on practice dialogs that are found by their text. */
+  testId?: string
   title: ReactNode
   onClose: () => void
   children: ReactNode
@@ -62,7 +63,7 @@ export function Modal({ testId, title, onClose, children, footer }: ModalProps) 
   const titleId = useId()
   return createPortal(
     <>
-      <div className="scrim" onClick={onClose} data-testid={`${testId}-scrim`} />
+      <div className="scrim" onClick={onClose} data-testid={testId ? `${testId}-scrim` : undefined} />
       <div
         className="modal"
         role="dialog"

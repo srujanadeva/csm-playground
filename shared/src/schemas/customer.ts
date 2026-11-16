@@ -16,6 +16,7 @@ import {
   KYC_STATUS,
   LANGUAGES,
   MARITAL_STATUS,
+  NOMINEE_RELATIONSHIPS,
   SEGMENTS,
 } from '../enums.ts'
 import { offsetQuery } from './common.ts'
@@ -152,6 +153,48 @@ export const kycSchema = kycBase.superRefine((d, ctx) => {
 export const kycDraftSchema = kycBase.partial().extend({ pepDetails: pepDetailsSchema.partial().optional() })
 export type KycInput = z.infer<typeof kycSchema>
 
+// ── Nominees (shown on the Contact step, saved as their own section) ─────────
+
+export const MAX_NOMINEES = 3
+
+const nomineeBase = z.strictObject({
+  name: personName(80),
+  relationship: z.enum(NOMINEE_RELATIONSHIPS),
+  dob: isoDate.refine((v) => v <= today(), 'dobNotFuture'),
+  share: z.coerce.number('shareRange').int('shareRange').min(1, 'shareRange').max(100, 'shareRange'),
+  guardianName: z.preprocess(emptyToUndefined, personName(80).optional()),
+})
+
+/** A minor nominee needs a guardian. */
+export const nomineeSchema = nomineeBase.superRefine((n, ctx) => {
+  if (ageOn(n.dob) < 18 && !n.guardianName) {
+    ctx.addIssue({ code: 'custom', message: 'guardianRequired', path: ['guardianName'] })
+  }
+})
+
+export const nomineesSchema = z
+  .strictObject({
+    addNominee: z.boolean(),
+    nominees: z.array(nomineeSchema).max(MAX_NOMINEES, 'tooLong'),
+  })
+  .superRefine((d, ctx) => {
+    if (!d.addNominee) return
+    if (d.nominees.length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'nomineeRequired', path: ['nominees'] })
+    } else if (d.nominees.reduce((sum, n) => sum + n.share, 0) !== 100) {
+      ctx.addIssue({ code: 'custom', message: 'nomineeShareTotal', path: ['nominees'] })
+    }
+  })
+export const nomineesDraftSchema = z.strictObject({
+  addNominee: z.boolean().optional(),
+  nominees: z.array(nomineeBase.partial()).max(MAX_NOMINEES, 'tooLong').optional(),
+})
+export type NomineesInput = z.infer<typeof nomineesSchema>
+
+/** Whether a "YYYY-MM-DD" date of birth is under 18 today. */
+export const isMinor = (dob: string | undefined) =>
+  !!dob && /^\d{4}-\d{2}-\d{2}$/.test(dob) && ageOn(dob) < 18
+
 // ── Draft save, submit, edit ─────────────────────────────────────────────────
 
 export const createDraftSchema = z.strictObject({ personal: personalDraftSchema })
@@ -161,6 +204,7 @@ export const updateDraftSchema = z.strictObject({
   personal: personalDraftSchema.optional(),
   contact: contactDraftSchema.optional(),
   kyc: kycDraftSchema.optional(),
+  nominees: nomineesDraftSchema.optional(),
 })
 
 /** Edits after activation: full sections only, and KYC is not editable (needs re-KYC). */

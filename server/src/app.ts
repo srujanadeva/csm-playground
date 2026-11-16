@@ -26,6 +26,7 @@ import { tellerRoutes } from './modules/teller/routes.ts'
 import { announcementRoutes } from './modules/announcements/routes.ts'
 import { accessRequestRoutes } from './modules/accessRequests/routes.ts'
 import { devInboxRoutes } from './modules/notifications/routes.ts'
+import { kycRoutes } from './modules/kyc/routes.ts'
 
 const WEB_DIST = resolve(dirname(fileURLToPath(import.meta.url)), '../../web/dist')
 
@@ -70,6 +71,9 @@ export function createApp(config: Config, logger: Logger, options: AppOptions = 
           imgSrc: ["'self'", 'data:', 'blob:'],
           fontSrc: ["'self'"],
           connectSrc: ["'self'"],
+          // The e-KYC provider's page is framed during onboarding (FR-KYC-003).
+          frameSrc: [new URL(config.MOCK_PROVIDER_ORIGIN).origin],
+          mediaSrc: ["'self'", 'blob:'],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
           formAction: ["'self'"],
@@ -83,6 +87,12 @@ export function createApp(config: Config, logger: Logger, options: AppOptions = 
       crossOriginResourcePolicy: { policy: 'same-origin' },
     }),
   )
+
+  // Camera for the KYC selfie (FR-KYC-002); everything else stays off.
+  app.use((_req, res, next) => {
+    res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=()')
+    next()
+  })
 
   app.use(
     '/api',
@@ -111,6 +121,7 @@ export function createApp(config: Config, logger: Logger, options: AppOptions = 
   app.use('/api/v1/auth', authRoutes(config, options.authRateLimit))
   app.use('/api/v1/lookups', lookupRoutes())
   app.use('/api/v1/customers', customerRoutes(config))
+  app.use('/api/v1/kyc', kycRoutes(config))
   app.use('/api/v1/approvals', approvalRoutes())
   app.use('/api/v1/service-requests', serviceRequestRoutes(config))
   app.use('/api/v1/admin', adminRoutes())

@@ -10,6 +10,7 @@ import {
   maskMobile,
   contactSchema,
   kycSchema,
+  nomineesSchema,
   personalSchema,
   validationMessage,
   type CustomerDetail,
@@ -23,6 +24,7 @@ import type {
   blockRequestSchema,
   contactDraftSchema,
   kycDraftSchema,
+  nomineesDraftSchema,
   personalDraftSchema,
   submitSchema,
   updateActiveSchema,
@@ -31,7 +33,14 @@ import type {
 import type { Config } from '../../config.ts'
 import { audit, diff } from '../../lib/audit.ts'
 import { blindIndex, decryptField, encryptField } from '../../lib/crypto.ts'
-import { conflict, notFound, staleVersion, validationFailed, type FieldError } from '../../lib/errors.ts'
+import {
+  badRequest,
+  conflict,
+  notFound,
+  staleVersion,
+  validationFailed,
+  type FieldError,
+} from '../../lib/errors.ts'
 import { clampPageSize, cursorFilter, parseSort, toCursorPage } from '../../lib/pagination.ts'
 import { endOfDay, op, startOfDay } from '../../lib/query.ts'
 import { escapeRegex } from '../../lib/regex.ts'
@@ -62,6 +71,10 @@ import { SERVER_DIR } from '../../env.ts'
 type PersonalDraft = z.infer<typeof personalDraftSchema>
 type ContactDraft = z.infer<typeof contactDraftSchema>
 type KycDraft = z.infer<typeof kycDraftSchema>
+type NomineesDraft = z.infer<typeof nomineesDraftSchema>
+
+/** Captured in the wizard: a new one replaces the old one while the customer is a draft. */
+const SINGLE_DOC_KINDS = new Set(['photo', 'signature'])
 
 const MAX_DOCUMENTS = 10
 const EXPORT_LIMIT = 5000
@@ -150,6 +163,15 @@ function applyKyc(doc: Doc, k: KycDraft, config: Config) {
   updateRisk(doc)
 }
 
+function applyNominees(doc: Doc, n: NomineesDraft) {
+  const add = n.addNominee ?? false
+  doc.set('addNominee', add)
+  doc.set(
+    'nominees',
+    add ? (n.nominees ?? []).map((x) => ({ ...x, dob: x.dob ? startOfDay(x.dob) : undefined })) : [],
+  )
+}
+
 function updateRisk(doc: Doc) {
   doc.set(
     'kyc.riskRating',
@@ -214,6 +236,7 @@ export async function updateDraft(
   if (body.personal) applyPersonal(doc, body.personal)
   if (body.contact) applyContact(doc, body.contact)
   if (body.kyc) applyKyc(doc, body.kyc, config)
+  if (body.nominees) applyNominees(doc, body.nominees)
   doc.set('updatedBy', actor(req))
   await doc.save()
   return toDraftForm(doc.toObject(), config.PII_ENC_KEY)
@@ -231,6 +254,7 @@ export async function submit(req: Request, ref: string, body: z.infer<typeof sub
     ['personal', personalSchema, form.personal],
     ['contact', contactSchema, form.contact],
     ['kyc', kycSchema, form.kyc],
+    ['nominees', nomineesSchema, form.nominees],
   ] as const) {
     const result = (schema as z.ZodType).safeParse(data)
     if (!result.success) {
@@ -245,6 +269,13 @@ export async function submit(req: Request, ref: string, body: z.infer<typeof sub
   }
   if (form.documents.length === 0) {
     errors.push({ path: 'documents', code: 'required', message: 'Upload at least one identity document.' })
+  }
+  if (!form.documents.some((d) => d.kind === 'signature')) {
+    errors.push({
+      path: 'signature',
+      code: 'signatureRequired',
+      message: validationMessage('signatureRequired'),
+    })
   }
   if (errors.length) throw validationFailed(errors, 'Complete every step before submitting.')
 
@@ -590,6 +621,21 @@ export async function addDocument(
   if ((doc.documents?.length ?? 0) >= MAX_DOCUMENTS)
     throw conflict(`A customer can have at most ${MAX_DOCUMENTS} documents.`)
   const stored = await storeUpload(uploadDir(config), file)
+  if (SINGLE_DOC_KINDS.has(kind)) {
+    if (!stored.mime.startsWith('image/')) {
+      await deleteUpload(uploadDir(config), stored.storageKey)
+      throw badRequest('Photos and signatures must be JPG or PNG images.', [
+        { path: 'file', code: 'invalid', message: 'Use JPG or PNG.' },
+      ])
+    }
+    // Retaking a photo or signature on a draft replaces it; submitted records keep every version.
+    if (doc.status === 'draft') {
+      for (const old of doc.documents.filter((d) => d.kind === kind)) {
+        doc.documents.pull({ _id: old._id })
+        await deleteUpload(uploadDir(config), old.storageKey)
+      }
+    }
+  }
   doc.documents.push({ kind, ...stored, uploadedBy: actor(req), uploadedAt: new Date() })
   await doc.save()
   const added = doc.documents.at(-1)!

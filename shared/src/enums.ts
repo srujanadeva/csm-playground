@@ -34,6 +34,12 @@ export const ID_FORMATS: Record<IdType, RegExp> = {
   driving_licence: /^KA[0-9]{2}[0-9]{11}$/,
 }
 
+/** Kinds of customer document. `photo` and `signature` are captured in the wizard, not chosen. */
+export const DOC_KINDS = ['id_front', 'id_back', 'photo', 'signature', 'address_proof', 'other'] as const
+export type DocKind = (typeof DOC_KINDS)[number]
+
+export const NOMINEE_RELATIONSHIPS = ['spouse', 'child', 'parent', 'sibling', 'other'] as const
+
 export const RISK_RATINGS = ['low', 'medium', 'high'] as const
 export type RiskRating = (typeof RISK_RATINGS)[number]
 

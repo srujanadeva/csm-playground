@@ -18,6 +18,7 @@ import { useToast } from '../../../components/Toast.tsx'
 import { Skeleton } from '../../../components/data/Skeleton.tsx'
 import { Tabs, Tooltip } from '../../../components/Widgets.tsx'
 import { formatDate, initials } from '../../../lib/format.ts'
+import { SafeImage } from '../../../components/media/SafeImage.tsx'
 import { EditCustomerDrawer } from './EditCustomerDrawer.tsx'
 import { StatusRequestModal } from './StatusRequestModal.tsx'
 import { AuditTab, ContactTab, KycTab, OverviewTab, RequestsTab } from './tabs.tsx'
@@ -206,9 +207,21 @@ export default function Customer360Page() {
 
       <section className="panel" data-testid="c360">
         <div className="body" style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span className="avatar" style={{ width: 56, height: 56, fontSize: 18 }} aria-hidden>
-            {initials(name)}
-          </span>
+          {/* FR-CUS-010: the photo, or initials when there is none or it fails to load (CLS locator). */}
+          {c.photoDocId ? (
+            <SafeImage
+              className="avatar c360-photo"
+              src={`/api/v1/customers/${c.ref}/documents/${c.photoDocId}/content?inline=1`}
+              alt={t('c360.photoOf', { name })}
+              width={56}
+              height={56}
+              fallback={initials(name)}
+            />
+          ) : (
+            <span className="avatar c360-photo" style={{ width: 56, height: 56, fontSize: 18 }} aria-hidden>
+              {initials(name)}
+            </span>
+          )}
           <div style={{ flex: 1, minWidth: 240 }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
               <h1 style={{ margin: 0, fontSize: 21, fontWeight: 600 }} data-testid="c360-name">
@@ -221,6 +234,11 @@ export default function Customer360Page() {
                   testId="c360-risk-pill"
                   prefix={`${t('fields.riskRating')}: `}
                 />
+              ) : null}
+              {c.kyc.ekyc ? (
+                <span className="pill ok" title={c.kyc.ekyc.reference}>
+                  {t('c360.ekycVerified')}
+                </span>
               ) : null}
               {c.kyc.pep ? (
                 <span className="pill info" data-testid="c360-pep-pill">

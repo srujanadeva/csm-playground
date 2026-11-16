@@ -3,6 +3,7 @@ import { createServer as createHttpServer, type Server } from 'node:http'
 import { createServer as createHttpsServer } from 'node:https'
 import { resolve } from 'node:path'
 import { createApp } from './app.ts'
+import { createMockProviderApp } from './mockProvider/app.ts'
 import { connectDB, disconnectDB, redactUri } from './db.ts'
 import { SERVER_DIR, loadEnvConfig } from './env.ts'
 import { createLogger } from './lib/logger.ts'
@@ -30,17 +31,25 @@ async function main() {
   const keyFile = resolve(SERVER_DIR, config.TLS_KEY_FILE)
   const tls = existsSync(certFile) && existsSync(keyFile)
 
-  const server: Server = tls
-    ? createHttpsServer({ cert: readFileSync(certFile), key: readFileSync(keyFile) }, app)
-    : createHttpServer(app)
+  const serve = (handler: ReturnType<typeof createApp>): Server =>
+    tls
+      ? createHttpsServer({ cert: readFileSync(certFile), key: readFileSync(keyFile) }, handler)
+      : createHttpServer(handler)
+  const server = serve(app)
+  // The simulated e-KYC provider: same process and database, but its own origin.
+  const provider = serve(createMockProviderApp(config))
   if (!tls) logger.warn('TLS certs not found, serving plain HTTP. Run "npm run setup" to create them.')
 
   server.listen(config.PORT, () => {
     logger.info(`API listening on ${tls ? 'https' : 'http'}://localhost:${config.PORT}/api/v1`)
   })
+  provider.listen(config.MOCK_PROVIDER_PORT, () => {
+    logger.info(`mock e-KYC provider on ${config.MOCK_PROVIDER_ORIGIN}`)
+  })
 
   const shutdown = (signal: string) => {
     logger.info(`${signal} received, shutting down`)
+    provider.close()
     server.close(() => {
       void disconnectDB().finally(() => process.exit(0))
     })

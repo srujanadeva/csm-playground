@@ -21,7 +21,7 @@ import { Field, FieldGroup, controlProps } from '../../../components/Field.tsx'
 import { Icon } from '../../../components/Icon.tsx'
 import { useLookups } from '../../../hooks/useLookups.ts'
 import { formatInr, label } from '../../../lib/format.ts'
-import { applyServerErrors, cleanEmpty, type StepProps } from './shared.tsx'
+import { applyServerErrors, cleanEmpty, useReportChanges, type StepProps } from './shared.tsx'
 
 type Form = z.input<typeof personalSchema>
 const SLIDER_MAX = 1_000_000
@@ -48,7 +48,7 @@ const DEFAULTS: Form = {
 }
 
 /** Step 1 of the onboarding wizard. */
-export function PersonalStep({ draft, save, bindSaveDraft }: StepProps) {
+export function PersonalStep({ draft, save, bindSaveDraft, setDirty }: StepProps) {
   const { t, i18n } = useTranslation('customers')
   const lang = i18n.language
   const countries = useLookups('countries')
@@ -69,6 +69,7 @@ export function PersonalStep({ draft, save, bindSaveDraft }: StepProps) {
     resolver: zodResolver(personalSchema),
     defaultValues: { ...DEFAULTS, ...(draft?.personal as Partial<Form>) },
   })
+  useReportChanges(watch, setDirty)
 
   useEffect(() => {
     bindSaveDraft(async () => {

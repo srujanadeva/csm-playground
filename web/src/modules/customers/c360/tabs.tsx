@@ -197,6 +197,28 @@ export function KycTab({ c, onChanged }: { c: CustomerDetail; onChanged: () => v
           testId="c360-fatca"
           value={t(k.fatcaUsPerson ? 'common:yes' : 'common:no')}
         />
+        <Item
+          label={t('onboard.ekyc.title')}
+          testId="c360-ekyc"
+          value={
+            k.ekyc
+              ? t('c360.ekycDetail', { ref: k.ekyc.reference, date: formatDate(k.ekyc.verifiedAt, lang) })
+              : t('onboard.review.ekycNone')
+          }
+        />
+        <Item
+          label={t('onboard.nominee.title')}
+          testId="c360-nominees"
+          value={
+            c.nominees.length
+              ? c.nominees
+                  .map(
+                    (n) => `${n.name} (${t(`onboard.nominee.relationships.${n.relationship}`)}, ${n.share}%)`,
+                  )
+                  .join('; ')
+              : t('onboard.review.noNominee')
+          }
+        />
         {k.pep && k.pepDetails ? (
           <div className="span-all">
             <dt>{t('fields.pepPosition')}</dt>

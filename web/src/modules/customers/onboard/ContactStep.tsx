@@ -1,20 +1,31 @@
 /**
- * Step 2 — Contact & address: mobile (+91), alternate mobile, email, communication
- * preferences (checkboxes), permanent address, and a "mailing same as permanent" checkbox
- * that reveals a second address block when unticked.
+ * Step 2 — Contact & address: mobile (+91, formatted as typed: 98450 12345), alternate mobile,
+ * email, communication preferences (checkboxes), permanent address, a "mailing same as permanent"
+ * checkbox that reveals a second address block when unticked, and nominees (saved as their own
+ * section in the same request).
  */
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import type { z } from 'zod'
-import { COMM_PREFS, contactDraftSchema, contactSchema } from '@csm/shared'
+import { COMM_PREFS, contactBase, contactDraftSchema, nomineesDraftSchema, nomineesSchema } from '@csm/shared'
 import { Field, FieldGroup, controlProps } from '../../../components/Field.tsx'
 import { Icon } from '../../../components/Icon.tsx'
+import { LocatorBadge } from '../../../components/LocatorBadge.tsx'
+import { MaskedTextInput } from '../../../components/inputs/MaskedTextInput.tsx'
 import { AddressFields } from './AddressFields.tsx'
-import { applyServerErrors, cleanEmpty, type StepProps } from './shared.tsx'
+import { NomineeFields } from './NomineeFields.tsx'
+import { applyServerErrors, cleanEmpty, useReportChanges, type StepProps } from './shared.tsx'
+import './onboard.css'
 
-type Form = z.input<typeof contactSchema>
+// Contact and nominees validate together on Next; the mailing rule is contactSchema's, repeated here.
+const stepSchema = contactBase
+  .extend({ nominee: nomineesSchema })
+  .refine((d) => d.mailingSameAsPermanent || !!d.mailing, { error: 'required', path: ['mailing', 'line1'] })
+
+export type ContactForm = z.input<typeof stepSchema>
+type Form = ContactForm
 
 const EMPTY_ADDRESS = {
   line1: '',
@@ -27,12 +38,13 @@ const EMPTY_ADDRESS = {
 }
 
 /** Step 2 of the onboarding wizard. */
-export function ContactStep({ draft, save, bindSaveDraft, back }: StepProps) {
+export function ContactStep({ draft, save, bindSaveDraft, setDirty, back }: StepProps) {
   const { t } = useTranslation('customers')
   const saved = (draft?.contact ?? {}) as Partial<Form>
   const {
     register,
     handleSubmit,
+    control,
     watch,
     getValues,
     setError,
@@ -40,7 +52,7 @@ export function ContactStep({ draft, save, bindSaveDraft, back }: StepProps) {
     unregister,
     formState: { errors, isSubmitting },
   } = useForm<Form>({
-    resolver: zodResolver(contactSchema),
+    resolver: zodResolver(stepSchema),
     defaultValues: {
       mobile: '',
       altMobile: '',
@@ -50,8 +62,10 @@ export function ContactStep({ draft, save, bindSaveDraft, back }: StepProps) {
       ...saved,
       permanent: { ...EMPTY_ADDRESS, ...saved.permanent },
       ...(saved.mailing ? { mailing: { ...EMPTY_ADDRESS, ...saved.mailing } } : {}),
+      nominee: (draft?.nominees as Form['nominee'] | undefined) ?? { addNominee: false, nominees: [] },
     },
   })
+  useReportChanges(watch, setDirty)
   const same = watch('mailingSameAsPermanent')
 
   useEffect(() => {
@@ -61,14 +75,22 @@ export function ContactStep({ draft, save, bindSaveDraft, back }: StepProps) {
   useEffect(() => {
     bindSaveDraft(async () => {
       clearErrors()
-      const values = cleanEmpty(getValues())
-      const parsed = contactDraftSchema.safeParse(values)
-      if (!parsed.success) {
-        parsed.error.issues.forEach((i) => setError(i.path.join('.') as keyof Form, { message: i.message }))
+      const { nominee, ...contact } = getValues()
+      const parsed = contactDraftSchema.safeParse(cleanEmpty(contact))
+      const nominees = nomineesDraftSchema.safeParse({
+        addNominee: nominee.addNominee,
+        // cleanEmpty leaves arrays alone, so blank nominee fields are removed one row at a time.
+        nominees: nominee.addNominee ? nominee.nominees.map((n) => cleanEmpty(n)) : [],
+      })
+      if (!parsed.success || !nominees.success) {
+        parsed.error?.issues.forEach((i) => setError(i.path.join('.') as keyof Form, { message: i.message }))
+        nominees.error?.issues.forEach((i) =>
+          setError(['nominee', ...i.path].join('.') as keyof Form, { message: i.message }),
+        )
         throw new Error('invalid')
       }
       try {
-        await save('contact', parsed.data, 'draft')
+        await save('contact', parsed.data, 'draft', { nominees: nominees.data })
       } catch (err) {
         applyServerErrors(err, 'contact', setError)
         throw err
@@ -76,9 +98,14 @@ export function ContactStep({ draft, save, bindSaveDraft, back }: StepProps) {
     })
   }, [bindSaveDraft, getValues, save, setError, clearErrors])
 
-  const onNext = handleSubmit(async (values) => {
+  const onNext = handleSubmit(async ({ nominee, ...values }) => {
     try {
-      await save('contact', values as unknown as Record<string, unknown>, 'next')
+      await save('contact', values as unknown as Record<string, unknown>, 'next', {
+        nominees: (nominee.addNominee ? nominee : { addNominee: false, nominees: [] }) as Record<
+          string,
+          unknown
+        >,
+      })
     } catch (err) {
       applyServerErrors(err, 'contact', setError)
     }
@@ -96,33 +123,57 @@ export function ContactStep({ draft, save, bindSaveDraft, back }: StepProps) {
         <div className="body grid g4">
           <Field
             id={id('mobile')}
-            label={t('fields.mobile')}
+            label={
+              <>
+                {t('fields.mobile')} <LocatorBadge style="NAME" />
+              </>
+            }
             required
             error={e.mobile?.message}
             help={t('onboard.contact.mobileHelp')}
           >
             <div className={`affix ${e.mobile ? 'invalid' : ''}`}>
               <span>+91</span>
-              <input
-                {...register('mobile')}
-                {...controlProps(id('mobile'), e.mobile?.message)}
-                className="in mono"
-                inputMode="numeric"
-                maxLength={10}
-                autoComplete="off"
+              <Controller
+                control={control}
+                name="mobile"
+                render={({ field }) => (
+                  <MaskedTextInput
+                    kind="mobile"
+                    value={String(field.value ?? '')}
+                    onChange={field.onChange}
+                    invalid={!!e.mobile}
+                    inputProps={{
+                      ...controlProps(id('mobile'), e.mobile?.message),
+                      name: 'mobile',
+                      onBlur: field.onBlur,
+                      className: 'mono',
+                    }}
+                  />
+                )}
               />
             </div>
           </Field>
           <Field id={id('alt-mobile')} label={t('fields.altMobile')} error={e.altMobile?.message}>
             <div className={`affix ${e.altMobile ? 'invalid' : ''}`}>
               <span>+91</span>
-              <input
-                {...register('altMobile')}
-                {...controlProps(id('alt-mobile'), e.altMobile?.message)}
-                className="in mono"
-                inputMode="numeric"
-                maxLength={10}
-                autoComplete="off"
+              <Controller
+                control={control}
+                name="altMobile"
+                render={({ field }) => (
+                  <MaskedTextInput
+                    kind="mobile"
+                    value={String(field.value ?? '')}
+                    onChange={field.onChange}
+                    invalid={!!e.altMobile}
+                    inputProps={{
+                      ...controlProps(id('alt-mobile'), e.altMobile?.message),
+                      name: 'altMobile',
+                      onBlur: field.onBlur,
+                      className: 'mono',
+                    }}
+                  />
+                )}
               />
             </div>
           </Field>
@@ -186,6 +237,17 @@ export function ContactStep({ draft, save, bindSaveDraft, back }: StepProps) {
               <AddressFields prefix="mailing" register={register} errors={errors} />
             </div>
           ) : null}
+        </div>
+      </section>
+
+      <section className="panel nominees" style={{ marginTop: 16 }}>
+        <header>
+          <h2>{t('onboard.nominee.title')}</h2>
+          <LocatorBadge style="XP" />
+          <span className="hint">{t('onboard.nominee.hint')}</span>
+        </header>
+        <div className="body">
+          <NomineeFields control={control} register={register} watch={watch} errors={errors} />
         </div>
       </section>
 

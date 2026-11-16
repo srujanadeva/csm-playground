@@ -2,8 +2,13 @@
   "loading": "Loading…",
   "dismiss": "Dismiss",
   "toTop": "Back to top",
-  "stepper": { "dec": "Decrease {{label}}", "inc": "Increase {{label}}" },
-  "otp": { "digit": "Digit {{n}} of {{total}}" },
+  "stepper": {
+    "dec": "Decrease {{label}}",
+    "inc": "Increase {{label}}"
+  },
+  "otp": {
+    "digit": "Digit {{n}} of {{total}}"
+  },
   "colour": {
     "native": "{{label}}: colour picker",
     "swatches": "Preset colours",
@@ -19,7 +24,12 @@
     "numbers": "Numbered list",
     "count": "{{n}} / {{max}} characters"
   },
-  "multi": { "none": "Any", "count": "{{n}} selected", "all": "Select all", "clear": "Clear" },
+  "multi": {
+    "none": "Any",
+    "count": "{{n}} selected",
+    "all": "Select all",
+    "clear": "Clear"
+  },
   "chips": {
     "remove": "Remove {{item}}",
     "placeholder": "Type to add…",
@@ -30,8 +40,13 @@
     "n_one": "{{count}} star",
     "n_other": "{{count}} stars"
   },
-  "tree": { "expand": "Expand {{item}}", "collapse": "Collapse {{item}}" },
-  "infotip": { "about": "About {{topic}}" },
+  "tree": {
+    "expand": "Expand {{item}}",
+    "collapse": "Collapse {{item}}"
+  },
+  "infotip": {
+    "about": "About {{topic}}"
+  },
   "palette": {
     "title": "Command palette",
     "placeholder": "Go to a screen, or type a CIF…",
@@ -39,7 +54,9 @@
     "noResults": "No matching commands",
     "keys": "↑↓ to move · Enter to run · Esc to close"
   },
-  "split": { "value": "Left panel {{n}}%" },
+  "split": {
+    "value": "Left panel {{n}}%"
+  },
   "video": {
     "play": "Play",
     "pause": "Pause",
@@ -89,5 +106,11 @@
     "DUP": "duplicate ids or text (scope by parent)",
     "XP": "structure only (XPath)",
     "CTX": "inside an iframe or shadow root"
+  },
+  "unsaved": {
+    "title": "Leave without saving?",
+    "message": "You have changes that haven't been saved. If you leave now, they will be lost.",
+    "stay": "Stay on this page",
+    "discard": "Discard changes"
   }
 }
