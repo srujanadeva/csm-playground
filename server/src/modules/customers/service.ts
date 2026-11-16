@@ -88,7 +88,7 @@ function refFilter(ref: string): Record<string, string> {
 }
 
 /** Loads a customer in the caller's scope, or throws 404. */
-async function findScoped(ref: string, req: Request, withSecrets = false) {
+export async function findScoped(ref: string, req: Request, withSecrets = false) {
   const query = CustomerModel.findOne({ ...refFilter(ref), ...branchScope(req) })
   if (withSecrets) query.select('+kyc.idNumberEnc +kyc.idNumberIndex')
   const doc = await query

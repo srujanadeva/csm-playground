@@ -23,6 +23,7 @@ import { Skeleton } from '../../components/data/Skeleton.tsx'
 import { EmptyState, Loading, Pagination } from '../../components/Widgets.tsx'
 import { formatDate, formatNumber } from '../../lib/format.ts'
 import { useLookupLabel } from '../../hooks/useLookups.ts'
+import { CustomerHoverCard, StaffHoverCard } from '../customers/HoverCards.tsx'
 
 function Tile({
   id,
@@ -121,13 +122,21 @@ function ApprovalsPanel() {
                   <tr key={a.id} data-row-id={a.id} data-testid="approvals-row">
                     <td>{t(`approvals.type.${a.type}`)}</td>
                     <td>
-                      <Link to={`/customers/${a.entityId}`} className="mono" data-testid="approvals-row-cif">
-                        {a.entityId}
-                      </Link>{' '}
+                      <CustomerHoverCard customerRef={a.entityId}>
+                        <Link
+                          to={`/customers/${a.entityId}`}
+                          className="mono"
+                          data-testid="approvals-row-cif"
+                        >
+                          {a.entityId}
+                        </Link>
+                      </CustomerHoverCard>{' '}
                       {a.customerName}
                     </td>
                     <td>{a.reason ? reasonLabel(a.reason) : '—'}</td>
-                    <td className="mono">{a.requestedBy}</td>
+                    <td className="mono">
+                      <StaffHoverCard staffId={a.requestedBy}>{a.requestedBy}</StaffHoverCard>
+                    </td>
                     <td className="num">{formatDate(a.createdAt, i18n.language)}</td>
                     <td>
                       <div className="actions" style={{ justifyContent: 'flex-end' }}>

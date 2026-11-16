@@ -1,6 +1,8 @@
 // <csm-bureau-score state="ready" score="742" band="Good" updated="2026-11-02">: a credit bureau
 // widget in an open shadow root. It contains a nested <csm-gauge> (a second shadow root) and two
 // slots: a named "footer" slot and the default slot, so light-DOM content is projected inside.
+// Text comes from attributes (heading, band-text, loading-text, error-text, none-text, updated-text "Updated {date}")
+// so the host page can translate it; the English defaults are only a fallback.
 import { define, sheet } from './sheet.ts'
 import './CsmGauge.ts'
 
@@ -22,7 +24,18 @@ const CSS = sheet(`
 
 /** States: loading | ready | error | none (no bureau record). */
 export class CsmBureauScore extends HTMLElement {
-  static observedAttributes = ['state', 'score', 'band', 'updated', 'heading']
+  static observedAttributes = [
+    'state',
+    'score',
+    'band',
+    'updated',
+    'heading',
+    'loading-text',
+    'error-text',
+    'none-text',
+    'updated-text',
+    'band-text',
+  ]
   #root: ShadowRoot
 
   constructor() {
@@ -55,11 +68,13 @@ export class CsmBureauScore extends HTMLElement {
     const bandEl = this.#root.querySelector<HTMLElement>('.band')!
     const content = this.#root.querySelector('.content')!
     if (state === 'ready') {
-      bandEl.textContent = band
+      // `band` is the English key (it drives the colour); `band-text` is what's shown.
+      bandEl.textContent = this.getAttribute('band-text') ?? band
       bandEl.dataset.band = band
       content.innerHTML = `<div class="body"><csm-gauge min="300" max="900"></csm-gauge><div class="meta"></div></div>`
       content.querySelector('csm-gauge')!.setAttribute('value', score)
-      content.querySelector('.meta')!.textContent = updated ? `Updated ${updated}` : ''
+      const updatedText = this.getAttribute('updated-text') ?? 'Updated {date}'
+      content.querySelector('.meta')!.textContent = updated ? updatedText.replace('{date}', updated) : ''
     } else {
       bandEl.remove()
       const msg = document.createElement('div')
@@ -67,10 +82,10 @@ export class CsmBureauScore extends HTMLElement {
       msg.setAttribute('role', state === 'error' ? 'alert' : 'status')
       msg.textContent =
         state === 'error'
-          ? 'Bureau unavailable'
+          ? (this.getAttribute('error-text') ?? 'Bureau unavailable')
           : state === 'none'
-            ? 'No bureau record'
-            : 'Fetching bureau score…'
+            ? (this.getAttribute('none-text') ?? 'No bureau record')
+            : (this.getAttribute('loading-text') ?? 'Fetching bureau score…')
       content.append(msg)
     }
   }

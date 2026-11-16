@@ -2,6 +2,8 @@
  * Customer search (/customers). Filters, sort, page and page size live in the URL, so any
  * result can be linked to or opened directly by a test. Paging and sorting happen on the
  * server; the table shows a "Searching…" state (data-state) while a page loads.
+ * Rows: a click selects (data-selected), a double-click or Enter opens (FR-CUS-020), and
+ * right-click / Shift+F10 opens the row menu (FR-CUS-021). Rows are found by data-row-id.
  */
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
@@ -22,6 +24,11 @@ import {
   type MenuItem,
 } from '../../../components/Widgets.tsx'
 import { formatDate, formatNumber } from '../../../lib/format.ts'
+import { LocatorBadge } from '../../../components/LocatorBadge.tsx'
+import { ContextMenu, useContextMenu } from '../../../components/overlays/ContextMenu.tsx'
+import { useClipboard } from '../../../hooks/useClipboard.ts'
+import { useToast } from '../../../components/Toast.tsx'
+import { CustomerHoverCard } from '../HoverCards.tsx'
 
 const FILTERS = ['cif', 'name', 'mobile', 'idNumber', 'status', 'kyc', 'from', 'to'] as const
 type Filters = Record<(typeof FILTERS)[number], string>
@@ -35,6 +42,10 @@ export default function CustomerSearchPage() {
   const me = useMe()
   const [params, setParams] = useSearchParams()
   const [collapsed, setCollapsed] = useState(false)
+  const [selected, setSelected] = useState<string | null>(null)
+  const rowMenu = useContextMenu<CustomerListItem>()
+  const clipboard = useClipboard()
+  const toast = useToast()
   const canExport = useCan('customers.search', 'export')
   const canOnboard = useCan('customers.onboard', 'create')
   const canRequest = useCan('serviceRequests.new', 'create')
@@ -121,6 +132,31 @@ export default function CustomerSearchPage() {
             ? t('search.menu.onlyActive')
             : undefined,
         onSelect: () => navigate(`/customers/${c.ref}?action=block`),
+      })
+    }
+    return items
+  }
+
+  const openRow = (c: CustomerListItem) =>
+    navigate(c.status === 'draft' ? `/customers/new?draft=${c.ref}` : `/customers/${c.ref}`)
+
+  /** The right-click menu: the ⋮ menu's items plus Copy CIF. */
+  const contextItems = (c: CustomerListItem): MenuItem[] => {
+    const items = menuFor(c)
+    if (c.cif) {
+      items.splice(1, 0, {
+        key: 'copy',
+        label: t('search.menu.copyCif'),
+        icon: 'file',
+        onSelect: () =>
+          void clipboard
+            .copy(c.cif!)
+            .then((ok) =>
+              toast(
+                ok ? t('search.copied', { cif: c.cif }) : t('search.copyBlocked'),
+                ok ? 'success' : 'error',
+              ),
+            ),
       })
     }
     return items
@@ -277,6 +313,8 @@ export default function CustomerSearchPage() {
           <b style={{ color: 'var(--ink)' }} data-testid="search-total">
             {data ? t('search.total', { count: data.total, formatted: formatNumber(data.total, lang) }) : '…'}
           </b>
+          <LocatorBadge style="DATA" />
+          <LocatorBadge style="TXT" />
           {isFetching ? (
             <span className="saved" data-testid="search-loading">
               <span className="spin" /> {t('search.searching')}
@@ -362,15 +400,26 @@ export default function CustomerSearchPage() {
               {(data?.items ?? []).map((c) => (
                 <tr
                   key={c.ref}
-                  className="clickable"
+                  className={`clickable ${selected === c.ref ? 'selected' : ''}`}
                   data-row-id={c.ref}
+                  data-selected={selected === c.ref}
                   data-testid="search-row"
-                  onClick={() =>
-                    navigate(c.status === 'draft' ? `/customers/new?draft=${c.ref}` : `/customers/${c.ref}`)
-                  }
+                  tabIndex={0}
+                  aria-selected={selected === c.ref}
+                  onClick={() => setSelected(c.ref)}
+                  onDoubleClick={() => openRow(c)}
+                  onContextMenu={(e) => {
+                    setSelected(c.ref)
+                    rowMenu.open(e, c)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return
+                    if (e.key === 'Enter') openRow(c)
+                    else rowMenu.openFromKeyboard(e, c)
+                  }}
                 >
                   <td className="mono" data-testid="search-row-ref">
-                    {c.cif ?? c.draftNo}
+                    <CustomerHoverCard customerRef={c.ref}>{c.cif ?? c.draftNo}</CustomerHoverCard>
                   </td>
                   <td data-testid="search-row-name">{c.name}</td>
                   <td className="mono" data-testid="search-row-mobile">
@@ -415,6 +464,12 @@ export default function CustomerSearchPage() {
             </tbody>
           </table>
         )}
+        <ContextMenu
+          state={rowMenu.state}
+          items={contextItems}
+          onClose={rowMenu.close}
+          label={t('search.columns.actions')}
+        />
         {data && data.total > 0 ? (
           <Pagination
             testId="search-pagination"

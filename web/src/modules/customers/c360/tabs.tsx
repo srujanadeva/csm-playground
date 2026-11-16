@@ -1,6 +1,7 @@
 /**
  * Customer 360 tab panels. Each panel fetches its own data the first time it is shown;
- * the Service requests and Audit log tabs load more as you scroll (cursor pagination).
+ * the Service requests and Audit log tabs load more as you scroll (cursor pagination), show
+ * placeholders on first load and a back-to-top button. KYC, Risk and SLA carry ⓘ explanations.
  */
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -12,12 +13,16 @@ import { useCan } from '../../../app/auth.tsx'
 import { PriorityBadge, SlaTimer, StatusPill } from '../../../components/Badges.tsx'
 import { Icon } from '../../../components/Icon.tsx'
 import { useToast } from '../../../components/Toast.tsx'
-import { EmptyState, InfiniteSentinel, Loading } from '../../../components/Widgets.tsx'
+import { EmptyState, InfiniteSentinel } from '../../../components/Widgets.tsx'
+import { LocatorBadge } from '../../../components/LocatorBadge.tsx'
+import { BackToTop } from '../../../components/data/BackToTop.tsx'
+import { Skeleton } from '../../../components/data/Skeleton.tsx'
+import { InfoTip } from '../../../components/overlays/InfoTip.tsx'
 import { useLookupLabel } from '../../../hooks/useLookups.ts'
 import { formatDate, formatDateTime, formatInr } from '../../../lib/format.ts'
 import { DocumentsPanel } from '../onboard/shared.tsx'
 
-function Item({ label, value, testId }: { label: string; value: ReactNode; testId: string }) {
+function Item({ label, value, testId }: { label: ReactNode; value: ReactNode; testId: string }) {
   return (
     <div>
       <dt>{label}</dt>
@@ -148,6 +153,11 @@ export function KycTab({ c, onChanged }: { c: CustomerDetail; onChanged: () => v
   const k = c.kyc
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h3 className="tab-heading">
+        {t('c360.tips.kycTitle')}
+        <InfoTip topic={t('c360.tips.kycTitle')}>{t('c360.tips.kyc')}</InfoTip>
+        <LocatorBadge style="ARIA" />
+      </h3>
       <dl className="kv" data-testid="c360-kyc">
         <Item
           label={t('fields.idType')}
@@ -187,7 +197,12 @@ export function KycTab({ c, onChanged }: { c: CustomerDetail; onChanged: () => v
           value={k.status ? <StatusPill value={k.status} /> : null}
         />
         <Item
-          label={t('fields.riskRating')}
+          label={
+            <>
+              {t('fields.riskRating')}
+              <InfoTip topic={t('fields.riskRating')}>{t('c360.tips.risk')}</InfoTip>
+            </>
+          }
           testId="c360-risk"
           value={k.riskRating ? <StatusPill value={k.riskRating} /> : null}
         />
@@ -256,11 +271,15 @@ export function RequestsTab({ c }: { c: CustomerDetail }) {
     initialPageParam: '',
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   })
-  if (q.isLoading) return <Loading testId="c360-requests-loading" />
+  if (q.isLoading) return <Skeleton kind="table" rows={4} testId="c360-requests-loading" />
   const items = q.data?.pages.flatMap((p) => p.items) ?? []
   if (!items.length) return <EmptyState testId="c360-requests-empty" title={t('c360.noRequests')} />
   return (
     <div className="tw">
+      <h3 className="tab-heading">
+        {t('c360.tips.slaTitle')}
+        <InfoTip topic={t('c360.tips.slaTitle')}>{t('c360.tips.sla')}</InfoTip>
+      </h3>
       <table data-testid="c360-requests">
         <tbody>
           {items.map((r) => (
@@ -290,6 +309,7 @@ export function RequestsTab({ c }: { c: CustomerDetail }) {
         loading={q.isFetchingNextPage}
         onVisible={() => void q.fetchNextPage()}
       />
+      <BackToTop />
     </div>
   )
 }
@@ -306,7 +326,7 @@ export function AuditTab({ c }: { c: CustomerDetail }) {
     initialPageParam: '',
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   })
-  if (q.isLoading) return <Loading testId="c360-audit-loading" />
+  if (q.isLoading) return <Skeleton kind="lines" rows={6} testId="c360-audit-loading" />
   const items = q.data?.pages.flatMap((p) => p.items) ?? []
   if (!items.length) return <EmptyState testId="c360-audit-empty" title={t('c360.noAudit')} />
   const show = (v: unknown) =>
@@ -336,6 +356,7 @@ export function AuditTab({ c }: { c: CustomerDetail }) {
         loading={q.isFetchingNextPage}
         onVisible={() => void q.fetchNextPage()}
       />
+      <BackToTop />
     </div>
   )
 }

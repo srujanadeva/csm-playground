@@ -201,6 +201,42 @@
         "To see the fallback for a broken image, block the photo's request in the browser's developer tools and reload."
       ],
       "expected": "The picture is a .c360-photo element; its data-state is loaded, loading or broken."
+    },
+    "searchShortcuts": {
+      "title": "Work faster in Customer search",
+      "summary": "Select, open and act on search results with the mouse or keyboard, and preview a customer without leaving the list.",
+      "steps": [
+        "Go to Customers → Customer search and click Search.",
+        "Click a row once: it is selected (highlighted) but stays on the list. Double-click it, or press Enter on a selected row, to open Customer 360.",
+        "Right-click a row (or press Shift+F10 on it): choose Open, Copy CIF, New service request or Request block. Items you aren't allowed to use stay visible but greyed out with the reason.",
+        "Rest the pointer on a CIF for a moment: a card shows the customer's name, status, KYC, risk, branch and masked mobile. The same works on the Request board list view and the approval queue on the Dashboard, and on staff IDs there."
+      ],
+      "expected": "Only a double-click or Enter opens the customer; Copy CIF says \"Copied\" (or explains if the browser blocked it)."
+    },
+    "customer360Tools": {
+      "title": "Use the Customer 360 tools",
+      "summary": "Create a request for a category straight from Customer 360, check an account number the customer reads out, and act on offers.",
+      "steps": [
+        "Open an active customer from Customer search.",
+        "Click Actions, then Create request ▸ and pick a category. New request opens with the customer and category filled in.",
+        "On Overview, under Accounts, click Copy next to an account number. Then type the number into Confirm account number: it says whether it matches and that it was typed. Paste it instead: it is accepted but marked as pasted.",
+        "If an offer banner shows above the customer, click Not now: it stays hidden for this customer for 30 days in this browser.",
+        "Hover or click the ⓘ next to KYC and Risk rating (KYC tab) and SLA (Service requests tab) to read how they work.",
+        "On a long Activity log, scroll down and use the back-to-top button."
+      ],
+      "expected": "New request opens pre-filled; the confirmation reports match and typed or pasted; the offer stays hidden after Not now."
+    },
+    "creditStanding": {
+      "title": "Check a customer's credit standing",
+      "summary": "Customer 360 loads the customer's bureau score a little after the page; supervisors also see the full bureau report.",
+      "steps": [
+        "Open an active customer. On Overview, the Credit standing panel first says it is fetching the score, then shows the score on a gauge with its band and date.",
+        "Some customers have no bureau record: the panel says so.",
+        "To practise the failure case, add ?bureauFail=1 to the address: the panel says Bureau unavailable; click Retry.",
+        "Signed in as a supervisor (View PII), wait a little longer: the full bureau report appears in a frame below the panel.",
+        "Add ?bureauDelay=0 to remove the waits."
+      ],
+      "expected": "Score 300–900 with band Excellent (750+), Good (700–749), Fair (650–699) or Poor; the same customer always shows the same score."
     }
   },
   "elements": {
@@ -299,6 +335,50 @@
     "customerPhoto": {
       "name": "Customer photo with initials fallback",
       "hint": ".c360-photo; img inside when loaded, initials when broken (data-state)."
+    },
+    "rowDoubleClick": {
+      "name": "Double-click row",
+      "hint": "tr[data-row-id='CIF-000124']: dblclick() opens; a single click sets data-selected=\"true\"."
+    },
+    "rowContextMenu": {
+      "name": "Right-click row menu",
+      "hint": "Right-click the row, then find items by text: getByRole('menuitem', { name: 'Copy CIF' })."
+    },
+    "hoverPreview": {
+      "name": "Hover preview card",
+      "hint": "Hover [title='Preview CIF-000124'] (or [title='Preview sup001']) for 0.4 s; the card is role=tooltip."
+    },
+    "actionsSubmenu": {
+      "name": "Actions menu with submenu",
+      "hint": "getByRole('button', { name: 'Actions' }), then menuitem 'Create request', then the category menuitem."
+    },
+    "accountConfirm": {
+      "name": "Copy and confirm account number",
+      "hint": "#copy-acct-<number>, #confirm-account-no, #confirm-account-result[data-match][data-source='pasted']."
+    },
+    "offerBanner": {
+      "name": "Offer banner",
+      "hint": ".promo-banner and its .btn (Not now); data-offer names the offer."
+    },
+    "sectionInfoTips": {
+      "name": "Section ⓘ tips",
+      "hint": "getByRole('button', { name: 'About KYC' }); the explanation appears while hovered or after a click."
+    },
+    "backToTop": {
+      "name": "Back-to-top button",
+      "hint": "button[title='Back to top'], shown after scrolling a screen down."
+    },
+    "bureauWidget": {
+      "name": "Bureau score web component",
+      "hint": "csm-bureau-score has an open shadow root with a nested csm-gauge (two roots to pierce); Retry is slotted from the light DOM."
+    },
+    "bureauDelayed": {
+      "name": "Late-loading bureau panel",
+      "hint": "[data-qa='bureau-panel'][data-state='ready'|'none'|'error']: wait for the state, not a fixed time."
+    },
+    "bureauReport": {
+      "name": "Late-loading report iframe",
+      "hint": "iframe[title='Full bureau report'] is added a few seconds after the score; wait for it, then switch into it."
     }
   }
 }

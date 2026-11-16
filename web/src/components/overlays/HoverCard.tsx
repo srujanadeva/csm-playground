@@ -10,10 +10,12 @@ interface Props {
   /** ms before opening; hover must rest this long, so passing over a table doesn't flash cards. */
   openDelay?: number
   className?: string
+  /** Tooltip text on the trigger: often its only hook (plan §3, TTL). */
+  title?: string
 }
 
 /** Trigger + card. The trigger only carries a `title`, mirroring a legacy tooltip. */
-export function HoverCard({ children, render, openDelay = 400, className }: Props) {
+export function HoverCard({ children, render, openDelay = 400, className, title }: Props) {
   const [open, setOpen] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const id = useId()
@@ -36,7 +38,7 @@ export function HoverCard({ children, render, openDelay = 400, className }: Prop
       onBlur={hide}
       onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
     >
-      <span className="hovercard-trigger" tabIndex={0} aria-describedby={open ? id : undefined}>
+      <span className="hovercard-trigger" tabIndex={0} title={title} aria-describedby={open ? id : undefined}>
         {children}
       </span>
       {open ? (

@@ -1,5 +1,5 @@
 /**
- * New service request (/service-requests/new?cif=CIF-000124). Customer typeahead, channel
+ * New service request (/service-requests/new?cif=CIF-000124&category=accounts). Customer typeahead, channel
  * radios, dependent category → sub-category dropdowns, priority radios that set the SLA
  * due date/time (until the user changes it), subject, description with a counter, queued
  * attachments uploaded after creation, assignee, and notification checkboxes.
@@ -91,7 +91,8 @@ export default function NewRequestPage() {
     defaultValues: {
       customerCif: '',
       channel: 'branch',
-      category: '',
+      // ?category= from Customer 360's Actions ▸ Create request (FR-CUS-022).
+      category: params.get('category') ?? '',
       subCategory: '',
       priority: 'medium',
       subject: '',

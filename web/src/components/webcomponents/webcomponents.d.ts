@@ -13,6 +13,11 @@ declare module 'react' {
         band?: string
         updated?: string
         heading?: string
+        'loading-text'?: string
+        'error-text'?: string
+        'none-text'?: string
+        'updated-text'?: string
+        'band-text'?: string
       }>
       'csm-pin-pad': El<{ length?: string | number }>
     }

@@ -5,6 +5,7 @@
 import type { Capability, EffectivePermissions, NavGroup } from './permissions.ts'
 import type { Denominations } from './teller.ts'
 import type { EkycOnCustomer } from './schemas/kyc.ts'
+import type { BureauBand } from './bureau.ts'
 import type {
   AccountStatus,
   AccountType,
@@ -139,6 +140,44 @@ export interface NomineeDTO {
   dob: string
   share: number
   guardianName?: string
+}
+
+/** Credit standing on Customer 360 (simulated bureau, fixed per customer). */
+export type BureauScoreDTO =
+  { status: 'ready'; score: number; band: BureauBand; asOf: string } | { status: 'none' }
+
+/** At most one cross-sell offer; the web app words it from `key`. */
+export interface OfferDTO {
+  key: string
+  /** Values for the offer text, e.g. a pre-approved limit in rupees. */
+  params: Record<string, string | number>
+}
+
+/** What a hover card on a CIF shows. */
+export interface CustomerCardDTO {
+  ref: string
+  name: string
+  status: CustomerStatus
+  kycStatus: KycStatus
+  riskRating: RiskRating | null
+  branchCode: BranchCode
+  mobile: string
+}
+
+/** What a hover card on a staff ID shows. */
+export interface StaffCardDTO {
+  staffId: string
+  name: string
+  roleKey: string
+  branchCode: BranchCode
+}
+
+/** An account on Customer 360. */
+export interface CustomerAccountDTO {
+  accountNo: string
+  type: AccountType
+  status: AccountStatus
+  openedAt: string
 }
 
 /** Draft data in the wizard's own form shape, so a saved draft can be resumed exactly. */

@@ -152,4 +152,39 @@ export const FLOWS: GuideFlow[] = [
     elements: [{ key: 'customerPhoto', locator: 'CLS' }],
     phase: 2,
   },
+  {
+    id: 'searchShortcuts',
+    personas: ['csr', 'supervisor'],
+    route: '/customers',
+    elements: [
+      { key: 'rowDoubleClick', locator: 'DATA' },
+      { key: 'rowContextMenu', locator: 'TXT' },
+      { key: 'hoverPreview', locator: 'TTL' },
+    ],
+    phase: 3,
+  },
+  {
+    id: 'customer360Tools',
+    personas: ['csr', 'supervisor'],
+    route: '/customers',
+    elements: [
+      { key: 'actionsSubmenu', locator: 'ARIA' },
+      { key: 'accountConfirm', locator: 'ID' },
+      { key: 'offerBanner', locator: 'CLS' },
+      { key: 'sectionInfoTips', locator: 'ARIA' },
+      { key: 'backToTop', locator: 'TTL' },
+    ],
+    phase: 3,
+  },
+  {
+    id: 'creditStanding',
+    personas: ['csr', 'supervisor'],
+    route: '/customers',
+    elements: [
+      { key: 'bureauWidget', locator: 'CTX' },
+      { key: 'bureauDelayed', locator: 'DATA' },
+      { key: 'bureauReport', locator: 'CTX' },
+    ],
+    phase: 3,
+  },
 ]

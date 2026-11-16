@@ -23,6 +23,7 @@ import { validate } from '../../lib/validate.ts'
 import { forbidden } from '../../lib/errors.ts'
 import { can } from '@csm/shared'
 import * as customers from './service.ts'
+import * as insights from './insights.ts'
 
 const ref = (p: unknown) => String((p as { ref: string }).ref)
 
@@ -91,6 +92,32 @@ export function customerRoutes(config: Config): Router {
     res.json(
       await customers.submit(req, ref(req.params), req.valid!.body as z.infer<typeof submitSchema>, config),
     )
+  })
+
+  // GET /customers/:ref/bureau (?simulate=unavailable outside production)
+  router.get('/:ref/bureau', view360, async (req, res) => {
+    const fail = !config.isProd && req.query.simulate === 'unavailable'
+    res.json(await insights.bureauScore(req, ref(req.params), fail))
+  })
+
+  // GET /customers/:ref/bureau/report: an HTML page, framed by Customer 360
+  router.get('/:ref/bureau/report', requireCapability('customers.360', 'viewPII'), async (req, res) => {
+    await insights.sendBureauReport(req, res, ref(req.params))
+  })
+
+  // GET /customers/:ref/offers
+  router.get('/:ref/offers', view360, async (req, res) => {
+    res.json(await insights.offer(req, ref(req.params)))
+  })
+
+  // GET /customers/:ref/accounts
+  router.get('/:ref/accounts', view360, async (req, res) => {
+    res.json(await insights.accounts(req, ref(req.params)))
+  })
+
+  // GET /customers/:ref/card: hover previews on search, the board and approvals; always masked
+  router.get('/:ref/card', requireAuth(), async (req, res) => {
+    res.json(await insights.card(req, ref(req.params)))
   })
 
   router.get('/:ref', view360, async (req, res) => {

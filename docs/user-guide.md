@@ -224,6 +224,80 @@ Customer 360 shows the customer's photo, or their initials when there is none or
 | ------------------------------------- | ------------- | ----------------------------------------------------------------------- |
 | Customer photo with initials fallback | `CLS`         | .c360-photo; img inside when loaded, initials when broken (data-state). |
 
+### Work faster in Customer search
+
+Select, open and act on search results with the mouse or keyboard, and preview a customer without leaving the list.
+
+- **Who:** Customer service rep, Supervisor
+- **Start at:** `/customers`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. Go to Customers → Customer search and click Search.
+2. Click a row once: it is selected (highlighted) but stays on the list. Double-click it, or press Enter on a selected row, to open Customer 360.
+3. Right-click a row (or press Shift+F10 on it): choose Open, Copy CIF, New service request or Request block. Items you aren't allowed to use stay visible but greyed out with the reason.
+4. Rest the pointer on a CIF for a moment: a card shows the customer's name, status, KYC, risk, branch and masked mobile. The same works on the Request board list view and the approval queue on the Dashboard, and on staff IDs there.
+
+**What you should see:** Only a double-click or Enter opens the customer; Copy CIF says "Copied" (or explains if the browser blocked it).
+
+| Element              | Locator style | How to find it                                                                                        |
+| -------------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
+| Double-click row     | `DATA`        | tr[data-row-id='CIF-000124']: dblclick() opens; a single click sets data-selected="true".             |
+| Right-click row menu | `TXT`         | Right-click the row, then find items by text: getByRole('menuitem', { name: 'Copy CIF' }).            |
+| Hover preview card   | `TTL`         | Hover [title='Preview CIF-000124'] (or [title='Preview sup001']) for 0.4 s; the card is role=tooltip. |
+
+### Use the Customer 360 tools
+
+Create a request for a category straight from Customer 360, check an account number the customer reads out, and act on offers.
+
+- **Who:** Customer service rep, Supervisor
+- **Start at:** `/customers`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. Open an active customer from Customer search.
+2. Click Actions, then Create request ▸ and pick a category. New request opens with the customer and category filled in.
+3. On Overview, under Accounts, click Copy next to an account number. Then type the number into Confirm account number: it says whether it matches and that it was typed. Paste it instead: it is accepted but marked as pasted.
+4. If an offer banner shows above the customer, click Not now: it stays hidden for this customer for 30 days in this browser.
+5. Hover or click the ⓘ next to KYC and Risk rating (KYC tab) and SLA (Service requests tab) to read how they work.
+6. On a long Activity log, scroll down and use the back-to-top button.
+
+**What you should see:** New request opens pre-filled; the confirmation reports match and typed or pasted; the offer stays hidden after Not now.
+
+| Element                         | Locator style | How to find it                                                                                        |
+| ------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
+| Actions menu with submenu       | `ARIA`        | getByRole('button', { name: 'Actions' }), then menuitem 'Create request', then the category menuitem. |
+| Copy and confirm account number | `ID`          | #copy-acct-<number>, #confirm-account-no, #confirm-account-result[data-match][data-source='pasted'].  |
+| Offer banner                    | `CLS`         | .promo-banner and its .btn (Not now); data-offer names the offer.                                     |
+| Section ⓘ tips                  | `ARIA`        | getByRole('button', { name: 'About KYC' }); the explanation appears while hovered or after a click.   |
+| Back-to-top button              | `TTL`         | button[title='Back to top'], shown after scrolling a screen down.                                     |
+
+### Check a customer's credit standing
+
+Customer 360 loads the customer's bureau score a little after the page; supervisors also see the full bureau report.
+
+- **Who:** Customer service rep, Supervisor
+- **Start at:** `/customers`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. Open an active customer. On Overview, the Credit standing panel first says it is fetching the score, then shows the score on a gauge with its band and date.
+2. Some customers have no bureau record: the panel says so.
+3. To practise the failure case, add ?bureauFail=1 to the address: the panel says Bureau unavailable; click Retry.
+4. Signed in as a supervisor (View PII), wait a little longer: the full bureau report appears in a frame below the panel.
+5. Add ?bureauDelay=0 to remove the waits.
+
+**What you should see:** Score 300–900 with band Excellent (750+), Good (700–749), Fair (650–699) or Poor; the same customer always shows the same score.
+
+| Element                    | Locator style | How to find it                                                                                                               |
+| -------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Bureau score web component | `CTX`         | csm-bureau-score has an open shadow root with a nested csm-gauge (two roots to pierce); Retry is slotted from the light DOM. |
+| Late-loading bureau panel  | `DATA`        | [data-qa='bureau-panel'][data-state='ready'\|'none'\|'error']: wait for the state, not a fixed time.                         |
+| Late-loading report iframe | `CTX`         | iframe[title='Full bureau report'] is added a few seconds after the score; wait for it, then switch into it.                 |
+
 ## Administrator
 
 Manages users, access and content.

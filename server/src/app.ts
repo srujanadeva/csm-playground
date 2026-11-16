@@ -27,6 +27,7 @@ import { announcementRoutes } from './modules/announcements/routes.ts'
 import { accessRequestRoutes } from './modules/accessRequests/routes.ts'
 import { devInboxRoutes } from './modules/notifications/routes.ts'
 import { kycRoutes } from './modules/kyc/routes.ts'
+import { staffRoutes } from './modules/staff/routes.ts'
 
 const WEB_DIST = resolve(dirname(fileURLToPath(import.meta.url)), '../../web/dist')
 
@@ -122,6 +123,7 @@ export function createApp(config: Config, logger: Logger, options: AppOptions = 
   app.use('/api/v1/lookups', lookupRoutes())
   app.use('/api/v1/customers', customerRoutes(config))
   app.use('/api/v1/kyc', kycRoutes(config))
+  app.use('/api/v1/staff', staffRoutes())
   app.use('/api/v1/approvals', approvalRoutes())
   app.use('/api/v1/service-requests', serviceRequestRoutes(config))
   app.use('/api/v1/admin', adminRoutes())

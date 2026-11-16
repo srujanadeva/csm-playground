@@ -2,6 +2,8 @@
  * Customer 360 (/customers/:cif). Header with status, risk and actions; a banner when a
  * request is waiting for approval (supervisors can decide it here, except their own); tabs
  * that load on first open (?tab=…). Actions follow the screen's hide/disable setting.
+ * Phase 3: the Actions menu (Create request ▸ category), an offer banner, and on Overview the
+ * customer's accounts and the late-loading credit bureau panel (see BureauPanel for ?bureauDelay=).
  */
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -19,9 +21,18 @@ import { Skeleton } from '../../../components/data/Skeleton.tsx'
 import { Tabs, Tooltip } from '../../../components/Widgets.tsx'
 import { formatDate, initials } from '../../../lib/format.ts'
 import { SafeImage } from '../../../components/media/SafeImage.tsx'
+import { LocatorBadge } from '../../../components/LocatorBadge.tsx'
+import { MenuWithSubmenu, type NestedMenuItem } from '../../../components/overlays/MenuWithSubmenu.tsx'
+import { useClipboard } from '../../../hooks/useClipboard.ts'
+import { useLookups } from '../../../hooks/useLookups.ts'
+import { label } from '../../../lib/format.ts'
+import { AccountsPanel } from './AccountsPanel.tsx'
+import { BureauPanel } from './BureauPanel.tsx'
 import { EditCustomerDrawer } from './EditCustomerDrawer.tsx'
+import { OfferBanner } from './OfferBanner.tsx'
 import { StatusRequestModal } from './StatusRequestModal.tsx'
 import { AuditTab, ContactTab, KycTab, OverviewTab, RequestsTab } from './tabs.tsx'
+import '../customers.css'
 
 const TABS = ['overview', 'contact', 'kyc', 'requests', 'audit'] as const
 
@@ -87,6 +98,8 @@ export default function Customer360Page() {
   const editAction = useAction('customers.360', 'edit')
   const canApprove = useCan('customers.360', 'approve')
   const canRequest = useCan('serviceRequests.new', 'create')
+  const categories = useLookups('srCategories')
+  const clipboard = useClipboard()
 
   const {
     data: c,
@@ -152,6 +165,45 @@ export default function Customer360Page() {
     void qc.invalidateQueries({ queryKey: ['customers'] })
   }
 
+  /** The Actions menu (FR-CUS-022): Create request ▸ one entry per category, Copy CIF, Edit. */
+  const actionItems = (cif: string): NestedMenuItem[] => [
+    {
+      key: 'create',
+      label: t('c360.actions.createRequest'),
+      icon: 'plus',
+      disabled: !canRequest,
+      disabledReason: canRequest ? undefined : t('c360.actions.noRequestRight'),
+      children: (categories.data ?? []).map((cat) => ({
+        key: cat.code,
+        label: label(cat.labels, i18n.language),
+        onSelect: () => navigate(`/service-requests/new?cif=${cif}&category=${cat.code}`),
+      })),
+    },
+    {
+      key: 'copy',
+      label: t('search.menu.copyCif'),
+      icon: 'file',
+      onSelect: () =>
+        void clipboard
+          .copy(cif)
+          .then((ok) =>
+            toast(ok ? t('search.copied', { cif }) : t('search.copyBlocked'), ok ? 'success' : 'error'),
+          ),
+    },
+    ...(editAction.visible
+      ? [
+          {
+            key: 'edit',
+            label: t('common:edit'),
+            icon: 'edit',
+            disabled: !editAction.enabled,
+            disabledReason: editAction.reason,
+            onSelect: () => setEditing(true),
+          },
+        ]
+      : []),
+  ]
+
   return (
     <>
       <div>
@@ -204,6 +256,8 @@ export default function Customer360Page() {
           ) : null}
         </div>
       ) : null}
+
+      {c.cif ? <OfferBanner customerRef={c.cif} /> : null}
 
       <section className="panel" data-testid="c360">
         <div className="body" style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -291,6 +345,16 @@ export default function Customer360Page() {
                 {t('c360.block.button')}
               </ActionButton>
             )}
+            {c.cif ? (
+              <>
+                <MenuWithSubmenu
+                  label={t('c360.actions.label')}
+                  className="c360-actions"
+                  items={actionItems(c.cif)}
+                />
+                <LocatorBadge style="ARIA" />
+              </>
+            ) : null}
             {canRequest && c.cif ? (
               <button
                 type="button"
@@ -329,7 +393,17 @@ export default function Customer360Page() {
               data-testid={`c360-panel-${k}`}
               hidden={tab !== k}
             >
-              {k === 'overview' ? <OverviewTab c={c} /> : null}
+              {k === 'overview' ? (
+                <>
+                  <OverviewTab c={c} />
+                  {c.cif ? (
+                    <div className="c360-extras">
+                      <AccountsPanel c={c} />
+                      <BureauPanel c={c} />
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
               {k === 'contact' ? <ContactTab c={c} /> : null}
               {k === 'kyc' ? <KycTab c={c} onChanged={refreshAll} /> : null}
               {k === 'requests' ? <RequestsTab c={c} /> : null}

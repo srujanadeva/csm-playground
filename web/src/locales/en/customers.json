@@ -311,8 +311,11 @@
       "view": "View customer 360",
       "request": "New service request",
       "block": "Request block",
-      "onlyActive": "only active customers"
-    }
+      "onlyActive": "only active customers",
+      "copyCif": "Copy CIF"
+    },
+    "copied": "Copied {{cif}}",
+    "copyBlocked": "The browser blocked copying. Select the CIF and copy it by hand."
   },
   "c360": {
     "since": "Customer since",
@@ -363,7 +366,19 @@
     "sendForApproval": "Send for approval",
     "photoOf": "Photo of {{name}}",
     "ekycVerified": "e-KYC verified",
-    "ekycDetail": "Verified · {{ref}} · {{date}}"
+    "ekycDetail": "Verified · {{ref}} · {{date}}",
+    "actions": {
+      "label": "Actions",
+      "createRequest": "Create request",
+      "noRequestRight": "You can't create service requests."
+    },
+    "tips": {
+      "kycTitle": "KYC",
+      "kyc": "Know Your Customer: the identity document on file and its dates. KYC is Pending until a supervisor approves the customer, and becomes Due before the ID expires.",
+      "risk": "Points: PEP 2, US tax resident 1, non-Indian national 1, monthly income above ₹5,00,000 1. Total 0 = Low, 1–2 = Medium, 3 or more = High.",
+      "slaTitle": "SLA",
+      "sla": "Each request has a due time set from its priority: critical 4 hours, high 24, medium 48, low 72. The timer turns amber in the last quarter and red once overdue."
+    }
   },
   "audit": {
     "customer": {
@@ -387,6 +402,59 @@
       "unblock": {
         "requested": "Unblock requested"
       }
+    }
+  },
+  "preview": {
+    "customerTitle": "Preview {{ref}}",
+    "staffTitle": "Preview {{staffId}}",
+    "kyc": "KYC",
+    "unavailable": "Preview unavailable"
+  },
+  "bureau": {
+    "title": "Credit standing",
+    "heading": "Bureau score",
+    "loading": "Fetching bureau score…",
+    "unavailable": "Bureau unavailable",
+    "none": "No bureau record",
+    "updated": "Data as of {date}",
+    "retry": "Retry",
+    "source": "Source: simulated credit bureau",
+    "reportTitle": "Full bureau report",
+    "reportLoading": "Loading the full report…",
+    "bands": {
+      "Excellent": "Excellent",
+      "Good": "Good",
+      "Fair": "Fair",
+      "Poor": "Poor"
+    }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "none": "No accounts yet.",
+    "types": {
+      "savings": "Savings",
+      "current": "Current"
+    },
+    "opened": "opened {{date}}",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyBlocked": "The browser blocked copying. Select the number and copy it by hand.",
+    "confirm": "Confirm account number",
+    "confirmHint": "Key in the number the customer reads out.",
+    "matches": "Matches an account.",
+    "noMatch": "Doesn't match any of this customer's accounts.",
+    "pasted": "It was pasted, so it doesn't prove what the customer said.",
+    "typed": "It was typed."
+  },
+  "offers": {
+    "notNow": "Not now",
+    "creditCard": {
+      "title": "Eligible: Platinum credit card",
+      "body": "Premier customer with a high monthly income and no card yet. Offer the Platinum card with lounge access."
+    },
+    "personalLoan": {
+      "title": "Pre-approved personal loan up to {{limit}}",
+      "body": "Based on the customer's declared income. Mention it if the customer asks about borrowing."
     }
   }
 }

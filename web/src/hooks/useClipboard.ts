@@ -10,15 +10,18 @@ export type CopyState = 'idle' | 'copied' | 'unavailable'
 export function useClipboard(resetAfterMs = 2000) {
   const [state, setState] = useState<CopyState>('idle')
   const copy = useCallback(
-    async (text: string) => {
+    async (text: string): Promise<boolean> => {
+      let ok = true
       try {
         if (!navigator.clipboard) throw new Error('no clipboard')
         await navigator.clipboard.writeText(text)
         setState('copied')
       } catch {
+        ok = false
         setState('unavailable')
       }
       setTimeout(() => setState('idle'), resetAfterMs)
+      return ok
     },
     [resetAfterMs],
   )

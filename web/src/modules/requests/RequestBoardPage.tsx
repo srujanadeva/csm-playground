@@ -28,6 +28,7 @@ import { useDebounce } from '../../hooks/useDebounce.ts'
 import { formatNumber } from '../../lib/format.ts'
 import { RequestDrawer, useStatusChange } from './RequestDrawer.tsx'
 import { ResolveModal } from './ResolveModal.tsx'
+import { CustomerHoverCard, StaffHoverCard } from '../customers/HoverCards.tsx'
 
 interface Filters {
   queue: string
@@ -299,7 +300,9 @@ function ListView({ filters, onOpen }: { filters: Filters; onOpen: (srNo: string
               >
                 <td className="mono">{r.srNo}</td>
                 <td style={{ whiteSpace: 'normal', minWidth: 220 }}>{r.subject}</td>
-                <td>{r.customerName}</td>
+                <td>
+                  <CustomerHoverCard customerRef={r.customerCif}>{r.customerName}</CustomerHoverCard>
+                </td>
                 <td>
                   <PriorityBadge value={r.priority} />
                 </td>
@@ -309,7 +312,13 @@ function ListView({ filters, onOpen }: { filters: Filters; onOpen: (srNo: string
                 <td>
                   <SlaTimer slaDueAt={r.slaDueAt} status={r.status} />
                 </td>
-                <td className="mono">{r.assignedTo}</td>
+                <td className="mono">
+                  {r.assignedTo ? (
+                    <StaffHoverCard staffId={r.assignedTo}>{r.assignedTo}</StaffHoverCard>
+                  ) : (
+                    '—'
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

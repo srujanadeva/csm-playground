@@ -1,0 +1,83 @@
+/* Customers area (Phase 3): selected search rows, hover previews, Customer 360 extras. */
+
+tr.selected > td {
+  background: var(--accent-weak);
+}
+tr[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+}
+.preview-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.promo-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--accent);
+  border-radius: var(--r);
+  background: var(--accent-weak);
+}
+.promo-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.c360-extras {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+@media (max-width: 900px) {
+  .c360-extras {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.acct-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.acct-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.acct-confirm .help.ok {
+  color: var(--ok);
+}
+.bureau-report {
+  display: block;
+  width: 100%;
+  height: 300px;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: #fff;
+}
+
+.tab-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 13px;
+}
