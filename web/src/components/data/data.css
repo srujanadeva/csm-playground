@@ -1,0 +1,256 @@
+/* Data display: chart, virtual list, skeletons, progress bars, split panels, back-to-top. */
+.chart {
+  position: relative;
+  margin: 0;
+}
+.chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  font: 11px var(--sans);
+}
+.chart-grid line {
+  stroke: var(--line);
+}
+.chart-grid text,
+.chart-xlabel {
+  fill: var(--faint);
+}
+.chart-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.chart-point {
+  fill: var(--surface);
+  stroke: currentColor;
+  stroke-width: 2;
+  cursor: pointer;
+}
+.chart-bar {
+  fill: currentColor;
+  cursor: pointer;
+}
+.chart-point:hover,
+.chart-point:focus,
+.chart-bar:hover,
+.chart-bar:focus {
+  outline: none;
+  stroke-width: 3;
+  opacity: 0.85;
+}
+.chart-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+  background: var(--ink);
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+.chart-tip i,
+.chart-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  padding-top: 4px;
+}
+
+.vlist {
+  overflow-y: auto;
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.vlist:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.vlist-inner {
+  position: relative;
+}
+.vrow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 0 12px;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skeleton.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+.sk {
+  display: block;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e6ecea 25%, #f2f5f4 37%, #e6ecea 63%);
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
+}
+.sk-tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sk-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.sk-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sk-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+}
+.sk-row {
+  display: flex;
+  gap: 18px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+@keyframes sk-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+  }
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.progress-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+  position: relative;
+}
+.progress-track b {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+.progress.indeterminate .progress-track b {
+  position: absolute;
+  width: 35%;
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+.progress.stalled .progress-track b {
+  background: repeating-linear-gradient(45deg, var(--warn), var(--warn) 6px, #c98a2e 6px, #c98a2e 12px);
+}
+.progress.failed .progress-track b {
+  background: var(--bad);
+}
+.progress.done .progress-track b {
+  background: var(--ok);
+}
+.progress.failed .help {
+  color: var(--bad);
+}
+@keyframes progress-slide {
+  0% {
+    left: -35%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.split {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.split-pane {
+  overflow: auto;
+  min-width: 0;
+}
+.split-handle {
+  background: var(--sunken);
+  border-inline: 1px solid var(--line);
+  cursor: col-resize;
+  touch-action: none;
+  position: relative;
+}
+.split-handle::after {
+  content: '⋮';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--faint);
+}
+.split-handle:hover,
+.split-handle:focus-visible {
+  background: var(--accent-weak);
+  outline: none;
+}
+
+.to-top {
+  position: fixed;
+  bottom: 84px;
+  inset-inline-end: 28px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--accent-ink);
+  box-shadow: 0 6px 18px rgba(10, 30, 28, 0.18);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  z-index: 40;
+}
+.skeleton.sk-gap {
+  margin-top: 18px;
+}

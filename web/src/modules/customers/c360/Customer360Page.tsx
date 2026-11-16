@@ -15,7 +15,8 @@ import { StatusPill } from '../../../components/Badges.tsx'
 import { Icon } from '../../../components/Icon.tsx'
 import { ConfirmDialog } from '../../../components/Overlay.tsx'
 import { useToast } from '../../../components/Toast.tsx'
-import { Loading, Tabs, Tooltip } from '../../../components/Widgets.tsx'
+import { Skeleton } from '../../../components/data/Skeleton.tsx'
+import { Tabs, Tooltip } from '../../../components/Widgets.tsx'
 import { formatDate, initials } from '../../../lib/format.ts'
 import { EditCustomerDrawer } from './EditCustomerDrawer.tsx'
 import { StatusRequestModal } from './StatusRequestModal.tsx'
@@ -124,7 +125,13 @@ export default function Customer360Page() {
     },
   })
 
-  if (isLoading) return <Loading testId="c360-loading" />
+  if (isLoading)
+    return (
+      <div className="panel" style={{ padding: 18 }} data-testid="c360-loading">
+        <Skeleton kind="header" />
+        <Skeleton kind="lines" rows={5} className="sk-gap" />
+      </div>
+    )
   if (error || !c) {
     return (
       <div className="empty" data-testid="c360-not-found">

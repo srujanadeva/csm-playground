@@ -1,4 +1,4 @@
-/** Entry point: fonts, styles, translations, data cache, auth, toasts and the router. */
+/** Entry point: fonts, styles, translations, data cache, auth, toasts, snackbar and the router. */
 import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router/dom'
@@ -15,6 +15,7 @@ import './styles/app.css'
 import './i18n.ts'
 import { AuthProvider } from './app/auth.tsx'
 import { ToastProvider } from './components/Toast.tsx'
+import { SnackbarProvider } from './components/overlays/Snackbar.tsx'
 import { Loading } from './components/Widgets.tsx'
 import { router } from './router.tsx'
 import { ApiError } from './api/client.ts'
@@ -35,7 +36,9 @@ createRoot(document.getElementById('root')!).render(
       <Suspense fallback={<Loading testId="app-loading" />}>
         <AuthProvider>
           <ToastProvider>
-            <RouterProvider router={router} />
+            <SnackbarProvider>
+              <RouterProvider router={router} />
+            </SnackbarProvider>
           </ToastProvider>
         </AuthProvider>
       </Suspense>

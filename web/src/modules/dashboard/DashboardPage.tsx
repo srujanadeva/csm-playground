@@ -19,6 +19,7 @@ import { useCrumb } from '../../app/AppShell.tsx'
 import { PriorityBadge, SlaTimer } from '../../components/Badges.tsx'
 import { ConfirmDialog } from '../../components/Overlay.tsx'
 import { useToast } from '../../components/Toast.tsx'
+import { Skeleton } from '../../components/data/Skeleton.tsx'
 import { EmptyState, Loading, Pagination } from '../../components/Widgets.tsx'
 import { formatDate, formatNumber } from '../../lib/format.ts'
 import { useLookupLabel } from '../../hooks/useLookups.ts'
@@ -309,7 +310,7 @@ export default function DashboardPage() {
   const canBoard = useCan('serviceRequests.board', 'view')
   const canSearch = useCan('customers.search', 'view')
   useCrumb([t('title')])
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => api<DashboardSummary>('/dashboard/summary'),
   })
@@ -328,7 +329,8 @@ export default function DashboardPage() {
           {t('passwordChanged')}
         </div>
       ) : null}
-      <div className="tiles" data-testid="dashboard-tiles">
+      {isLoading ? <Skeleton kind="tiles" rows={4} testId="dashboard-tiles-loading" /> : null}
+      <div className="tiles" data-testid="dashboard-tiles" hidden={isLoading}>
         {canBoard ? (
           <Tile
             id="tile-my-open"

@@ -1569,3 +1569,16 @@ tr.drop-target td {
     transition: none !important;
   }
 }
+
+/* practice hints (?hints=1) */
+.locator-badge {
+  font: 600 10px var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--brass);
+  background: var(--brass-weak);
+  border: 1px solid #e6d3a8;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-inline-start: 6px;
+  vertical-align: middle;
+}

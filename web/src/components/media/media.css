@@ -1,0 +1,196 @@
+/* Media: images with fallback, video player, carousel, signature pad, camera. */
+.safeimg {
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--sunken);
+  border-radius: var(--r);
+}
+.safeimg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.safeimg-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-weak);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.player {
+  position: relative;
+  background: #0b1514;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  flex-direction: column;
+}
+.player video {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  object-fit: contain;
+  cursor: pointer;
+}
+.player-placeholder,
+.player-error,
+.player-loading {
+  position: absolute;
+  inset: 0 0 44px;
+  display: grid;
+  place-items: center;
+  color: #cfe0dc;
+  font-size: 13px;
+}
+.player-error {
+  background: #2a1210;
+  color: #ffb4a8;
+}
+.player-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  height: 44px;
+}
+.player-bar button {
+  all: unset;
+  cursor: pointer;
+  width: 28px;
+  text-align: center;
+}
+.player-bar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.player-bar button:focus-visible {
+  outline: 2px solid #7fd6c3;
+}
+.player-seek {
+  flex: 1;
+  accent-color: #7fd6c3;
+}
+.player-time {
+  font-size: 12px;
+}
+
+.carousel {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--side);
+  color: #fff;
+}
+.carousel-track {
+  display: grid;
+}
+.carousel-slide {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s;
+}
+.carousel-slide.current {
+  opacity: 1;
+  visibility: visible;
+}
+.carousel-controls {
+  position: absolute;
+  bottom: 10px;
+  inset-inline-end: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.carousel-btn {
+  all: unset;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  text-align: center;
+  cursor: pointer;
+}
+.carousel-btn:focus-visible,
+.carousel-dot:focus-visible {
+  outline: 2px solid #fff;
+}
+.carousel-dots {
+  display: flex;
+  gap: 6px;
+}
+.carousel-dot {
+  all: unset;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+.carousel-dot[aria-current='true'] {
+  background: #fff;
+}
+
+.sigpad {
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.sigpad-canvas {
+  width: 100%;
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+  background: repeating-linear-gradient(transparent 0 140px, var(--line) 140px 141px, transparent 141px);
+}
+.sigpad-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.camera {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.camera-view {
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  text-align: center;
+  padding: 0;
+}
+.camera-view video,
+.camera-view img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.camera-view .note {
+  margin: 12px;
+}
+.camera-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.camera-upload {
+  cursor: pointer;
+}

@@ -36,7 +36,7 @@ void i18n
     lng: initialLanguage(),
     fallbackLng: 'en',
     supportedLngs: ['en', 'kn'],
-    ns: ['common', 'validation'],
+    ns: ['common', 'validation', 'ui'],
     defaultNS: 'common',
     interpolation: { escapeValue: false },
     react: { useSuspense: true },

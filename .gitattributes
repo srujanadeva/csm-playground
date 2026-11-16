@@ -3,3 +3,9 @@
 # PowerShell 5.1 is happiest with CRLF.
 *.ps1 text eol=crlf
 *.png binary
+# Sample files under testresources/ are uploaded byte-for-byte in tests (sizes, signatures, OCR hashes).
+*.jpg binary
+*.mp4 binary
+*.xlsx binary
+*.xls binary
+testresources/**/*.csv -text

@@ -1,0 +1,93 @@
+{
+  "loading": "Loading…",
+  "dismiss": "Dismiss",
+  "toTop": "Back to top",
+  "stepper": { "dec": "Decrease {{label}}", "inc": "Increase {{label}}" },
+  "otp": { "digit": "Digit {{n}} of {{total}}" },
+  "colour": {
+    "native": "{{label}}: colour picker",
+    "swatches": "Preset colours",
+    "hex": "{{label}}: hex code",
+    "invalid": "Enter a hex colour like #0d7564."
+  },
+  "rte": {
+    "toolbar": "Formatting",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "bullets": "Bulleted list",
+    "numbers": "Numbered list",
+    "count": "{{n}} / {{max}} characters"
+  },
+  "multi": { "none": "Any", "count": "{{n}} selected", "all": "Select all", "clear": "Clear" },
+  "chips": {
+    "remove": "Remove {{item}}",
+    "placeholder": "Type to add…",
+    "full": "Up to {{max}} items"
+  },
+  "stars": {
+    "outOf": "{{value}} out of 5",
+    "n_one": "{{count}} star",
+    "n_other": "{{count}} stars"
+  },
+  "tree": { "expand": "Expand {{item}}", "collapse": "Collapse {{item}}" },
+  "infotip": { "about": "About {{topic}}" },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Go to a screen, or type a CIF…",
+    "results": "Commands",
+    "noResults": "No matching commands",
+    "keys": "↑↓ to move · Enter to run · Esc to close"
+  },
+  "split": { "value": "Left panel {{n}}%" },
+  "video": {
+    "play": "Play",
+    "pause": "Pause",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "seek": "Seek",
+    "error": "This video can't be played.",
+    "deferred": "Scroll to load the video"
+  },
+  "carousel": {
+    "slideOf": "{{n}} of {{total}}: {{label}}",
+    "play": "Start slide show",
+    "pause": "Pause slide show",
+    "prev": "Previous slide",
+    "next": "Next slide",
+    "goTo": "Go to slide {{n}}"
+  },
+  "signature": {
+    "hint": "Sign inside the box",
+    "captured": "Signature captured",
+    "undo": "Undo",
+    "clear": "Clear"
+  },
+  "camera": {
+    "off": "Camera is off",
+    "requesting": "Waiting for camera permission…",
+    "denied": "Camera permission was refused. Upload a photo instead.",
+    "unsupported": "No camera available. Upload a photo instead.",
+    "preview": "Captured photo",
+    "start": "Start camera",
+    "capture": "Capture",
+    "cancel": "Cancel",
+    "retake": "Retake",
+    "upload": "Upload a photo"
+  },
+  "locator": {
+    "TID": "data-testid",
+    "ID": "id attribute",
+    "NAME": "name attribute",
+    "CLS": "class names only",
+    "TXT": "visible text",
+    "ARIA": "role and accessible name",
+    "LBL": "label or placeholder",
+    "TTL": "title attribute",
+    "DATA": "other data-* attributes",
+    "DYN": "dynamic ids (match by prefix)",
+    "DUP": "duplicate ids or text (scope by parent)",
+    "XP": "structure only (XPath)",
+    "CTX": "inside an iframe or shadow root"
+  }
+}
