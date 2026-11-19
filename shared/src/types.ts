@@ -242,6 +242,14 @@ export interface ServiceRequestCard {
   assignedTo: string | null
   createdAt: string
   version: number
+  tags: string[]
+  /** Scheduled callback (ISO) and preferred call window ("10:00"–"12:30"). */
+  callbackAt: string | null
+  windowStart: string | null
+  windowEnd: string | null
+  /** The customer's rating on resolve; declined = the customer chose not to rate. */
+  csat: { rating: number | null; declined: boolean } | null
+  qualityScore: number | null
 }
 
 export interface ServiceRequestDetail extends ServiceRequestCard {
@@ -256,6 +264,8 @@ export interface ServiceRequestDetail extends ServiceRequestCard {
   closedAt: string | null
   notifyBySms: boolean
   attachments: DocumentDTO[]
+  csatComment: string | null
+  quality: { score: number; note: string | null; by: string; at: string } | null
 }
 
 export interface CommentDTO {

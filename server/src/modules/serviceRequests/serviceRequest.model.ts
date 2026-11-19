@@ -32,7 +32,24 @@ const serviceRequestSchema = new Schema(
     status: { type: String, enum: SR_STATUS, default: 'open' },
     assignedTo: { type: String, index: true },
     createdBy: { type: String, required: true },
-    resolutionNotes: { type: String, trim: true, maxlength: 1000 },
+    /** Cleaned rich text (see lib/richText.ts). */
+    resolutionNotes: { type: String, trim: true, maxlength: 20_000 },
+    tags: { type: [String], default: [] },
+    callbackAt: Date,
+    /** Preferred call window, "HH:MM" in IST. */
+    windowStart: String,
+    windowEnd: String,
+    csat: {
+      type: new Schema(
+        { rating: Number, declined: Boolean, comment: String, by: String, at: Date },
+        { _id: false },
+      ),
+      default: undefined,
+    },
+    quality: {
+      type: new Schema({ score: Number, note: String, by: String, at: Date }, { _id: false }),
+      default: undefined,
+    },
     resolvedAt: Date,
     closedAt: Date,
     notifyBySms: { type: Boolean, default: true },
@@ -43,6 +60,7 @@ const serviceRequestSchema = new Schema(
 serviceRequestSchema.index({ status: 1, _id: -1 })
 serviceRequestSchema.index({ assignedTo: 1, status: 1, _id: -1 })
 serviceRequestSchema.index({ branchCode: 1, status: 1, _id: -1 })
+serviceRequestSchema.index({ tags: 1 })
 
 export type ServiceRequest = InferSchemaType<typeof serviceRequestSchema>
 export const ServiceRequestModel = model('ServiceRequest', serviceRequestSchema, 'servicerequests')

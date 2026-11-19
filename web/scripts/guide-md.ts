@@ -4,7 +4,14 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as prettier from 'prettier'
-import { DEMO_LOGIN, FLOWS, PERSONAS, type GuideFlow, type Persona } from '../src/modules/help/guide/flows.ts'
+import {
+  DEMO_LOGIN,
+  ELEMENT_LOCATORS,
+  FLOWS,
+  PERSONAS,
+  type GuideFlow,
+  type Persona,
+} from '../src/modules/help/guide/flows.ts'
 import { LOCATOR_STYLES } from '../src/lib/locators.ts'
 
 const ROOT = resolve(import.meta.dirname, '../..')
@@ -40,11 +47,13 @@ function flowSection(f: GuideFlow, persona: Persona): string {
     '',
     `**${L.expected}:** ${text.expected}`,
     '',
-    `| ${L.element} | ${L.locator} | ${L.hint} |`,
-    '| --- | --- | --- |',
-    ...f.elements.map(
-      (e) => `| ${cell(help.elements[e.key].name)} | \`${e.locator}\` | ${cell(help.elements[e.key].hint)} |`,
-    ),
+    `| ${L.element} | ${L.locator} | CSS | XPath | ${L.hint} |`,
+    '| --- | --- | --- | --- | --- |',
+    ...f.elements.map((e) => {
+      const ex = ELEMENT_LOCATORS[e.key]
+      const code = (v?: string) => (v ? `\`${cell(v)}\`` : '—')
+      return `| ${cell(help.elements[e.key].name)} | \`${e.locator}\` | ${code(ex?.css)} | ${code(ex?.xpath)} | ${cell(help.elements[e.key].hint)} |`
+    }),
     '',
   ]
   return lines.join('\n')

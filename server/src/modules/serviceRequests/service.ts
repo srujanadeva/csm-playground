@@ -7,8 +7,12 @@ import { resolve } from 'node:path'
 import type { Request, Response } from 'express'
 import type { z } from 'zod'
 import {
+  SLA_HOURS,
   can,
   canTransition,
+  type csatUpdateSchema,
+  type qualitySchema,
+  type updateServiceRequestSchema,
   type boardQuery,
   type CommentDTO,
   type commentSchema,
@@ -28,6 +32,7 @@ import { clampPageSize, cursorFilter, parseSort, toCursorPage } from '../../lib/
 import { op } from '../../lib/query.ts'
 import { escapeRegex } from '../../lib/regex.ts'
 import { sendUpload, storeUpload } from '../../lib/uploads.ts'
+import { sanitizeRichText } from '../../lib/richText.ts'
 import { branchScope } from '../../middleware/auth.ts'
 import { maxPageSizeFor } from '../admin/access.ts'
 import { StaffUserModel } from '../auth/staffUser.model.ts'
@@ -56,6 +61,12 @@ export function toCard(r: SrRecord): ServiceRequestCard {
     assignedTo: r.assignedTo ?? null,
     createdAt: new Date(r.createdAt).toISOString(),
     version: r.__v ?? 0,
+    tags: r.tags ?? [],
+    callbackAt: r.callbackAt ? new Date(r.callbackAt).toISOString() : null,
+    windowStart: r.windowStart ?? null,
+    windowEnd: r.windowEnd ?? null,
+    csat: r.csat ? { rating: r.csat.rating ?? null, declined: !!r.csat.declined } : null,
+    qualityScore: r.quality?.score ?? null,
   }
 }
 
@@ -73,6 +84,15 @@ function toDetail(r: SrRecord): ServiceRequestDetail {
     closedAt: r.closedAt ? new Date(r.closedAt).toISOString() : null,
     notifyBySms: r.notifyBySms ?? false,
     attachments: (r.attachments ?? []).map((a: SrRecord) => toDocumentDTO({ ...a, kind: 'other' })),
+    csatComment: r.csat?.comment ?? null,
+    quality: r.quality
+      ? {
+          score: r.quality.score,
+          note: r.quality.note ?? null,
+          by: r.quality.by,
+          at: new Date(r.quality.at).toISOString(),
+        }
+      : null,
   }
 }
 
@@ -156,6 +176,10 @@ export async function create(req: Request, input: CreateServiceRequestInput): Pr
     assignedTo,
     createdBy: actor(req),
     notifyBySms: input.notifyBySms,
+    tags: input.tags,
+    callbackAt: input.callbackAt ? new Date(input.callbackAt) : undefined,
+    windowStart: input.windowStart,
+    windowEnd: input.windowEnd,
   })
   await audit(
     {
@@ -170,10 +194,22 @@ export async function create(req: Request, input: CreateServiceRequestInput): Pr
   return toDetail(doc.toObject())
 }
 
-function queueFilter(req: Request, q: { queue: 'mine' | 'branch' | 'all'; priority?: string; q?: string }) {
+function queueFilter(
+  req: Request,
+  q: {
+    queue: 'mine' | 'branch' | 'all'
+    priority?: string
+    q?: string
+    categories?: string[]
+    tags?: string[]
+  },
+) {
   const filter: Record<string, unknown> = { ...branchScope(req) }
   if (q.queue === 'mine') filter.assignedTo = actor(req)
   if (q.priority) filter.priority = q.priority
+  if (q.categories?.length) filter.category = op({ $in: q.categories })
+  // A request matches when it carries any of the chosen tags.
+  if (q.tags?.length) filter.tags = op({ $in: q.tags })
   if (q.q) {
     const text = escapeRegex(q.q)
     filter.$or = [
@@ -207,7 +243,7 @@ export async function list(
   req: Request,
   q: z.infer<typeof srListQuery>,
 ): Promise<OffsetPage<ServiceRequestCard>> {
-  const filter = { ...queueFilter(req, q), ...(q.status ? { status: q.status } : {}) }
+  const filter = { ...queueFilter(req, q), ...(q.status?.length ? { status: op({ $in: q.status }) } : {}) }
   const pageSize = clampPageSize(q.pageSize, await maxPageSizeFor('serviceRequests.board'))
   const sort = parseSort(q.sort, SORTS, { _id: -1 })
   const [rows, total] = await Promise.all([
@@ -223,7 +259,7 @@ export async function list(
 
 /** CSV of the list view's current filters (first 5,000 rows). */
 export async function exportCsv(req: Request, q: z.infer<typeof srListQuery>): Promise<string> {
-  const filter = { ...queueFilter(req, q), ...(q.status ? { status: q.status } : {}) }
+  const filter = { ...queueFilter(req, q), ...(q.status?.length ? { status: op({ $in: q.status }) } : {}) }
   const rows = await ServiceRequestModel.find(filter)
     .sort(parseSort(q.sort, SORTS, { _id: -1 }))
     .limit(5000)
@@ -275,7 +311,18 @@ export async function changeStatus(req: Request, srNo: string, body: z.infer<typ
   }
   const from = doc.status
   doc.set('status', body.status)
-  if (body.status === 'resolved') doc.set({ resolvedAt: new Date(), resolutionNotes: body.resolutionNotes })
+  if (body.status === 'resolved') {
+    doc.set({
+      resolvedAt: new Date(),
+      resolutionNotes: sanitizeRichText(body.resolutionNotes ?? ''),
+      csat: {
+        ...body.csat,
+        rating: body.csat?.declined ? undefined : body.csat?.rating,
+        by: actor(req),
+        at: new Date(),
+      },
+    })
+  }
   if (body.status === 'closed') doc.set('closedAt', new Date())
   if (body.status === 'open' || body.status === 'in_progress') doc.set({ resolvedAt: undefined })
   await doc.save()
@@ -287,6 +334,126 @@ export async function changeStatus(req: Request, srNo: string, body: z.infer<typ
       entityType: 'serviceRequest',
       entityId: srNo,
       changes: [{ field: 'status', from, to: body.status }],
+    },
+    req,
+  )
+  return toDetail(doc.toObject())
+}
+
+/**
+ * In-place edits: priority (the SLA moves to creation + the new priority's hours), assignee, tags and
+ * the callback. Closed requests are final.
+ */
+export async function update(req: Request, srNo: string, body: z.infer<typeof updateServiceRequestSchema>) {
+  const doc = await findScoped(req, srNo)
+  if ((doc.__v ?? 0) !== body.version) throw staleVersion()
+  if (doc.status === 'closed') throw conflict('Closed requests can’t be changed.', { code: 'closed' })
+  const changes: { field: string; from: unknown; to: unknown }[] = []
+  const change = (field: string, to: unknown) => {
+    const from = doc.get(field)
+    const same =
+      JSON.stringify(from instanceof Date ? from.toISOString() : from) ===
+      JSON.stringify(to instanceof Date ? to.toISOString() : to)
+    if (!same)
+      changes.push({
+        field,
+        from: from instanceof Date ? from.toISOString() : from,
+        to: to instanceof Date ? to.toISOString() : to,
+      })
+    doc.set(field, to ?? undefined)
+  }
+  if (body.priority) {
+    change('priority', body.priority)
+    change('slaDueAt', new Date(doc.createdAt.getTime() + SLA_HOURS[body.priority] * 3_600_000))
+  }
+  if (body.assignedTo) {
+    const ok = await StaffUserModel.exists({
+      staffId: body.assignedTo,
+      branchCode: doc.branchCode,
+      status: 'active',
+    })
+    if (!ok) {
+      throw validationFailed([
+        {
+          path: 'assignedTo',
+          code: 'invalid',
+          message: 'Assign the request to active staff in the same branch.',
+        },
+      ])
+    }
+    change('assignedTo', body.assignedTo)
+  }
+  if (body.tags) change('tags', body.tags)
+  if (body.callbackAt !== undefined) change('callbackAt', body.callbackAt ? new Date(body.callbackAt) : null)
+  if (body.windowStart !== undefined) change('windowStart', body.windowStart)
+  if (body.windowEnd !== undefined) change('windowEnd', body.windowEnd)
+  if (!changes.length) return toDetail(doc.toObject())
+  await doc.save()
+  await audit(
+    {
+      category: 'data',
+      action: 'serviceRequest.updated',
+      actor: actor(req),
+      entityType: 'serviceRequest',
+      entityId: srNo,
+      changes,
+    },
+    req,
+  )
+  return toDetail(doc.toObject())
+}
+
+/** Records (or corrects) the customer's rating on a resolved or closed request. */
+export async function setCsat(req: Request, srNo: string, body: z.infer<typeof csatUpdateSchema>) {
+  const doc = await findScoped(req, srNo)
+  if ((doc.__v ?? 0) !== body.version) throw staleVersion()
+  if (!['resolved', 'closed'].includes(doc.status)) {
+    throw conflict('Record the customer’s rating once the request is resolved.', { code: 'not_resolved' })
+  }
+  const c = body.csat
+  doc.set('csat', {
+    rating: c.declined ? undefined : c.rating,
+    declined: c.declined,
+    comment: c.comment,
+    by: actor(req),
+    at: new Date(),
+  })
+  await doc.save()
+  await audit(
+    {
+      category: 'data',
+      action: 'serviceRequest.csat',
+      actor: actor(req),
+      entityType: 'serviceRequest',
+      entityId: srNo,
+    },
+    req,
+  )
+  return toDetail(doc.toObject())
+}
+
+/** A supervisor's quality score: once per request, never on their own request. */
+export async function setQuality(req: Request, srNo: string, body: z.infer<typeof qualitySchema>) {
+  const doc = await findScoped(req, srNo)
+  if ((doc.__v ?? 0) !== body.version) throw staleVersion()
+  if (!['resolved', 'closed'].includes(doc.status)) {
+    throw conflict('Only resolved or closed requests can be scored.', { code: 'not_resolved' })
+  }
+  if (doc.get('quality.score') !== undefined)
+    throw conflict('This request already has a quality score.', { code: 'already_scored' })
+  if (doc.assignedTo === actor(req) || doc.createdBy === actor(req)) {
+    throw forbidden('You can’t score a request you raised or worked on.', { code: 'own_request' })
+  }
+  doc.set('quality', { score: body.score, note: body.note, by: actor(req), at: new Date() })
+  await doc.save()
+  await audit(
+    {
+      category: 'data',
+      action: 'serviceRequest.quality',
+      actor: actor(req),
+      entityType: 'serviceRequest',
+      entityId: srNo,
+      changes: [{ field: 'quality', from: null, to: body.score }],
     },
     req,
   )

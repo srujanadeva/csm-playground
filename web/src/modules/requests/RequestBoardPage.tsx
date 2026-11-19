@@ -1,83 +1,46 @@
 /**
- * Request board (/service-requests). Board view: four status columns, each loading more as
- * you scroll (cursor pagination), with drag and drop between columns. The board enforces the
- * state machine: invalid moves are refused, Resolved asks for notes, Closed needs Approve.
- * List view (?view=list): a sortable, paginated table with filters and CSV export.
- * Filters (queue, priority, search) and the open request (?sr=) live in the URL.
+ * Request board (/service-requests). Board view: status columns, each loading more as you scroll
+ * (cursor pagination), with drag and drop between columns or each card's "Move to ▸" menu. The board
+ * enforces the state machine: invalid moves are refused, Resolved asks for notes and the customer's
+ * rating, Closed needs Approve. List view (?view=list): see RequestList.
+ * Filters live in the URL: queue, priority, q, statuses=open,in_progress, categories=cards,loans,
+ * tags=VIP. The open request is ?sr=. "Present" shows the board full screen.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
   SR_PRIORITIES,
+  SR_STANDARD_TAGS,
   SR_STATUS,
   canTransition,
-  type OffsetPage,
   type ServiceRequestCard,
   type SrStatus,
 } from '@csm/shared'
 import { api } from '../../api/client.ts'
 import { useCan, useMe } from '../../app/auth.tsx'
 import { useCrumb } from '../../app/AppShell.tsx'
-import { PriorityBadge, SlaTimer, StatusPill } from '../../components/Badges.tsx'
 import { Icon } from '../../components/Icon.tsx'
+import { LocatorBadge } from '../../components/LocatorBadge.tsx'
 import { useToast } from '../../components/Toast.tsx'
-import { EmptyState, InfiniteSentinel, Loading, Pagination, SortHeader } from '../../components/Widgets.tsx'
+import { InfiniteSentinel, Loading } from '../../components/Widgets.tsx'
+import { ChipSelect } from '../../components/selection/ChipSelect.tsx'
+import { MultiSelect } from '../../components/selection/MultiSelect.tsx'
 import { useDebounce } from '../../hooks/useDebounce.ts'
-import { formatNumber } from '../../lib/format.ts'
+import { useLookups } from '../../hooks/useLookups.ts'
+import { formatNumber, label } from '../../lib/format.ts'
+import { BoardCard } from './BoardCard.tsx'
+import { DesktopAlerts } from './DesktopAlerts.tsx'
 import { RequestDrawer, useStatusChange } from './RequestDrawer.tsx'
+import { RequestList, useSplit, type ListFilters } from './RequestList.tsx'
 import { ResolveModal } from './ResolveModal.tsx'
-import { CustomerHoverCard, StaffHoverCard } from '../customers/HoverCards.tsx'
+import './requests.css'
 
-interface Filters {
-  queue: string
-  priority: string
-  q: string
-}
+type Filters = ListFilters
 
-function Card({
-  sr,
-  onOpen,
-  onDragStart,
-  dragging,
-}: {
-  sr: ServiceRequestCard
-  onOpen: () => void
-  onDragStart: () => void
-  dragging: boolean
-}) {
-  return (
-    <button
-      type="button"
-      className={`card ${dragging ? 'dragging' : ''}`}
-      draggable
-      data-testid="board-card"
-      data-sr-no={sr.srNo}
-      data-status={sr.status}
-      onDragStart={(e) => {
-        e.dataTransfer.setData('text/plain', sr.srNo)
-        e.dataTransfer.effectAllowed = 'move'
-        onDragStart()
-      }}
-      onClick={onOpen}
-    >
-      <span className="r">
-        <span className="mono" style={{ color: 'var(--ink)' }}>
-          {sr.srNo}
-        </span>
-        <span className="grow" />
-        <PriorityBadge value={sr.priority} />
-      </span>
-      <span className="t">{sr.subject}</span>
-      <span className="r">
-        {sr.customerName}
-        <span className="grow" />
-        <SlaTimer slaDueAt={sr.slaDueAt} status={sr.status} />
-      </span>
-    </button>
-  )
-}
+/** "a,b" → ['a','b']; missing → []. */
+const listParam = (v: string | null) => (v ? v.split(',').filter(Boolean) : [])
 
 function Column({
   status,
@@ -86,6 +49,7 @@ function Column({
   onDragStart,
   onDrop,
   onOpen,
+  onMove,
 }: {
   status: SrStatus
   filters: Filters
@@ -93,6 +57,7 @@ function Column({
   onDragStart: (sr: ServiceRequestCard) => void
   onDrop: (status: SrStatus) => void
   onOpen: (srNo: string) => void
+  onMove: (sr: ServiceRequestCard, status: SrStatus) => void
 }) {
   const { t, i18n } = useTranslation('requests')
   const canApprove = useCan('serviceRequests.board', 'approve')
@@ -103,6 +68,8 @@ function Column({
     limit: '10',
     ...(filters.priority ? { priority: filters.priority } : {}),
     ...(filters.q ? { q: filters.q } : {}),
+    ...(filters.categories.length ? { categories: filters.categories.join(',') } : {}),
+    ...(filters.tags.length ? { tags: filters.tags.join(',') } : {}),
   })
   const q = useInfiniteQuery({
     queryKey: ['board', status, filters],
@@ -157,12 +124,13 @@ function Column({
       ) : null}
       {q.isLoading ? <Loading testId={`board-column-${status}-loading`} /> : null}
       {items.map((sr) => (
-        <Card
+        <BoardCard
           key={sr.srNo}
           sr={sr}
           dragging={dragged?.srNo === sr.srNo}
           onDragStart={() => onDragStart(sr)}
           onOpen={() => onOpen(sr.srNo)}
+          onMove={(target) => onMove(sr, target)}
         />
       ))}
       {!q.isLoading && !items.length ? (
@@ -180,166 +148,9 @@ function Column({
   )
 }
 
-function ListView({ filters, onOpen }: { filters: Filters; onOpen: (srNo: string) => void }) {
-  const { t } = useTranslation('requests')
-  const me = useMe()
-  const [params, setParams] = useSearchParams()
-  const canExport = useCan('serviceRequests.board', 'export')
-  const page = Number(params.get('page')) || 1
-  const sort = params.get('sort') ?? '-createdAt'
-  const status = params.get('status') ?? ''
-  const pageSize = me.screens['serviceRequests.board']?.defaultPageSize ?? 25
-  const qs = new URLSearchParams({
-    page: String(page),
-    pageSize: String(pageSize),
-    sort,
-    queue: filters.queue,
-    ...(status ? { status } : {}),
-    ...(filters.priority ? { priority: filters.priority } : {}),
-    ...(filters.q ? { q: filters.q } : {}),
-  })
-  const { data, isFetching, isPlaceholderData } = useQuery({
-    queryKey: ['service-requests', 'list', qs.toString()],
-    queryFn: ({ signal }) => api<OffsetPage<ServiceRequestCard>>(`/service-requests?${qs}`, { signal }),
-    placeholderData: keepPreviousData,
-  })
-  const set = (k: string, v: string | number) => {
-    const next = new URLSearchParams(params)
-    if (v === '') next.delete(k)
-    else next.set(k, String(v))
-    if (k !== 'page') next.set('page', '1')
-    setParams(next)
-  }
-  const exportQs = new URLSearchParams(qs)
-  exportQs.delete('page')
-  exportQs.delete('pageSize')
-  return (
-    <section
-      className="panel tw"
-      data-testid="sr-list"
-      data-page={data?.page}
-      data-state={isFetching || isPlaceholderData ? 'loading' : 'loaded'}
-    >
-      <div className="tfoot top">
-        <label htmlFor="sr-list-status">{t('fields.status')}</label>
-        <select
-          id="sr-list-status"
-          data-testid="sr-list-status"
-          className="in"
-          style={{ width: 160, height: 30 }}
-          value={status}
-          onChange={(e) => set('status', e.target.value)}
-        >
-          <option value="">{t('common:all')}</option>
-          {SR_STATUS.map((s) => (
-            <option key={s} value={s}>
-              {t(`common:status.${s}`)}
-            </option>
-          ))}
-        </select>
-        {isFetching ? <span className="spin" /> : null}
-        <div className="grow" />
-        {canExport ? (
-          <a
-            className="btn sm"
-            href={`/api/v1/service-requests/export.csv?${exportQs}`}
-            download
-            data-testid="sr-list-export"
-          >
-            <Icon name="download" />
-            {t('board.export')}
-          </a>
-        ) : null}
-      </div>
-      {data && !data.items.length ? (
-        <EmptyState testId="sr-list-empty" title={t('board.noResults')} />
-      ) : (
-        <table data-testid="sr-list-table">
-          <thead>
-            <tr>
-              <SortHeader field="srNo" sort={sort} onSort={(s) => set('sort', s)} testId="sr-list-sort-srno">
-                {t('fields.srNo')}
-              </SortHeader>
-              <th>{t('fields.subject')}</th>
-              <th>{t('fields.customer')}</th>
-              <SortHeader
-                field="priority"
-                sort={sort}
-                onSort={(s) => set('sort', s)}
-                testId="sr-list-sort-priority"
-              >
-                {t('fields.priority')}
-              </SortHeader>
-              <SortHeader
-                field="status"
-                sort={sort}
-                onSort={(s) => set('sort', s)}
-                testId="sr-list-sort-status"
-              >
-                {t('fields.status')}
-              </SortHeader>
-              <SortHeader
-                field="slaDueAt"
-                sort={sort}
-                onSort={(s) => set('sort', s)}
-                testId="sr-list-sort-sla"
-              >
-                {t('fields.slaDue')}
-              </SortHeader>
-              <th>{t('fields.assignee')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data?.items ?? []).map((r) => (
-              <tr
-                key={r.srNo}
-                className="clickable"
-                data-row-id={r.srNo}
-                data-testid="sr-list-row"
-                onClick={() => onOpen(r.srNo)}
-              >
-                <td className="mono">{r.srNo}</td>
-                <td style={{ whiteSpace: 'normal', minWidth: 220 }}>{r.subject}</td>
-                <td>
-                  <CustomerHoverCard customerRef={r.customerCif}>{r.customerName}</CustomerHoverCard>
-                </td>
-                <td>
-                  <PriorityBadge value={r.priority} />
-                </td>
-                <td>
-                  <StatusPill value={r.status} />
-                </td>
-                <td>
-                  <SlaTimer slaDueAt={r.slaDueAt} status={r.status} />
-                </td>
-                <td className="mono">
-                  {r.assignedTo ? (
-                    <StaffHoverCard staffId={r.assignedTo}>{r.assignedTo}</StaffHoverCard>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {data && data.total ? (
-        <Pagination
-          testId="sr-list-pagination"
-          page={data.page}
-          pageSize={data.pageSize}
-          total={data.total}
-          onPage={(p) => set('page', p)}
-        />
-      ) : null}
-    </section>
-  )
-}
-
 /** /service-requests */
 export default function RequestBoardPage() {
-  const { t } = useTranslation('requests')
+  const { t, i18n } = useTranslation('requests')
   const me = useMe()
   const toast = useToast()
   const [params, setParams] = useSearchParams()
@@ -352,12 +163,27 @@ export default function RequestBoardPage() {
   const debounced = useDebounce(search.trim(), 400)
   useCrumb([t('nav.requests'), t('board.title')])
 
+  const categories = useLookups('srCategories')
+  const [split, setSplit] = useSplit()
+  const boardRef = useRef<HTMLDivElement>(null)
+  const [presenting, setPresenting] = useState(false)
+  useEffect(() => {
+    const onChange = () =>
+      setPresenting(document.fullscreenElement === boardRef.current && !!boardRef.current)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+
   const view = params.get('view') === 'list' ? 'list' : 'board'
   const filters: Filters = {
     queue: params.get('queue') ?? 'mine',
     priority: params.get('priority') ?? '',
     q: debounced.length >= 2 ? debounced : '',
+    statuses: listParam(params.get('statuses')),
+    categories: listParam(params.get('categories')),
+    tags: listParam(params.get('tags')),
   }
+  const columns = filters.statuses.length ? SR_STATUS.filter((s) => filters.statuses.includes(s)) : SR_STATUS
   const set = (k: string, v: string) => {
     const next = new URLSearchParams(params)
     if (v) next.set(k, v)
@@ -369,7 +195,12 @@ export default function RequestBoardPage() {
   const drop = (target: SrStatus) => {
     const sr = dragged
     setDragged(null)
-    if (!sr || sr.status === target) return
+    if (sr) move(sr, target)
+  }
+
+  /** Drag and drop and "Move to ▸" both end here, so both follow the same rules. */
+  const move = (sr: ServiceRequestCard, target: SrStatus) => {
+    if (sr.status === target) return
     if (!canEdit) return toast(t('board.noEdit'), 'error')
     if (!canTransition(sr.status, target)) {
       return toast(
@@ -469,9 +300,58 @@ export default function RequestBoardPage() {
         </div>
       </div>
 
+      <div className="sr-filters">
+        <MultiSelect
+          label={t('filters.statuses')}
+          placeholder={t('filters.allStatuses')}
+          options={SR_STATUS.map((v) => ({ value: v, label: t(`common:status.${v}`) }))}
+          value={filters.statuses}
+          onChange={(v) => set('statuses', v.join(','))}
+        />
+        <MultiSelect
+          label={t('filters.categories')}
+          placeholder={t('filters.allCategories')}
+          options={(categories.data ?? []).map((c) => ({
+            value: c.code,
+            label: label(c.labels, i18n.language),
+          }))}
+          value={filters.categories}
+          onChange={(v) => set('categories', v.join(','))}
+        />
+        <LocatorBadge style="ARIA" />
+        <div className="sr-tag-filter" aria-label={t('filters.tags')} role="group">
+          <ChipSelect
+            label={t('filters.tags')}
+            options={SR_STANDARD_TAGS.map((v) => ({ value: v, label: v }))}
+            value={filters.tags}
+            allowCreate
+            onChange={(v) => set('tags', v.join(','))}
+          />
+        </div>
+        <div className="grow" />
+        <DesktopAlerts />
+        {view === 'board' ? (
+          <button
+            type="button"
+            className="btn icon"
+            title={t('board.present')}
+            onClick={() => void boardRef.current?.requestFullscreen?.()}
+          >
+            <Icon name="expand" />
+          </button>
+        ) : null}
+        {view === 'board' ? <LocatorBadge style="TTL" /> : null}
+      </div>
+
       {view === 'board' ? (
-        <div className="board" data-testid="board" onDragEnd={() => setDragged(null)}>
-          {SR_STATUS.map((s) => (
+        <div
+          ref={boardRef}
+          className={`board ${presenting ? 'presenting' : ''}`}
+          data-testid="board"
+          data-presenting={presenting}
+          onDragEnd={() => setDragged(null)}
+        >
+          {columns.map((s) => (
             <Column
               key={s}
               status={s}
@@ -480,26 +360,36 @@ export default function RequestBoardPage() {
               onDragStart={setDragged}
               onDrop={drop}
               onOpen={open}
+              onMove={move}
             />
           ))}
         </div>
       ) : (
-        <ListView filters={filters} onOpen={open} />
+        <RequestList
+          filters={filters}
+          selected={params.get('sr')}
+          onOpen={open}
+          split={split}
+          setSplit={setSplit}
+        />
       )}
 
-      {params.get('sr') ? <RequestDrawer srNo={params.get('sr')!} onClose={() => set('sr', '')} /> : null}
+      {params.get('sr') && !(view === 'list' && split.on) ? (
+        <RequestDrawer srNo={params.get('sr')!} onClose={() => set('sr', '')} />
+      ) : null}
       {resolving ? (
         <ResolveModal
           srNo={resolving.srNo}
           busy={change.isPending}
           onCancel={() => setResolving(null)}
-          onConfirm={(notes) =>
+          onConfirm={(notes, csat) =>
             change.mutate(
               {
                 srNo: resolving.srNo,
                 status: 'resolved',
                 version: resolving.version,
                 resolutionNotes: notes,
+                csat,
               },
               { onSettled: () => setResolving(null) },
             )

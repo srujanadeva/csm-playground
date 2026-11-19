@@ -365,6 +365,7 @@ describe.skipIf(!mongoUp)('API integration (MongoDB)', () => {
           status: 'resolved',
           version: sr.version,
           resolutionNotes: 'Replacement card issued.',
+          csat: { rating: 5 },
         })
       ).body
       const stale = await csr.patch(`/service-requests/${sr.srNo}/status`, {
@@ -388,6 +389,143 @@ describe.skipIf(!mongoUp)('API integration (MongoDB)', () => {
           })
         ).status,
       ).toBe(200)
+    })
+
+    it('saves tags and a callback, and refuses callbacks outside hours or too far ahead', async () => {
+      const csr = await signedIn('csr001')
+      // Next weekday (Mon–Sat) at 11:00 IST, a few days out.
+      const at = new Date()
+      at.setUTCDate(at.getUTCDate() + 3)
+      if (new Date(at.getTime() + 330 * 60_000).getUTCDay() === 0) at.setUTCDate(at.getUTCDate() + 1)
+      at.setUTCHours(5, 30, 0, 0)
+      const ok = await csr.post('/service-requests', {
+        ...body(),
+        tags: ['VIP', 'Called twice'],
+        callbackAt: at.toISOString(),
+        windowStart: '10:00',
+        windowEnd: '12:30',
+      })
+      expect(ok.status, JSON.stringify(ok.body)).toBe(201)
+      expect(ok.body).toMatchObject({
+        tags: ['VIP', 'Called twice'],
+        windowStart: '10:00',
+        windowEnd: '12:30',
+      })
+
+      const night = new Date(at)
+      night.setUTCHours(16, 0, 0, 0) // 21:30 IST
+      const bad = await csr.post('/service-requests', {
+        ...body(),
+        tags: ['VIP', 'vip'],
+        callbackAt: night.toISOString(),
+        windowStart: '12:00',
+        windowEnd: '11:00',
+      })
+      expect(bad.status).toBe(400)
+      const codes = Object.fromEntries(
+        bad.body.errors.map((e: { path: string; code: string }) => [e.path, e.code]),
+      )
+      expect(codes).toMatchObject({
+        tags: 'tagsDuplicate',
+        callbackAt: 'callbackHours',
+        windowEnd: 'windowOrder',
+      })
+      const far = await csr.post('/service-requests', {
+        ...body(),
+        callbackAt: new Date(Date.now() + 40 * 86_400_000).toISOString(),
+      })
+      expect(far.body.errors[0].code).toBe('callbackRange')
+
+      const tagged = await csr.get('/service-requests?queue=branch&tags=VIP&status=open,in_progress')
+      expect(tagged.body.items.map((r: { srNo: string }) => r.srNo)).toContain(ok.body.srNo)
+      const other = await csr.get('/service-requests?queue=branch&categories=loans')
+      expect(other.body.items.map((r: { srNo: string }) => r.srNo)).not.toContain(ok.body.srNo)
+    })
+
+    it('moves the SLA with priority, and edits in place with a version check', async () => {
+      const csr = await signedIn('csr001')
+      const sr = (await csr.post('/service-requests', { ...body(), priority: 'low' })).body
+      const res = await csr.patch(`/service-requests/${sr.srNo}`, {
+        version: sr.version,
+        priority: 'critical',
+      })
+      expect(res.status, JSON.stringify(res.body)).toBe(200)
+      expect(Date.parse(res.body.slaDueAt) - Date.parse(res.body.createdAt)).toBe(4 * 3_600_000)
+      const stale = await csr.patch(`/service-requests/${sr.srNo}`, { version: sr.version, tags: ['VIP'] })
+      expect(stale.body.code).toBe('stale_version')
+      const cleared = await csr.patch(`/service-requests/${sr.srNo}`, {
+        version: res.body.version,
+        callbackAt: null,
+        windowStart: null,
+        windowEnd: null,
+        assignedTo: 'sup001',
+      })
+      expect(cleared.body).toMatchObject({ callbackAt: null, assignedTo: 'sup001' })
+    })
+
+    it('cleans resolution notes, needs CSAT on resolve, and limits quality scores', async () => {
+      const csr = await signedIn('csr001')
+      const sup = await signedIn('sup001')
+      const sr = (await csr.post('/service-requests', body())).body
+      const noCsat = await csr.patch(`/service-requests/${sr.srNo}/status`, {
+        status: 'resolved',
+        version: sr.version,
+        resolutionNotes: '<p>Card <b>reissued</b></p>',
+      })
+      expect(noCsat.body.errors.map((e: { code: string }) => e.code)).toContain('csatRequired')
+      const done = await csr.patch(`/service-requests/${sr.srNo}/status`, {
+        status: 'resolved',
+        version: sr.version,
+        resolutionNotes: '<p onclick="x()">Card <b>reissued</b> today<script>alert(1)</script></p>',
+        csat: { declined: true },
+      })
+      expect(done.status, JSON.stringify(done.body)).toBe(200)
+      expect(done.body.resolutionNotes).toBe('<p>Card <b>reissued</b> today</p>')
+      expect(done.body.csat).toEqual({ rating: null, declined: true })
+
+      const rated = await csr.post(`/service-requests/${sr.srNo}/csat`, {
+        version: done.body.version,
+        csat: { rating: 4, comment: 'Quick help' },
+      })
+      expect(rated.body.csat).toEqual({ rating: 4, declined: false })
+
+      expect(
+        (await csr.post(`/service-requests/${sr.srNo}/quality`, { version: rated.body.version, score: 4 }))
+          .status,
+      ).toBe(403)
+      const noNote = await sup.post(`/service-requests/${sr.srNo}/quality`, {
+        version: rated.body.version,
+        score: 2.5,
+      })
+      expect(noNote.body.errors[0].code).toBe('qualityNoteRequired')
+      const odd = await sup.post(`/service-requests/${sr.srNo}/quality`, {
+        version: rated.body.version,
+        score: 3.3,
+      })
+      expect(odd.body.errors[0].code).toBe('qualityStep')
+      const scored = await sup.post(`/service-requests/${sr.srNo}/quality`, {
+        version: rated.body.version,
+        score: 4.5,
+      })
+      expect(scored.body.qualityScore).toBe(4.5)
+      const again = await sup.post(`/service-requests/${sr.srNo}/quality`, {
+        version: scored.body.version,
+        score: 5,
+      })
+      expect(again.body.code).toBe('already_scored')
+
+      const mine = (await sup.post('/service-requests', { ...body(), assignedTo: 'sup001' })).body
+      const r2 = await sup.patch(`/service-requests/${mine.srNo}/status`, {
+        status: 'resolved',
+        version: mine.version,
+        resolutionNotes: 'Handled at the counter.',
+        csat: { rating: 3 },
+      })
+      const own = await sup.post(`/service-requests/${mine.srNo}/quality`, {
+        version: r2.body.version,
+        score: 5,
+      })
+      expect(own.body.code).toBe('own_request')
     })
 
     it('refuses customers from another branch', async () => {

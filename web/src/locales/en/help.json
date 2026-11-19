@@ -237,6 +237,66 @@
         "Add ?bureauDelay=0 to remove the waits."
       ],
       "expected": "Score 300–900 with band Excellent (750+), Good (700–749), Fair (650–699) or Poor; the same customer always shows the same score."
+    },
+    "triageBoard": {
+      "title": "Triage the Request board",
+      "summary": "Filter by several statuses, categories and tags at once, move cards without dragging, present the board, and get desktop alerts.",
+      "steps": [
+        "Go to Service requests → Request board and choose Branch as the queue.",
+        "Open Statuses and tick Open and In progress: the other columns disappear. Open Categories and tick two categories. The choices are kept in the address (statuses=…, categories=…).",
+        "Under Filter by tag, type VIP and press Enter: only requests tagged VIP remain. The same tag name also shows on cards and in request panels, so a test must say which one it means.",
+        "On any card, open the ▸ menu (named \"Move SR-… to another status\") and pick a status. Only moves the rules allow are offered; Closed is greyed out without the Approve right.",
+        "Click the full-screen button (title Present board). Press Escape to leave full screen.",
+        "Click Turn on desktop alerts and allow notifications. New requests assigned to you, and your requests that pass their SLA, now pop up; clicking one opens the request. If you block notifications, the page explains how to allow them."
+      ],
+      "expected": "Columns and cards follow the filters; Move to changes the status as dragging would (Resolved still asks for notes and a rating)."
+    },
+    "scheduleCallback": {
+      "title": "Tag a request and schedule a callback",
+      "summary": "Add tags and a callback with a preferred call window when you raise a request, or later from its panel.",
+      "steps": [
+        "Go to Service requests → New request and fill in the request as usual.",
+        "Under Tags and callback, type tags (VIP, Escalated, Branch visit, Regulatory, or your own, 2–20 characters, up to 10).",
+        "Choose Callback on: a weekday or Saturday between 09:00 and 18:00, within 30 days. Choose the call window from and to.",
+        "Try a Sunday, 20:00, or a window that ends before it starts: you get a message under the field.",
+        "Submit. On the board, the card shows the tags and a phone icon (red once the callback time has passed). In the request panel you can change or clear the callback."
+      ],
+      "expected": "The request carries the tags and callback; overdue callbacks are highlighted."
+    },
+    "resolveWithRating": {
+      "title": "Resolve a request with formatted notes and a rating",
+      "summary": "Resolution notes are rich text, and the customer's rating is recorded on every resolve.",
+      "steps": [
+        "Open a request that is Open or In progress and choose Resolved (Move to, drag, or the ▸ menu).",
+        "Write the notes in the editor: use Bold and the bulleted list. The count must be 10 to 2,000 characters.",
+        "Pick the customer's rating with the stars, or tick Customer declined to rate. Add their comment if they gave one.",
+        "Click Resolve request. Without notes or a rating, a message tells you what's missing.",
+        "The card and the list now show the rating as stars; Customer 360's Service requests tab too."
+      ],
+      "expected": "The panel shows the notes formatted (scripts and links are removed by the server) and the rating read-only."
+    },
+    "qualityReview": {
+      "title": "Score a resolved request",
+      "summary": "Supervisors score resolved or closed requests from 0.5 to 5 stars, once each, never their own.",
+      "steps": [
+        "Sign in as a supervisor and open the list of resolved and closed requests in the branch.",
+        "Open a request someone else handled. Under Quality review, move the Quality score slider (arrow keys move half a star).",
+        "Below 3, a review note of at least 10 characters is required. Click Save score.",
+        "Open a request you raised or handled: there is no Quality review section."
+      ],
+      "expected": "The score shows as read-only stars with who scored it and when; a second score is refused."
+    },
+    "listEditing": {
+      "title": "Work in the list view",
+      "summary": "Expand rows, change priority or assignee in place, and see a request beside the list.",
+      "steps": [
+        "On the Request board, switch to List.",
+        "Click the ▸ at the start of a row to expand it: description, tags and the latest comment appear in a row underneath.",
+        "Click the pencil next to a priority, choose another and press Enter to save (Escape cancels). The SLA due time moves to creation time plus the new priority's hours; if that has passed, the request shows overdue at once.",
+        "Do the same for the assignee.",
+        "Click Split view, then a row: the request opens beside the list. Drag the divider, or focus it and use ←/→ (Shift for bigger steps). The browser remembers the split."
+      ],
+      "expected": "Edits save in the row with a confirmation; a change someone else made first is refused with a message."
     }
   },
   "elements": {
@@ -379,6 +439,58 @@
     "bureauReport": {
       "name": "Late-loading report iframe",
       "hint": "iframe[title='Full bureau report'] is added a few seconds after the score; wait for it, then switch into it."
+    },
+    "srMultiFilter": {
+      "name": "Multi-select filters",
+      "hint": "Open by role and name: getByRole('button', { name: /Statuses/ }), then tick options by role 'option'."
+    },
+    "srTagChips": {
+      "name": "Tag chips (same text in several places)",
+      "hint": "The tag \"VIP\" can show in the filter, on cards and in the panel: scope by the container or pick by index."
+    },
+    "moveMenu": {
+      "name": "Move to ▸ menu on cards",
+      "hint": "Only the start of the button's label is fixed: aria-label starts with \"Move SR-2026-000012\"."
+    },
+    "presentBoard": {
+      "name": "Present (full screen)",
+      "hint": "Icon button with only a title, \"Present board\"; the board gets data-presenting=\"true\"."
+    },
+    "desktopAlerts": {
+      "name": "Desktop alerts permission",
+      "hint": "Found by its text; the browser's permission prompt then appears (grant it in the test's browser context)."
+    },
+    "callbackFields": {
+      "name": "Callback date-time and call window",
+      "hint": "Inputs found by name: callbackAt (datetime-local), windowStart and windowEnd (time)."
+    },
+    "resolutionEditor": {
+      "name": "Rich text resolution notes",
+      "hint": "The editable area has id resolution-notes; toolbar buttons only have aria-pressed and a label."
+    },
+    "csatStars": {
+      "name": "Rating stars (radio)",
+      "hint": "Real radio inputs named csat with values 1–5, inside the fieldset whose legend is Customer rating; they are visually hidden, so click the label or use check()."
+    },
+    "csatReadOnly": {
+      "name": "Read-only rating",
+      "hint": "role=img whose label ends in \"out of 5\"; data-rating holds the number."
+    },
+    "qualitySlider": {
+      "name": "Half-star slider",
+      "hint": "getByRole('slider', { name: 'Quality score' }); fill() or arrow keys in steps of 0.5."
+    },
+    "listColumnCell": {
+      "name": "List cells and expanded rows",
+      "hint": "No ids: find the row by SR number, the cell by the column header's position; the expanded detail is the next row."
+    },
+    "inlineEdit": {
+      "name": "Edit in the row",
+      "hint": "The pencil is a button whose only name is hidden text (Change priority); the select appears in its place."
+    },
+    "splitPanels": {
+      "name": "Resizable split view",
+      "hint": "Class-only container .sr-split; the divider has role separator and aria-valuenow."
     }
   }
 }

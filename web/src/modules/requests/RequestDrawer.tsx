@@ -1,7 +1,7 @@
 /**
- * Request details drawer (/service-requests?sr=SR-2026-000031): details, a "Move to" status
- * control (the keyboard alternative to drag and drop), attachments, and a comment thread
- * that loads more as you scroll.
+ * Request details (/service-requests?sr=SR-2026-000031): details, a "Move to" status control,
+ * tags, callback, formatted resolution notes, customer rating, quality review, attachments, and a
+ * comment thread that loads more as you scroll. Shown in a drawer, or beside the list in split view.
  */
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -23,6 +23,9 @@ import { useToast } from '../../components/Toast.tsx'
 import { InfiniteSentinel, Loading } from '../../components/Widgets.tsx'
 import { useLookupLabel } from '../../hooks/useLookups.ts'
 import { formatDateTime, initials } from '../../lib/format.ts'
+import { RichTextView } from '../../components/data/RichTextView.tsx'
+import type { CsatInput } from './api.ts'
+import { CallbackSection, CsatSection, QualitySection, TagsSection } from './RequestPanelParts.tsx'
 import { ResolveModal } from './ResolveModal.tsx'
 
 /** Changes a request's status, asking for notes when resolving. */
@@ -31,13 +34,20 @@ export function useStatusChange() {
   const toast = useToast()
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (v: { srNo: string; status: SrStatus; version: number; resolutionNotes?: string }) =>
+    mutationFn: (v: {
+      srNo: string
+      status: SrStatus
+      version: number
+      resolutionNotes?: string
+      csat?: CsatInput
+    }) =>
       api<ServiceRequestDetail>(`/service-requests/${v.srNo}/status`, {
         method: 'PATCH',
         body: {
           status: v.status,
           version: v.version,
           ...(v.resolutionNotes ? { resolutionNotes: v.resolutionNotes } : {}),
+          ...(v.csat ? { csat: v.csat } : {}),
         },
       }),
     onSuccess: (sr) => {
@@ -143,8 +153,8 @@ function Comments({ srNo, closed }: { srNo: string; closed: boolean }) {
   )
 }
 
-/** The drawer itself. */
-export function RequestDrawer({ srNo, onClose }: { srNo: string; onClose: () => void }) {
+/** The request's details, without any frame (the drawer and the split view both use it). */
+export function RequestDetails({ srNo }: { srNo: string }) {
   const { t, i18n } = useTranslation('requests')
   const canEdit = useCan('serviceRequests.board', 'edit')
   const canApprove = useCan('serviceRequests.board', 'approve')
@@ -162,16 +172,12 @@ export function RequestDrawer({ srNo, onClose }: { srNo: string; onClose: () => 
   })
 
   if (isLoading || !sr) {
-    return (
-      <Drawer testId="sr-drawer" title={srNo} onClose={onClose}>
-        {error ? (
-          <div className="note bad" role="alert">
-            {error instanceof ApiError ? error.message : t('common:error.generic')}
-          </div>
-        ) : (
-          <Loading testId="sr-drawer-loading" />
-        )}
-      </Drawer>
+    return error ? (
+      <div className="note bad" role="alert">
+        {error instanceof ApiError ? error.message : t('common:error.generic')}
+      </div>
+    ) : (
+      <Loading testId="sr-drawer-loading" />
     )
   }
 
@@ -181,14 +187,11 @@ export function RequestDrawer({ srNo, onClose }: { srNo: string; onClose: () => 
     else change.mutate({ srNo: sr.srNo, status, version: sr.version })
   }
 
+  const editable = canEdit && sr.status !== 'closed'
   return (
-    <Drawer
-      testId="sr-drawer"
-      title={<span className="mono">{sr.srNo}</span>}
-      subtitle={sr.subject}
-      onClose={onClose}
-      footer={
-        canEdit && targets.length ? (
+    <div className="sr-details" data-sr-no={sr.srNo}>
+      {canEdit && targets.length ? (
+        <div className="actions">
           <>
             <label htmlFor="sr-drawer-move">{t('drawer.moveTo')}</label>
             <select
@@ -209,9 +212,8 @@ export function RequestDrawer({ srNo, onClose }: { srNo: string; onClose: () => 
               ))}
             </select>
           </>
-        ) : null
-      }
-    >
+        </div>
+      ) : null}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <StatusPill value={sr.status} testId="sr-drawer-status" />
         <PriorityBadge value={sr.priority} testId="sr-drawer-priority" />
@@ -263,7 +265,7 @@ export function RequestDrawer({ srNo, onClose }: { srNo: string; onClose: () => 
           <div className="span-all">
             <dt>{t('drawer.resolution')}</dt>
             <dd style={{ fontWeight: 400 }} data-testid="sr-drawer-resolution">
-              {sr.resolutionNotes}
+              <RichTextView html={sr.resolutionNotes} className="rich" />
             </dd>
           </div>
         ) : null}
@@ -283,20 +285,42 @@ export function RequestDrawer({ srNo, onClose }: { srNo: string; onClose: () => 
           ))}
         </div>
       ) : null}
+      <TagsSection sr={sr} editable={editable} />
+      <CallbackSection sr={sr} editable={editable} />
+      <CsatSection sr={sr} editable={canEdit} />
+      <QualitySection sr={sr} />
       <Comments srNo={sr.srNo} closed={sr.status === 'closed'} />
       {resolving ? (
         <ResolveModal
           srNo={sr.srNo}
           busy={change.isPending}
           onCancel={() => setResolving(false)}
-          onConfirm={(notes) =>
+          onConfirm={(notes, csat) =>
             change.mutate(
-              { srNo: sr.srNo, status: 'resolved', version: sr.version, resolutionNotes: notes },
+              { srNo: sr.srNo, status: 'resolved', version: sr.version, resolutionNotes: notes, csat },
               { onSettled: () => setResolving(false) },
             )
           }
         />
       ) : null}
+    </div>
+  )
+}
+
+/** The details in a drawer. */
+export function RequestDrawer({ srNo, onClose }: { srNo: string; onClose: () => void }) {
+  const { data: sr } = useQuery({
+    queryKey: ['sr', srNo],
+    queryFn: () => api<ServiceRequestDetail>(`/service-requests/${srNo}`),
+  })
+  return (
+    <Drawer
+      testId="sr-drawer"
+      title={<span className="mono">{srNo}</span>}
+      subtitle={sr?.subject}
+      onClose={onClose}
+    >
+      <RequestDetails srNo={srNo} />
     </Drawer>
   )
 }

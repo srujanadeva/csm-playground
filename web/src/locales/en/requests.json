@@ -44,16 +44,24 @@
     "notifyEmail": "Email the customer when the request is resolved",
     "submit": "Create request",
     "created": "{{srNo}} created.",
-    "createdWithFailures": "{{srNo}} created, but these files didn't upload: {{files}}"
+    "createdWithFailures": "{{srNo}} created, but these files didn't upload: {{files}}",
+    "followUp": "Tags and callback"
   },
   "board": {
     "title": "Request board",
     "subtitle": "Drag a card to change its status. Each column loads more as you scroll.",
     "listSubtitle": "Sort and page through requests.",
     "view": "View",
-    "views": { "board": "Board", "list": "List" },
+    "views": {
+      "board": "Board",
+      "list": "List"
+    },
     "queue": "Queue",
-    "queues": { "mine": "My queue", "branch": "Branch queue", "all": "All branches" },
+    "queues": {
+      "mine": "My queue",
+      "branch": "Branch queue",
+      "all": "All branches"
+    },
     "anyPriority": "Any priority",
     "searchLabel": "Search requests",
     "searchPlaceholder": "SR number, customer or subject",
@@ -63,7 +71,9 @@
     "invalidMove": "A request can't move from {{from}} to {{to}}.",
     "moved": "{{srNo}} moved to {{status}}.",
     "export": "Export CSV",
-    "noResults": "No requests match these filters."
+    "noResults": "No requests match these filters.",
+    "moveMenu": "Move {{srNo}} to another status",
+    "present": "Present board"
   },
   "drawer": {
     "comments": "Comments",
@@ -72,12 +82,72 @@
     "noComments": "No comments yet.",
     "moveTo": "Move to",
     "created": "Created",
-    "resolution": "Resolution notes"
+    "resolution": "Resolution notes",
+    "saved": "Saved"
   },
   "resolve": {
     "title": "Resolve {{srNo}}",
     "message": "Say what was done for the customer. The notes are kept with the request.",
     "notes": "Resolution notes",
     "confirm": "Resolve request"
+  },
+  "filters": {
+    "statuses": "Statuses",
+    "allStatuses": "All statuses",
+    "categories": "Categories",
+    "allCategories": "All categories",
+    "tags": "Filter by tag"
+  },
+  "alerts": {
+    "turnOn": "Turn on desktop alerts",
+    "turnOff": "Turn off desktop alerts",
+    "blocked": "Desktop alerts are blocked for this site. Allow notifications in the browser's site settings, then reload.",
+    "assigned": "New request assigned: {{subject}}",
+    "breached": "SLA breached: {{subject}}"
+  },
+  "list": {
+    "caption": "Service requests",
+    "expandColumn": "Details",
+    "showDetails": "Show details",
+    "latestComment": "Latest comment",
+    "changePriority": "Change priority",
+    "changeAssignee": "Change assignee",
+    "saved": "{{srNo}} updated",
+    "split": "Split view",
+    "splitLabel": "Resize the list and details",
+    "pickOne": "Select a request to see it here."
+  },
+  "tags": {
+    "title": "Tags",
+    "none": "No tags"
+  },
+  "callback": {
+    "title": "Callback",
+    "at": "Callback on",
+    "from": "Call window from",
+    "to": "Call window to",
+    "save": "Save callback",
+    "clear": "Clear callback",
+    "scheduled": "Callback {{when}}",
+    "overdue": "Callback overdue (was {{when}})",
+    "window": "window {{start}}–{{end}}",
+    "hint": "Monday to Saturday, 09:00 to 18:00, within 30 days."
+  },
+  "csat": {
+    "title": "Customer rating",
+    "legend": "Customer rating",
+    "short": "CSAT",
+    "declined": "Customer declined to rate",
+    "comment": "Customer's comment (optional)",
+    "save": "Save rating",
+    "wasDeclined": "The customer declined to rate.",
+    "none": "No rating recorded."
+  },
+  "quality": {
+    "title": "Quality review",
+    "slider": "Quality score",
+    "note": "Review note",
+    "save": "Save score",
+    "by": "by {{by}} on {{at}}"
   }
 }

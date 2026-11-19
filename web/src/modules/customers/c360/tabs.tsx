@@ -18,6 +18,7 @@ import { LocatorBadge } from '../../../components/LocatorBadge.tsx'
 import { BackToTop } from '../../../components/data/BackToTop.tsx'
 import { Skeleton } from '../../../components/data/Skeleton.tsx'
 import { InfoTip } from '../../../components/overlays/InfoTip.tsx'
+import { StarDisplay } from '../../../components/selection/StarRating.tsx'
 import { useLookupLabel } from '../../../hooks/useLookups.ts'
 import { formatDate, formatDateTime, formatInr } from '../../../lib/format.ts'
 import { DocumentsPanel } from '../onboard/shared.tsx'
@@ -299,6 +300,7 @@ export function RequestsTab({ c }: { c: CustomerDetail }) {
               <td>
                 <SlaTimer slaDueAt={r.slaDueAt} status={r.status} />
               </td>
+              <td>{r.csat?.rating ? <StarDisplay value={r.csat.rating} /> : null}</td>
             </tr>
           ))}
         </tbody>

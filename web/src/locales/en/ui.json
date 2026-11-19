@@ -105,7 +105,12 @@
     "DYN": "dynamic ids (match by prefix)",
     "DUP": "duplicate ids or text (scope by parent)",
     "XP": "structure only (XPath)",
-    "CTX": "inside an iframe or shadow root"
+    "CTX": "inside an iframe or shadow root",
+    "LINK": "link text",
+    "ALT": "image alt text",
+    "PH": "placeholder only",
+    "PART": "part of an attribute value",
+    "NTH": "position among identical siblings"
   },
   "unsaved": {
     "title": "Leave without saving?",

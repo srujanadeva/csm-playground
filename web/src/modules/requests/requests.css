@@ -1,0 +1,123 @@
+/* Request board and list (Phase 4): filter bar, card extras, full-screen board, list rows, split view,
+   and the request panel's sections. */
+
+.sr-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.sr-tag-filter {
+  min-width: 220px;
+}
+
+.card-open {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.card-meta {
+  min-height: 0;
+}
+.card-meta:empty {
+  display: none;
+}
+.card .chip,
+.sr-section .chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--sunken);
+  font-size: 11px;
+  color: var(--ink);
+}
+.card .callback {
+  display: inline-flex;
+  color: var(--accent);
+}
+.card .callback.overdue {
+  color: var(--bad);
+}
+.card-move .btn {
+  height: 24px;
+  padding: 0 6px;
+}
+
+.board.presenting {
+  padding: 18px;
+  background: var(--bg);
+  overflow: auto;
+}
+
+.inline-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.inline-select {
+  height: 28px;
+  width: auto;
+}
+.detail-row > td {
+  background: var(--sunken);
+  white-space: normal;
+}
+.row-detail {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr;
+  gap: 14px;
+  padding: 6px 4px;
+}
+.row-detail p {
+  margin: 4px 0 0;
+}
+
+.sr-split .panel {
+  height: 100%;
+  overflow: auto;
+}
+
+.sr-details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sr-section h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.callback-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 8px;
+  align-items: end;
+}
+.callback-form .actions {
+  grid-column: 1 / -1;
+}
+.csat {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.csat legend {
+  font-size: 12px;
+  color: var(--muted);
+}
+.rich ul,
+.rich ol {
+  margin: 4px 0;
+  padding-inline-start: 20px;
+}

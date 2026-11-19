@@ -54,5 +54,17 @@
   "guardianRequired": "The nominee is under 18. Enter a guardian name.",
   "shareRange": "Enter a share between 1 and 100.",
   "dobNotFuture": "Date of birth can't be in the future.",
-  "signatureRequired": "The customer must sign before you submit."
+  "signatureRequired": "The customer must sign before you submit.",
+  "tagLength": "Use 2 to 20 characters.",
+  "tagFormat": "Use letters, digits, spaces or hyphens.",
+  "tagsMax": "A request can have at most 10 tags.",
+  "tagsDuplicate": "Each tag can be added once.",
+  "callbackFuture": "The callback must be in the future.",
+  "callbackHours": "Callbacks are Monday to Saturday, 09:00 to 18:00.",
+  "callbackRange": "Schedule the callback within 30 days.",
+  "windowOrder": "The window must end after it starts.",
+  "resolutionLength": "Use at most 2,000 characters.",
+  "csatRequired": "Record the customer’s rating, or tick \"Customer declined\".",
+  "qualityStep": "Score in half stars, from 0.5 to 5.",
+  "qualityNoteRequired": "Explain a score below 3 in at least 10 characters."
 }

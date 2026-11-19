@@ -5,7 +5,10 @@ import {
   boardQuery,
   commentSchema,
   createServiceRequestSchema,
+  csatUpdateSchema,
   cursorQuery,
+  qualitySchema,
+  updateServiceRequestSchema,
   srListQuery,
   statusChangeSchema,
 } from '@csm/shared'
@@ -59,6 +62,28 @@ export function serviceRequestRoutes(config: Config): Router {
   router.get('/:srNo', view, async (req, res) => {
     res.json(await sr.get(req, srNo(req.params)))
   })
+
+  // PATCH /service-requests/:srNo { version, priority?, assignedTo?, tags?, callbackAt?, windowStart?, windowEnd? }
+  router.patch('/:srNo', edit, validate('body', updateServiceRequestSchema), async (req, res) => {
+    res.json(
+      await sr.update(req, srNo(req.params), req.valid!.body as z.infer<typeof updateServiceRequestSchema>),
+    )
+  })
+
+  // POST /service-requests/:srNo/csat { version, csat }
+  router.post('/:srNo/csat', edit, validate('body', csatUpdateSchema), async (req, res) => {
+    res.json(await sr.setCsat(req, srNo(req.params), req.valid!.body as z.infer<typeof csatUpdateSchema>))
+  })
+
+  // POST /service-requests/:srNo/quality { version, score, note? }
+  router.post(
+    '/:srNo/quality',
+    requireCapability('serviceRequests.board', 'approve'),
+    validate('body', qualitySchema),
+    async (req, res) => {
+      res.json(await sr.setQuality(req, srNo(req.params), req.valid!.body as z.infer<typeof qualitySchema>))
+    },
+  )
 
   router.patch('/:srNo/status', edit, validate('body', statusChangeSchema), async (req, res) => {
     res.json(

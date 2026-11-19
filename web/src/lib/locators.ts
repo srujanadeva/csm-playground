@@ -15,6 +15,17 @@ export const LOCATOR_STYLES = [
   'DUP',
   'XP',
   'CTX',
+  'LINK',
+  'ALT',
+  'PH',
+  'PART',
+  'NTH',
 ] as const
+
+/** Working example selectors for one element (plan §3.1): one CSS and one XPath technique. */
+export interface ElementLocators {
+  css: string
+  xpath: string
+}
 
 export type LocatorStyle = (typeof LOCATOR_STYLES)[number]

@@ -1,10 +1,19 @@
-/** Asks for resolution notes (at least 10 characters) before a request moves to Resolved. */
+/**
+ * Resolving a request: formatted resolution notes (10–2,000 characters, rich text editor with
+ * id="resolution-notes"; its toolbar buttons only have aria-pressed and a label) and the customer's
+ * rating, which is required ("Customer declined" counts as an answer).
+ */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Field, controlProps } from '../../components/Field.tsx'
+import { richTextTextLength } from '@csm/shared'
+import { useErrorText } from '../../components/Field.tsx'
+import { LocatorBadge } from '../../components/LocatorBadge.tsx'
 import { Modal } from '../../components/Overlay.tsx'
+import { RichTextEditor } from '../../components/inputs/RichTextEditor.tsx'
+import type { CsatInput } from './api.ts'
+import { CsatFields, csatComplete } from './CsatFields.tsx'
 
-/** Resolution-notes dialog. */
+/** Resolution dialog. */
 export function ResolveModal({
   srNo,
   busy,
@@ -14,11 +23,24 @@ export function ResolveModal({
   srNo: string
   busy: boolean
   onCancel: () => void
-  onConfirm: (notes: string) => void
+  onConfirm: (notes: string, csat: CsatInput) => void
 }) {
   const { t } = useTranslation('requests')
+  const errorText = useErrorText()
   const [notes, setNotes] = useState('')
-  const [error, setError] = useState<string | undefined>()
+  const [csat, setCsat] = useState<CsatInput>({ declined: false })
+  const [errors, setErrors] = useState<{ notes?: string; csat?: string }>({})
+  const length = richTextTextLength(notes)
+
+  const confirm = () => {
+    const next = {
+      notes: length < 10 ? 'resolutionRequired' : length > 2000 ? 'resolutionLength' : undefined,
+      csat: csatComplete(csat) ? undefined : 'csatRequired',
+    }
+    setErrors(next)
+    if (!next.notes && !next.csat) onConfirm(notes, csat)
+  }
+
   return (
     <Modal
       testId="sr-resolve"
@@ -34,10 +56,7 @@ export function ResolveModal({
             className="btn pri"
             data-testid="sr-resolve-confirm"
             disabled={busy}
-            onClick={() => {
-              if (notes.trim().length < 10) setError('resolutionRequired')
-              else onConfirm(notes.trim())
-            }}
+            onClick={confirm}
           >
             {busy ? <span className="spin" /> : null}
             {t('resolve.confirm')}
@@ -46,25 +65,34 @@ export function ResolveModal({
       }
     >
       <span>{t('resolve.message')}</span>
-      <Field
-        id="sr-resolve-notes"
-        label={t('resolve.notes')}
-        required
-        error={error}
-        help={`${notes.length} / 1000`}
-      >
-        <textarea
-          {...controlProps('sr-resolve-notes', error)}
-          className="in"
-          maxLength={1000}
-          value={notes}
-          data-autofocus
-          onChange={(e) => {
-            setNotes(e.target.value)
-            setError(undefined)
+      <div className="f">
+        <span className="lbl req" id="resolution-notes-label">
+          {t('resolve.notes')} <LocatorBadge style="ID" />
+        </span>
+        <RichTextEditor
+          id="resolution-notes"
+          label={t('resolve.notes')}
+          maxLength={2000}
+          invalid={!!errors.notes}
+          onChange={(html) => {
+            setNotes(html)
+            setErrors((e) => ({ ...e, notes: undefined }))
           }}
         />
-      </Field>
+        {errors.notes ? (
+          <span className="errmsg" role="alert">
+            {errorText(errors.notes)}
+          </span>
+        ) : null}
+      </div>
+      <CsatFields
+        value={csat}
+        onChange={(v) => {
+          setCsat(v)
+          setErrors((e) => ({ ...e, csat: undefined }))
+        }}
+        error={errors.csat}
+      />
     </Modal>
   )
 }

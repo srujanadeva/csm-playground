@@ -28,6 +28,11 @@ Step-by-step flows for each kind of user. Every element you meet is listed with 
 | `DUP`  | duplicate ids or text (scope by parent) |
 | `XP`   | structure only (XPath)                  |
 | `CTX`  | inside an iframe or shadow root         |
+| `LINK` | link text                               |
+| `ALT`  | image alt text                          |
+| `PH`   | placeholder only                        |
+| `PART` | part of an attribute value              |
+| `NTH`  | position among identical siblings       |
 
 ## Visitor (not signed in)
 
@@ -50,9 +55,9 @@ The sign-in page is blocked until you answer the cookie banner.
 
 **What you should see:** The banner closes and the sign-in form works. The choice is stored in localStorage as csm.cookieConsent.
 
-| Element                | Locator style | How to find it                                                                                             |
-| ---------------------- | ------------- | ---------------------------------------------------------------------------------------------------------- |
-| Blocking cookie banner | `TXT`         | Buttons by text only: //button[normalize-space()='Accept all']. The page behind is inert until you answer. |
+| Element                | Locator style | CSS | XPath | How to find it                                                                                             |
+| ---------------------- | ------------- | --- | ----- | ---------------------------------------------------------------------------------------------------------- |
+| Blocking cookie banner | `TXT`         | —   | —     | Buttons by text only: //button[normalize-space()='Accept all']. The page behind is inert until you answer. |
 
 ### Request staff access
 
@@ -73,12 +78,12 @@ A new joiner asks for an account; an administrator decides.
 
 **What you should see:** A confirmation with a request number like AR-2026-000003. A receipt e-mail appears in the dev inbox.
 
-| Element                      | Locator style | How to find it                                                                                                    |
-| ---------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Sign-up form                 | `NAME`        | Controls by name: input[name='fullName'], select[name='branchCode'], input[name='roleRequested'][value='teller']. |
-| Terms and privacy checkboxes | `NAME`        | input[name='acceptTerms'], input[name='acceptPrivacy'] (required), input[name='subscribeUpdates'] (optional).     |
-| Masked mobile input          | `NAME`        | input[name='mobile']; the raw digits are in data-raw.                                                             |
-| Policy dialogs               | `TXT`         | Open from the links by text; the dialog is role=dialog with the policy title.                                     |
+| Element                      | Locator style | CSS                    | XPath                     | How to find it                                                                                                    |
+| ---------------------------- | ------------- | ---------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Sign-up form                 | `NAME`        | —                      | —                         | Controls by name: input[name='fullName'], select[name='branchCode'], input[name='roleRequested'][value='teller']. |
+| Terms and privacy checkboxes | `NAME`        | —                      | —                         | input[name='acceptTerms'], input[name='acceptPrivacy'] (required), input[name='subscribeUpdates'] (optional).     |
+| Masked mobile input          | `NAME`        | `input[name='mobile']` | `//input[@name='mobile']` | input[name='mobile']; the raw digits are in data-raw.                                                             |
+| Policy dialogs               | `TXT`         | —                      | —                         | Open from the links by text; the dialog is role=dialog with the policy title.                                     |
 
 ### Reset a forgotten password
 
@@ -99,12 +104,12 @@ Staff ID, then a 6-digit code from the dev inbox, then a new password.
 
 **What you should see:** Your password was changed. Sign in with the new password; a locked account is unlocked too. A "password changed" e-mail appears in the dev inbox.
 
-| Element                      | Locator style | How to find it                                                                                                |
-| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------- |
-| Forgot-password fields       | `LBL`         | By label: getByLabel('Staff ID'), getByLabel('New password'). Ids are generated by React and change.          |
-| Six-box code input           | `DYN`         | Ids like otp-3fa9c1-0 change on every load: input[id^='otp-'], or the group by its label 'Verification code'. |
-| Expiry and resend countdowns | `TXT`         | Text such as 'Send a new code in 0:24'; wait for the button to become enabled.                                |
-| Show/hide password           | `ARIA`        | getByRole('button', { name: 'Show' }); aria-pressed reflects the state.                                       |
+| Element                      | Locator style | CSS | XPath | How to find it                                                                                                |
+| ---------------------------- | ------------- | --- | ----- | ------------------------------------------------------------------------------------------------------------- |
+| Forgot-password fields       | `LBL`         | —   | —     | By label: getByLabel('Staff ID'), getByLabel('New password'). Ids are generated by React and change.          |
+| Six-box code input           | `DYN`         | —   | —     | Ids like otp-3fa9c1-0 change on every load: input[id^='otp-'], or the group by its label 'Verification code'. |
+| Expiry and resend countdowns | `TXT`         | —   | —     | Text such as 'Send a new code in 0:24'; wait for the button to become enabled.                                |
+| Show/hide password           | `ARIA`        | —   | —     | getByRole('button', { name: 'Show' }); aria-pressed reflects the state.                                       |
 
 ### Read messages in the dev inbox
 
@@ -123,9 +128,9 @@ Every SMS and e-mail the practice environment sent.
 
 **What you should see:** Newest first. The code is in the Message column of the SMS row.
 
-| Element     | Locator style | How to find it                                                     |
-| ----------- | ------------- | ------------------------------------------------------------------ |
-| Inbox table | `XP`          | No ids or classes on rows: //table/tbody/tr[td[2]='sms'][1]/td[5]. |
+| Element     | Locator style | CSS | XPath | How to find it                                                     |
+| ----------- | ------------- | --- | ----- | ------------------------------------------------------------------ |
+| Inbox table | `XP`          | —   | —     | No ids or classes on rows: //table/tbody/tr[td[2]='sms'][1]/td[5]. |
 
 ## Customer service rep
 
@@ -152,12 +157,12 @@ Let the app read the ID card, take the customer's photo, verify them with the e-
 
 **What you should see:** Fields read from the card are filled and flagged ones must be checked; the e-KYC result shows a reference (EKYC-…) and any difference from the form; the customer is submitted with a CIF, and Customer 360 shows the photo and "e-KYC verified".
 
-| Element                           | Locator style | How to find it                                                                                                                                 |
-| --------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| ID-card OCR results               | `DATA`        | [data-qa='ocr-row'][data-field='idNumber']; read data-confidence and data-flagged. The file input is [data-qa='ocr-file'].                     |
-| Camera photo with upload fallback | `TTL`         | Icon buttons named only by title: button[title='Start camera'], [title='Capture'], [title='Retake']. State is on .camera[data-state].          |
-| Cross-origin e-KYC frame          | `CTX`         | iframe[title='e-KYC provider'] from https://localhost:4002: switch into the frame first; inside, #ekyc-consent and the Verify identity button. |
-| Signature pad                     | `ID`          | canvas#customer-signature: draw with pointer moves; the wrapper's data-strokes and data-empty show the result.                                 |
+| Element                           | Locator style | CSS                                        | XPath                                                             | How to find it                                                                                                                                 |
+| --------------------------------- | ------------- | ------------------------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| ID-card OCR results               | `DATA`        | `[data-qa='ocr-row'][data-flagged='true']` | `//tr[@data-qa='ocr-row' and @data-field='idNumber']`             | [data-qa='ocr-row'][data-field='idNumber']; read data-confidence and data-flagged. The file input is [data-qa='ocr-file'].                     |
+| Camera photo with upload fallback | `TTL`         | `button[title='Start camera']`             | `//button[@title='Capture']`                                      | Icon buttons named only by title: button[title='Start camera'], [title='Capture'], [title='Retake']. State is on .camera[data-state].          |
+| Cross-origin e-KYC frame          | `CTX`         | `iframe[title='e-KYC provider']`           | `//iframe[@title='e-KYC provider']`                               | iframe[title='e-KYC provider'] from https://localhost:4002: switch into the frame first; inside, #ekyc-consent and the Verify identity button. |
+| Signature pad                     | `ID`          | `#customer-signature`                      | `//canvas[@id='customer-signature']/ancestor::div[@data-strokes]` | canvas#customer-signature: draw with pointer moves; the wrapper's data-strokes and data-empty show the result.                                 |
 
 ### Add nominees
 
@@ -177,10 +182,10 @@ Record up to three nominees whose shares add up to 100%.
 
 **What you should see:** The nominees are saved with the draft and listed on Review & submit and on Customer 360 (KYC tab).
 
-| Element                 | Locator style | How to find it                                                                        |
-| ----------------------- | ------------- | ------------------------------------------------------------------------------------- |
-| Revealed nominee fields | `XP`          | No ids: //fieldset[legend='Nominee 1']//span[.='Share (%)']/following-sibling::input. |
-| Masked mobile input     | `NAME`        | input[name='mobile']; the raw digits are in data-raw.                                 |
+| Element                 | Locator style | CSS                                                        | XPath                                                                          | How to find it                                                                        |
+| ----------------------- | ------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Revealed nominee fields | `XP`          | `fieldset.nominee-row:nth-of-type(1) input[type='number']` | `//fieldset[legend='Nominee 1']//span[.='Share (%)']/following-sibling::input` | No ids: //fieldset[legend='Nominee 1']//span[.='Share (%)']/following-sibling::input. |
+| Masked mobile input     | `NAME`        | `input[name='mobile']`                                     | `//input[@name='mobile']`                                                      | input[name='mobile']; the raw digits are in data-raw.                                 |
 
 ### Leave a form with unsaved changes
 
@@ -200,9 +205,9 @@ The onboarding wizard, the Edit customer panel and New request warn before you l
 
 **What you should see:** Nothing is lost unless you choose Discard changes. Saving (Next, Save draft, Save) clears the warning.
 
-| Element                | Locator style | How to find it                                                      |
-| ---------------------- | ------------- | ------------------------------------------------------------------- |
-| Unsaved-changes dialog | `TXT`         | Find it by text: the Stay on this page and Discard changes buttons. |
+| Element                | Locator style | CSS                                 | XPath                                                                | How to find it                                                      |
+| ---------------------- | ------------- | ----------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Unsaved-changes dialog | `TXT`         | `[role='dialog'] .btn.danger-solid` | `//div[@role='dialog']//button[normalize-space()='Discard changes']` | Find it by text: the Stay on this page and Discard changes buttons. |
 
 ### See the customer's photo
 
@@ -220,9 +225,9 @@ Customer 360 shows the customer's photo, or their initials when there is none or
 
 **What you should see:** The picture is a .c360-photo element; its data-state is loaded, loading or broken.
 
-| Element                               | Locator style | How to find it                                                          |
-| ------------------------------------- | ------------- | ----------------------------------------------------------------------- |
-| Customer photo with initials fallback | `CLS`         | .c360-photo; img inside when loaded, initials when broken (data-state). |
+| Element                               | Locator style | CSS                                    | XPath                                   | How to find it                                                          |
+| ------------------------------------- | ------------- | -------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------- |
+| Customer photo with initials fallback | `CLS`         | `.c360-photo[data-state='loaded'] img` | `//span[contains(@class,'c360-photo')]` | .c360-photo; img inside when loaded, initials when broken (data-state). |
 
 ### Work faster in Customer search
 
@@ -241,11 +246,11 @@ Select, open and act on search results with the mouse or keyboard, and preview a
 
 **What you should see:** Only a double-click or Enter opens the customer; Copy CIF says "Copied" (or explains if the browser blocked it).
 
-| Element              | Locator style | How to find it                                                                                        |
-| -------------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
-| Double-click row     | `DATA`        | tr[data-row-id='CIF-000124']: dblclick() opens; a single click sets data-selected="true".             |
-| Right-click row menu | `TXT`         | Right-click the row, then find items by text: getByRole('menuitem', { name: 'Copy CIF' }).            |
-| Hover preview card   | `TTL`         | Hover [title='Preview CIF-000124'] (or [title='Preview sup001']) for 0.4 s; the card is role=tooltip. |
+| Element              | Locator style | CSS                            | XPath                                                                          | How to find it                                                                                        |
+| -------------------- | ------------- | ------------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Double-click row     | `DATA`        | `tr[data-row-id='CIF-000124']` | `//tr[@data-row-id='CIF-000124']`                                              | tr[data-row-id='CIF-000124']: dblclick() opens; a single click sets data-selected="true".             |
+| Right-click row menu | `TXT`         | `.ctx-menu [role='menuitem']`  | `//ul[@role='menu']//*[@role='menuitem'][normalize-space()='Copy CIF']`        | Right-click the row, then find items by text: getByRole('menuitem', { name: 'Copy CIF' }).            |
+| Hover preview card   | `TTL`         | `[title='Preview CIF-000124']` | `//span[@title='Preview CIF-000124']/following-sibling::span[@role='tooltip']` | Hover [title='Preview CIF-000124'] (or [title='Preview sup001']) for 0.4 s; the card is role=tooltip. |
 
 ### Use the Customer 360 tools
 
@@ -266,13 +271,13 @@ Create a request for a category straight from Customer 360, check an account num
 
 **What you should see:** New request opens pre-filled; the confirmation reports match and typed or pasted; the offer stays hidden after Not now.
 
-| Element                         | Locator style | How to find it                                                                                        |
-| ------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
-| Actions menu with submenu       | `ARIA`        | getByRole('button', { name: 'Actions' }), then menuitem 'Create request', then the category menuitem. |
-| Copy and confirm account number | `ID`          | #copy-acct-<number>, #confirm-account-no, #confirm-account-result[data-match][data-source='pasted'].  |
-| Offer banner                    | `CLS`         | .promo-banner and its .btn (Not now); data-offer names the offer.                                     |
-| Section ⓘ tips                  | `ARIA`        | getByRole('button', { name: 'About KYC' }); the explanation appears while hovered or after a click.   |
-| Back-to-top button              | `TTL`         | button[title='Back to top'], shown after scrolling a screen down.                                     |
+| Element                         | Locator style | CSS                                                     | XPath                                                                                          | How to find it                                                                                        |
+| ------------------------------- | ------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Actions menu with submenu       | `ARIA`        | `.c360-actions [role='menuitem'][aria-haspopup='menu']` | `//button[normalize-space()='Create request']/following-sibling::ul//button[@role='menuitem']` | getByRole('button', { name: 'Actions' }), then menuitem 'Create request', then the category menuitem. |
+| Copy and confirm account number | `ID`          | `#confirm-account-result[data-source='pasted']`         | `//input[@id='confirm-account-no']/following-sibling::span[@role='status']`                    | #copy-acct-<number>, #confirm-account-no, #confirm-account-result[data-match][data-source='pasted'].  |
+| Offer banner                    | `CLS`         | `.promo-banner > .btn`                                  | `//div[contains(@class,'promo-banner')]//button`                                               | .promo-banner and its .btn (Not now); data-offer names the offer.                                     |
+| Section ⓘ tips                  | `ARIA`        | `button[aria-label='About KYC']`                        | `//h3[contains(.,'KYC')]//button`                                                              | getByRole('button', { name: 'About KYC' }); the explanation appears while hovered or after a click.   |
+| Back-to-top button              | `TTL`         | `button[title='Back to top']`                           | `//button[@title='Back to top']`                                                               | button[title='Back to top'], shown after scrolling a screen down.                                     |
 
 ### Check a customer's credit standing
 
@@ -292,11 +297,134 @@ Customer 360 loads the customer's bureau score a little after the page; supervis
 
 **What you should see:** Score 300–900 with band Excellent (750+), Good (700–749), Fair (650–699) or Poor; the same customer always shows the same score.
 
-| Element                    | Locator style | How to find it                                                                                                               |
-| -------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Bureau score web component | `CTX`         | csm-bureau-score has an open shadow root with a nested csm-gauge (two roots to pierce); Retry is slotted from the light DOM. |
-| Late-loading bureau panel  | `DATA`        | [data-qa='bureau-panel'][data-state='ready'\|'none'\|'error']: wait for the state, not a fixed time.                         |
-| Late-loading report iframe | `CTX`         | iframe[title='Full bureau report'] is added a few seconds after the score; wait for it, then switch into it.                 |
+| Element                    | Locator style | CSS                                            | XPath                                                        | How to find it                                                                                                               |
+| -------------------------- | ------------- | ---------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Bureau score web component | `CTX`         | `csm-bureau-score csm-gauge`                   | `//csm-bureau-score (XPath stops at the shadow root)`        | csm-bureau-score has an open shadow root with a nested csm-gauge (two roots to pierce); Retry is slotted from the light DOM. |
+| Late-loading bureau panel  | `DATA`        | `[data-qa='bureau-panel'][data-state='ready']` | `//section[@data-qa='bureau-panel' and @data-state='ready']` | [data-qa='bureau-panel'][data-state='ready'\|'none'\|'error']: wait for the state, not a fixed time.                         |
+| Late-loading report iframe | `CTX`         | `iframe[title='Full bureau report']`           | `//iframe[@title='Full bureau report']`                      | iframe[title='Full bureau report'] is added a few seconds after the score; wait for it, then switch into it.                 |
+
+### Triage the Request board
+
+Filter by several statuses, categories and tags at once, move cards without dragging, present the board, and get desktop alerts.
+
+- **Who:** Customer service rep, Supervisor
+- **Start at:** `/service-requests`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. Go to Service requests → Request board and choose Branch as the queue.
+2. Open Statuses and tick Open and In progress: the other columns disappear. Open Categories and tick two categories. The choices are kept in the address (statuses=…, categories=…).
+3. Under Filter by tag, type VIP and press Enter: only requests tagged VIP remain. The same tag name also shows on cards and in request panels, so a test must say which one it means.
+4. On any card, open the ▸ menu (named "Move SR-… to another status") and pick a status. Only moves the rules allow are offered; Closed is greyed out without the Approve right.
+5. Click the full-screen button (title Present board). Press Escape to leave full screen.
+6. Click Turn on desktop alerts and allow notifications. New requests assigned to you, and your requests that pass their SLA, now pop up; clicking one opens the request. If you block notifications, the page explains how to allow them.
+
+**What you should see:** Columns and cards follow the filters; Move to changes the status as dragging would (Resolved still asks for notes and a rating).
+
+| Element                                 | Locator style | CSS                                                                                   | XPath                                                                                                                         | How to find it                                                                                            |
+| --------------------------------------- | ------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Multi-select filters                    | `ARIA`        | `[role='listbox'][aria-multiselectable='true'] [role='option'][aria-selected='true']` | `//*[@role='option' and normalize-space()='In progress']`                                                                     | Open by role and name: getByRole('button', { name: /Statuses/ }), then tick options by role 'option'.     |
+| Tag chips (same text in several places) | `DUP`         | `section[aria-label='Tags'] li.chip-item:has(> span)`                                 | `(//li[contains(@class,'chip-item')][span[normalize-space()='VIP']])[2]`                                                      | The tag "VIP" can show in the filter, on cards and in the panel: scope by the container or pick by index. |
+| Move to ▸ menu on cards                 | `PART`        | `button[aria-label^='Move SR-']`                                                      | `//button[starts-with(@aria-label,'Move SR-')]`                                                                               | Only the start of the button's label is fixed: aria-label starts with "Move SR-2026-000012".              |
+| Present (full screen)                   | `TTL`         | `button[title='present board' i]`                                                     | `//button[@title='Present board']`                                                                                            | Icon button with only a title, "Present board"; the board gets data-presenting="true".                    |
+| Desktop alerts permission               | `TXT`         | `.desktop-alerts > button.btn`                                                        | `//button[contains(translate(normalize-space(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'desktop alerts')]` | Found by its text; the browser's permission prompt then appears (grant it in the test's browser context). |
+
+### Tag a request and schedule a callback
+
+Add tags and a callback with a preferred call window when you raise a request, or later from its panel.
+
+- **Who:** Customer service rep
+- **Start at:** `/service-requests/new`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. Go to Service requests → New request and fill in the request as usual.
+2. Under Tags and callback, type tags (VIP, Escalated, Branch visit, Regulatory, or your own, 2–20 characters, up to 10).
+3. Choose Callback on: a weekday or Saturday between 09:00 and 18:00, within 30 days. Choose the call window from and to.
+4. Try a Sunday, 20:00, or a window that ends before it starts: you get a message under the field.
+5. Submit. On the board, the card shows the tags and a phone icon (red once the callback time has passed). In the request panel you can change or clear the callback.
+
+**What you should see:** The request carries the tags and callback; overdue callbacks are highlighted.
+
+| Element                                 | Locator style | CSS                                                   | XPath                                                                    | How to find it                                                                                            |
+| --------------------------------------- | ------------- | ----------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Callback date-time and call window      | `NAME`        | `input[type='datetime-local'][name='callbackAt']`     | `//input[@name='windowStart' or @name='windowEnd']`                      | Inputs found by name: callbackAt (datetime-local), windowStart and windowEnd (time).                      |
+| Tag chips (same text in several places) | `DUP`         | `section[aria-label='Tags'] li.chip-item:has(> span)` | `(//li[contains(@class,'chip-item')][span[normalize-space()='VIP']])[2]` | The tag "VIP" can show in the filter, on cards and in the panel: scope by the container or pick by index. |
+
+### Resolve a request with formatted notes and a rating
+
+Resolution notes are rich text, and the customer's rating is recorded on every resolve.
+
+- **Who:** Customer service rep
+- **Start at:** `/service-requests`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. Open a request that is Open or In progress and choose Resolved (Move to, drag, or the ▸ menu).
+2. Write the notes in the editor: use Bold and the bulleted list. The count must be 10 to 2,000 characters.
+3. Pick the customer's rating with the stars, or tick Customer declined to rate. Add their comment if they gave one.
+4. Click Resolve request. Without notes or a rating, a message tells you what's missing.
+5. The card and the list now show the rating as stars; Customer 360's Service requests tab too.
+
+**What you should see:** The panel shows the notes formatted (scripts and links are removed by the server) and the rating read-only.
+
+| Element                    | Locator style | CSS                                                            | XPath                                                                                          | How to find it                                                                                                                                                  |
+| -------------------------- | ------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rich text resolution notes | `ID`          | `#resolution-notes[contenteditable='true']`                    | `//*[@id='resolution-notes']/preceding-sibling::*[@role='toolbar']//button`                    | The editable area has id resolution-notes; toolbar buttons only have aria-pressed and a label.                                                                  |
+| Rating stars (radio)       | `XP`          | `fieldset.csat input[type='radio'][name='csat']:not(:checked)` | `//fieldset[legend[normalize-space()='Customer rating']]//input[@type='radio' and @value='4']` | Real radio inputs named csat with values 1–5, inside the fieldset whose legend is Customer rating; they are visually hidden, so click the label or use check(). |
+| Read-only rating           | `PART`        | `[role='img'][aria-label$='out of 5']`                         | `//*[@role='img' and substring(@aria-label, string-length(@aria-label) - 7) = 'out of 5']`     | role=img whose label ends in "out of 5"; data-rating holds the number.                                                                                          |
+
+### Work in the list view
+
+Expand rows, change priority or assignee in place, and see a request beside the list.
+
+- **Who:** Customer service rep, Supervisor
+- **Start at:** `/service-requests?view=list`
+- **Sign in as:** `csr001`
+
+**Steps**
+
+1. On the Request board, switch to List.
+2. Click the ▸ at the start of a row to expand it: description, tags and the latest comment appear in a row underneath.
+3. Click the pencil next to a priority, choose another and press Enter to save (Escape cancels). The SLA due time moves to creation time plus the new priority's hours; if that has passed, the request shows overdue at once.
+4. Do the same for the assignee.
+5. Click Split view, then a row: the request opens beside the list. Drag the divider, or focus it and use ←/→ (Shift for bigger steps). The browser remembers the split.
+
+**What you should see:** Edits save in the row with a confirmation; a change someone else made first is refused with a message.
+
+| Element                      | Locator style | CSS                                                | XPath                                                                                                                   | How to find it                                                                                                    |
+| ---------------------------- | ------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| List cells and expanded rows | `XP`          | `tbody > tr[aria-expanded='true'] + tr.detail-row` | `//tr[td[2][normalize-space()='SR-2026-000012']]/td[count(//th[normalize-space()='Priority']/preceding-sibling::th)+1]` | No ids: find the row by SR number, the cell by the column header's position; the expanded detail is the next row. |
+| Edit in the row              | `XP`          | `tr:has(select.inline-select) td:nth-child(2)`     | `//select[@aria-label='Change priority']/ancestor::tr[1]/td[2]`                                                         | The pencil is a button whose only name is hidden text (Change priority); the select appears in its place.         |
+| Resizable split view         | `CLS`         | `.sr-split [role='separator']`                     | `//div[contains(concat(' ',normalize-space(@class),' '),' sr-split ')]//*[@role='separator']`                           | Class-only container .sr-split; the divider has role separator and aria-valuenow.                                 |
+
+## Supervisor
+
+Approves, authorises and signs off.
+
+### Score a resolved request
+
+Supervisors score resolved or closed requests from 0.5 to 5 stars, once each, never their own.
+
+- **Who:** Supervisor
+- **Start at:** `/service-requests?view=list&queue=branch&statuses=resolved,closed`
+- **Sign in as:** `sup001`
+
+**Steps**
+
+1. Sign in as a supervisor and open the list of resolved and closed requests in the branch.
+2. Open a request someone else handled. Under Quality review, move the Quality score slider (arrow keys move half a star).
+3. Below 3, a review note of at least 10 characters is required. Click Save score.
+4. Open a request you raised or handled: there is no Quality review section.
+
+**What you should see:** The score shows as read-only stars with who scored it and when; a second score is refused.
+
+| Element          | Locator style | CSS                                               | XPath                                                    | How to find it                                                                        |
+| ---------------- | ------------- | ------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Half-star slider | `ARIA`        | `input[type='range'][aria-label='Quality score']` | `//input[@type='range' and @aria-label='Quality score']` | getByRole('slider', { name: 'Quality score' }); fill() or arrow keys in steps of 0.5. |
 
 ## Administrator
 
@@ -320,10 +448,10 @@ Administrators turn requests into staff users.
 
 **What you should see:** A new staff user exists; they must choose their own password at first sign-in. The applicant gets an e-mail in the dev inbox.
 
-| Element               | Locator style | How to find it                                                                                          |
-| --------------------- | ------------- | ------------------------------------------------------------------------------------------------------- |
-| Access request rows   | `DATA`        | tr[data-request-no='AR-2026-000001'] and its button[data-action='approve'].                             |
-| Approve/reject dialog | `DATA`        | Fields by data-field (staffId, role, branch, note); confirm with button[data-action='confirm-approve']. |
+| Element               | Locator style | CSS | XPath | How to find it                                                                                          |
+| --------------------- | ------------- | --- | ----- | ------------------------------------------------------------------------------------------------------- |
+| Access request rows   | `DATA`        | —   | —     | tr[data-request-no='AR-2026-000001'] and its button[data-action='approve'].                             |
+| Approve/reject dialog | `DATA`        | —   | —     | Fields by data-field (staffId, role, branch, note); confirm with button[data-action='confirm-approve']. |
 
 ## Every signed-in user
 
@@ -346,9 +474,9 @@ Ctrl+K (⌘K on a Mac) opens a searchable list of screens and actions.
 
 **What you should see:** The palette closes and the chosen screen opens. Focus returns to where it was when you press Esc.
 
-| Element         | Locator style | How to find it                                                                           |
-| --------------- | ------------- | ---------------------------------------------------------------------------------------- |
-| Command palette | `ARIA`        | getByRole('dialog', { name: 'Command palette' }) with a combobox and listbox of options. |
+| Element         | Locator style | CSS | XPath | How to find it                                                                           |
+| --------------- | ------------- | --- | ----- | ---------------------------------------------------------------------------------------- |
+| Command palette | `ARIA`        | —   | —     | getByRole('dialog', { name: 'Command palette' }) with a combobox and listbox of options. |
 
 ### Collapse and expand the menu
 
@@ -367,10 +495,10 @@ Menu groups and sub-groups fold away and stay folded.
 
 **What you should see:** Each heading's aria-expanded changes, and links inside a collapsed group are hidden (not just scrolled away).
 
-| Element                 | Locator style | How to find it                                                                                   |
-| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------ |
-| Collapsible menu groups | `ARIA`        | getByRole('button', { name: 'Customers' }) with aria-expanded; the sub-group is a nested button. |
-| Pages group             | `TXT`         | getByRole('link', { name: 'Dev inbox' }).                                                        |
+| Element                 | Locator style | CSS | XPath | How to find it                                                                                   |
+| ----------------------- | ------------- | --- | ----- | ------------------------------------------------------------------------------------------------ |
+| Collapsible menu groups | `ARIA`        | —   | —     | getByRole('button', { name: 'Customers' }) with aria-expanded; the sub-group is a nested button. |
+| Pages group             | `TXT`         | —   | —     | getByRole('link', { name: 'Dev inbox' }).                                                        |
 
 ### Read and dismiss announcements
 
@@ -388,9 +516,9 @@ Notices from administrators across the top of every page.
 
 **What you should see:** The bar shows the most severe notice first. Critical notices have no ✕.
 
-| Element          | Locator style | How to find it                                          |
-| ---------------- | ------------- | ------------------------------------------------------- |
-| Announcement bar | `CLS`         | Classes only: .ann-bar .ann, .ann-critical, .ann-close. |
+| Element          | Locator style | CSS | XPath | How to find it                                          |
+| ---------------- | ------------- | --- | ----- | ------------------------------------------------------- |
+| Announcement bar | `CLS`         | —   | —     | Classes only: .ann-bar .ann, .ann-critical, .ann-close. |
 
 ### Go back with breadcrumbs
 
@@ -408,6 +536,6 @@ Earlier parts of the breadcrumb are links.
 
 **What you should see:** Only parts with a page behind them are links; the current page is bold and marked aria-current="page".
 
-| Element          | Locator style | How to find it                                         |
-| ---------------- | ------------- | ------------------------------------------------------ |
-| Breadcrumb links | `XP`          | No class or id: //nav[@aria-label='Breadcrumb']//a[1]. |
+| Element          | Locator style | CSS | XPath | How to find it                                         |
+| ---------------- | ------------- | --- | ----- | ------------------------------------------------------ |
+| Breadcrumb links | `XP`          | —   | —     | No class or id: //nav[@aria-label='Breadcrumb']//a[1]. |

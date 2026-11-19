@@ -17,7 +17,9 @@ import {
   SLA_HOURS,
   SR_CHANNELS,
   SR_PRIORITIES,
-  createServiceRequestSchema,
+  createServiceRequestBase,
+  callbackProblem,
+  SR_STANDARD_TAGS,
   type CustomerDetail,
   type CustomerTypeaheadItem,
   type ServiceRequestDetail,
@@ -26,26 +28,44 @@ import { ApiError, api, newIdempotencyKey } from '../../api/client.ts'
 import { uploadFile } from '../../api/upload.ts'
 import { useMe } from '../../app/auth.tsx'
 import { useCrumb } from '../../app/AppShell.tsx'
-import { Field, FieldGroup, controlProps } from '../../components/Field.tsx'
+import { Field, FieldGroup, controlProps, useErrorText } from '../../components/Field.tsx'
 import { FileDropzone, precheck } from '../../components/FileDropzone.tsx'
 import { Icon } from '../../components/Icon.tsx'
 import { CustomerTypeahead } from '../../components/Typeahead.tsx'
 import { useToast } from '../../components/Toast.tsx'
+import { LocatorBadge } from '../../components/LocatorBadge.tsx'
+import { ChipSelect } from '../../components/selection/ChipSelect.tsx'
 import { UnsavedChangesDialog } from '../../components/overlays/UnsavedChangesDialog.tsx'
 import { useUnsavedGuard } from '../../hooks/useUnsavedGuard.ts'
 import { useLookups } from '../../hooks/useLookups.ts'
 import { label, toIso, toLocalInputs } from '../../lib/format.ts'
 
-// The form keeps date and time as two inputs; they become `slaDueAt` on submit.
-const formSchema = createServiceRequestSchema
-  .omit({ slaDueAt: true })
+// The form keeps the SLA as date + time inputs and the callback as one datetime-local input; they
+// become `slaDueAt` and `callbackAt` (ISO) on submit. The server repeats every rule.
+const formSchema = createServiceRequestBase
+  .omit({ slaDueAt: true, callbackAt: true })
   .extend({
     slaDate: z.string().min(1, 'required'),
     slaTime: z.string().min(1, 'required'),
+    callbackLocal: z.string().optional(),
   })
-  .refine((d) => Date.parse(toIso(d.slaDate, d.slaTime)) > Date.now(), {
-    error: 'slaFuture',
-    path: ['slaDate'],
+  .superRefine((d, ctx) => {
+    if (Date.parse(toIso(d.slaDate, d.slaTime)) <= Date.now()) {
+      ctx.addIssue({ code: 'custom', message: 'slaFuture', path: ['slaDate'] })
+    }
+    if (d.callbackLocal) {
+      const problem = callbackProblem(new Date(d.callbackLocal))
+      if (problem) ctx.addIssue({ code: 'custom', message: problem, path: ['callbackLocal'] })
+    }
+    if (!!d.windowStart !== !!d.windowEnd) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'required',
+        path: [d.windowStart ? 'windowEnd' : 'windowStart'],
+      })
+    } else if (d.windowStart && d.windowEnd && d.windowEnd <= d.windowStart) {
+      ctx.addIssue({ code: 'custom', message: 'windowOrder', path: ['windowEnd'] })
+    }
   })
 type Form = z.input<typeof formSchema>
 
@@ -100,6 +120,10 @@ export default function NewRequestPage() {
       assignedTo: me.user.staffId,
       notifyBySms: true,
       notifyByEmail: false,
+      tags: [],
+      callbackLocal: '',
+      windowStart: '',
+      windowEnd: '',
       slaDate: initialSla.date,
       slaTime: initialSla.time,
     },
@@ -158,11 +182,17 @@ export default function NewRequestPage() {
     if (created) navigate(`/service-requests?sr=${created}`)
   }, [created, navigate])
 
-  const submit = handleSubmit(async ({ slaDate, slaTime, ...rest }) => {
+  const submit = handleSubmit(async ({ slaDate, slaTime, callbackLocal, ...rest }) => {
     try {
       const created = await api<ServiceRequestDetail>('/service-requests', {
         method: 'POST',
-        body: { ...rest, slaDueAt: toIso(slaDate, slaTime) },
+        body: {
+          ...rest,
+          slaDueAt: toIso(slaDate, slaTime),
+          ...(callbackLocal
+            ? { callbackAt: toIso(callbackLocal.slice(0, 10), callbackLocal.slice(11, 16)) }
+            : {}),
+        },
         idempotencyKey: idemKey.current,
       })
       const failed: string[] = []
@@ -186,9 +216,16 @@ export default function NewRequestPage() {
     } catch (err) {
       if (err instanceof ApiError && err.problem.errors) {
         err.problem.errors.forEach((e) =>
-          setError((e.path === 'slaDueAt' ? 'slaDate' : e.path) as keyof Form, {
-            message: e.code ?? e.message,
-          }),
+          setError(
+            (e.path === 'slaDueAt'
+              ? 'slaDate'
+              : e.path === 'callbackAt'
+                ? 'callbackLocal'
+                : e.path) as keyof Form,
+            {
+              message: e.code ?? e.message,
+            },
+          ),
         )
       } else {
         setError('root', { message: err instanceof ApiError ? err.message : t('common:error.generic') })
@@ -197,6 +234,7 @@ export default function NewRequestPage() {
   })
 
   const e = errors
+  const errorText = useErrorText()
   const id = (f: string) => `sr-new-${f}`
   return (
     <form
@@ -447,6 +485,67 @@ export default function NewRequestPage() {
             </label>
           </FieldGroup>
           <Controller control={control} name="customerCif" render={() => <></>} />
+        </div>
+      </section>
+
+      <section className="panel">
+        <header>
+          <h2>{t('new.followUp')}</h2>
+          <LocatorBadge style="NAME" />
+        </header>
+        <div className="body grid g4">
+          <div className="f span2">
+            <span className="lbl">{t('tags.title')}</span>
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
+                <ChipSelect
+                  label={t('tags.title')}
+                  name="tags"
+                  options={SR_STANDARD_TAGS.map((v) => ({ value: v, label: v }))}
+                  value={field.value ?? []}
+                  allowCreate
+                  max={10}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            {e.tags ? (
+              <span className="errmsg" role="alert">
+                {errorText(e.tags.message ?? e.tags.root?.message)}
+              </span>
+            ) : null}
+          </div>
+          <label className="f span2">
+            <span className="lbl">{t('callback.at')}</span>
+            <input type="datetime-local" className="in" {...register('callbackLocal')} />
+            {e.callbackLocal ? (
+              <span className="errmsg" role="alert">
+                {errorText(e.callbackLocal.message)}
+              </span>
+            ) : (
+              <span className="help">{t('callback.hint')}</span>
+            )}
+          </label>
+          <label className="f">
+            <span className="lbl">{t('callback.from')}</span>
+            <input type="time" className="in" {...register('windowStart')} />
+            {e.windowStart ? (
+              <span className="errmsg" role="alert">
+                {errorText(e.windowStart.message)}
+              </span>
+            ) : null}
+          </label>
+          <label className="f">
+            <span className="lbl">{t('callback.to')}</span>
+            <input type="time" className="in" {...register('windowEnd')} />
+            {e.windowEnd ? (
+              <span className="errmsg" role="alert">
+                {errorText(e.windowEnd.message)}
+              </span>
+            ) : null}
+          </label>
         </div>
       </section>
 

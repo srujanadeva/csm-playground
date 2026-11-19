@@ -1,6 +1,6 @@
 # Plan: practice UI elements inside the banking app
 
-Status: **in progress** (Phases 0–3 done) · Last updated: 2026-11-16
+Status: **in progress** (Phases 0–4 done) · Last updated: 2026-11-16
 
 This plan adds the UI elements the app is missing, so testers can practise automating them.
 Every element is built into a real banking flow, such as KYC, teller, service requests or
@@ -91,6 +91,74 @@ tester finds elements. Some are **deliberately awkward**, as in a real legacy ap
 | DUP  | duplicate id/text      | Same button text or the same id in two panels; must be narrowed by a parent element                   |
 | XP   | XPath-only             | No useful attributes: reach it with `following-sibling`, `ancestor`, or by column position in a table |
 | CTX  | context switch         | Inside an iframe or a shadow root: switch frame / pierce shadow first                                 |
+
+Three more hook codes cover the remaining built-in finders of the common frameworks:
+
+| Code | Style                   | What testers get                                                                 |
+| ---- | ----------------------- | -------------------------------------------------------------------------------- |
+| LINK | link text               | Selenium `By.linkText` / `By.partialLinkText`; `//a[contains(text(),'…')]`       |
+| ALT  | image alt text          | `getByAltText`, `img[alt^='…']`                                                  |
+| PH   | placeholder only        | `getByPlaceholder`, `input[placeholder='…']` (no label `for`, no id)             |
+| PART | partial attribute value | Only part of an attribute is stable: `[aria-label^='Move SR-']`, `[id$='-save']` |
+| NTH  | position only           | Identical siblings: `:nth-child(2)`, `(//…)[2]`, `.nth(1)`                       |
+
+### 3.1 Selector and XPath techniques
+
+The hook code says _what_ an element offers; the technique says _how_ a test reaches it. From Phase 4
+on, every new element names one CSS technique and one XPath technique (in its guide entry, with a
+working example), and each phase covers techniques the earlier ones didn't.
+
+**CSS**
+
+| #   | Technique                    | Example                                                       |
+| --- | ---------------------------- | ------------------------------------------------------------- |
+| C1  | id                           | `#resolution-notes`                                           |
+| C2  | class, compound class        | `.split-handle`, `.btn.sm.pri`                                |
+| C3  | tag + type                   | `input[type='datetime-local']`                                |
+| C4  | attribute equals             | `[name='callbackAt']`, `[title='Present board']`              |
+| C5  | attribute starts with        | `[id^='otp-']`, `[aria-label^='Move SR-']`                    |
+| C6  | attribute ends with          | `[aria-label$='out of 5']`                                    |
+| C7  | attribute contains           | `[class*='flagged']`, `[alt*='signature']`                    |
+| C8  | word match, case-insensitive | `[class~='chip']`, `[title='present board' i]`                |
+| C9  | combinators                  | `.list > tr`, `tr[aria-expanded='true'] + tr`, `h3 ~ .chips`  |
+| C10 | structural pseudo-classes    | `td:nth-child(4)`, `li:first-child`, `li:nth-child(-n+3)`     |
+| C11 | state pseudo-classes         | `:checked`, `:disabled`, `[aria-pressed='true']`, `:focus`    |
+| C12 | negation and relational      | `.chip:not(.removable)`, `tr:has(select)`                     |
+| C13 | shadow DOM                   | Playwright CSS pierces open roots; Selenium `getShadowRoot()` |
+
+**XPath**
+
+| #   | Technique                     | Example                                                                         |
+| --- | ----------------------------- | ------------------------------------------------------------------------------- |
+| X1  | absolute path (anti-pattern)  | `/html/body/div[1]/…` (shown once, to show why not)                             |
+| X2  | attribute equals              | `//input[@name='windowStart']`, `//*[@id='cutoff-countdown']`                   |
+| X3  | exact text                    | `//button[text()='Call next']`, `//legend[normalize-space()='Customer rating']` |
+| X4  | contains                      | `//a[contains(text(),'lobby')]`, `contains(concat(' ',@class,' '),' chip ')`    |
+| X5  | starts-with / ends-with       | `starts-with(@id,'otp-')`; ends-with via `substring(@x, string-length(@x)-7)`   |
+| X6  | and / or / not()              | `//input[@name='windowStart' or @name='windowEnd']`, `[not(@disabled)]`         |
+| X7  | index and position            | `(//span[.='VIP'])[2]`, `li[last()]`, `li[position()<=3]`                       |
+| X8  | axes                          | `parent::`, `ancestor::tr`, `following-sibling::`, `preceding::`, `following::` |
+| X9  | nested predicates             | `//tr[td[1]='SR-2026-000012']//select`                                          |
+| X10 | table cell by column header   | `td[count(//th[.='Priority']/preceding-sibling::th)+1]`                         |
+| X11 | string functions              | `translate(.,'ABC…','abc…')` for case, `string-length()`                        |
+| X12 | attribute existence, wildcard | `//*[@data-event]`, `//li[@*='posted']`                                         |
+
+**Framework finders**: Selenium `By.id`, `By.name`, `By.className`, `By.tagName`, `By.linkText`,
+`By.partialLinkText`; Playwright `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText` (exact,
+substring, regex), `getByAltText`, `getByTitle`, `getByTestId` (configurable to `data-qa`),
+`frameLocator`, and chaining with `.filter({ hasText })`, `.nth()`, `:has-text()`.
+
+### 3.2 Coverage so far and planned
+
+| Phase | Hooks                                           | CSS techniques                | XPath techniques             |
+| ----- | ----------------------------------------------- | ----------------------------- | ---------------------------- |
+| 0–1   | NAME, LBL, DYN, TXT, CLS, ARIA, XP              | C1, C4, C5, C2                | X3, X8 (dev inbox)           |
+| 2     | DATA, TTL, CTX, ID, XP, TXT, CLS, NAME          | C1, C4, C2                    | X8, X9 (nominees)            |
+| 3     | DATA, TXT, TTL, ARIA, ID, CLS, CTX              | C4, C13                       | X3                           |
+| 4     | ARIA, DUP, NAME, ID, XP, PART, CLS, TTL, TXT    | C3, C6, C8, C9, C10, C11, C12 | X4, X5, X6, X7, X9, X10, X11 |
+| 5     | NTH, LINK, ID, DUP, PH, DYN, ALT, DATA, XP, TXT | C5, C7, C9, C10, C11          | X2, X4, X5, X7, X8, X12      |
+
+X1 (absolute path) is demonstrated once, in the guide, never required.
 
 These are assigned per element in the table in §4. Every element still has an
 accessible name (labels, roles) so screen readers work. Locators are made awkward only by
@@ -183,29 +251,30 @@ drawer → Teller counter.
 
 ### Phase 4 — Service requests
 
-| Element                                        | Banking feature                                                                                       | Locator |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------- |
-| Multi-select dropdown                          | Board filter: several statuses and categories at once                                                 | ARIA    |
-| Multi-select with chips                        | Request tags (e.g. `VIP`, `Escalated`, `Branch-visit`)                                                | DUP     |
-| Time and date-time pickers                     | Schedule a callback (`datetime-local`), preferred call window (`time`)                                | NAME    |
-| Rich text editor                               | Resolution notes (the server cleans the HTML)                                                         | ID      |
-| Star ratings: radio / half-star / read-only    | CSAT on resolve (radio stars); supervisor quality score (half-star slider); read-only on board        | XP      |
-| Sortable table + inline edit + expandable rows | List view: expand a row for description and latest comment; edit priority/assignee inline (Enter/Esc) | XP      |
-| Resizable panels                               | Split view: list \| detail, with a drag handle and keyboard arrows                                    | CLS     |
-| Full-screen mode                               | "Present" the Kanban board                                                                            | TTL     |
-| Notification permission prompt                 | Desktop alerts for SLA breach or new assignment                                                       | TXT     |
-| Drag-and-drop (extend)                         | Kanban drag already exists; add a keyboard alternative                                                | —       |
+| Element                                        | Banking feature                                                                                                 | Locator |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------- |
+| Multi-select dropdown                          | Board filter: several statuses and categories at once                                                           | ARIA    |
+| Multi-select with chips                        | Request tags (e.g. `VIP`, `Escalated`, `Branch-visit`)                                                          | DUP     |
+| Time and date-time pickers                     | Schedule a callback (`datetime-local`), preferred call window (`time`)                                          | NAME    |
+| Rich text editor                               | Resolution notes (the server cleans the HTML)                                                                   | ID      |
+| Star ratings: radio / half-star / read-only    | CSAT on resolve (radio stars, XP); supervisor quality score (half-star slider, ARIA); read-only on board (PART) | XP      |
+| Sortable table + inline edit + expandable rows | List view: expand a row for description and latest comment; edit priority/assignee inline (Enter/Esc)           | XP      |
+| Resizable panels                               | Split view: list \| detail, with a drag handle and keyboard arrows                                              | CLS     |
+| Full-screen mode                               | "Present" the Kanban board                                                                                      | TTL     |
+| Notification permission prompt                 | Desktop alerts for SLA breach or new assignment                                                                 | TXT     |
+| Drag-and-drop (extend)                         | Kanban drag already exists; keyboard alternative: "Move to ▸" menu on each card                                 | PART    |
 
 ### Phase 5 — Teller
 
 | Element                            | Banking feature                                                                | Locator |
 | ---------------------------------- | ------------------------------------------------------------------------------ | ------- |
-| Click counter buttons              | Token queue: "Call next", "Recall", "Skip" with per-button counts              | CLS     |
+| Click counter buttons              | Token queue: "Call next", "Recall", "Skip", "Served" with per-button counts    | NTH     |
 | Full-screen (2nd use)              | Lobby token display                                                            | ID      |
 | Number stepper                     | −/+ on each denomination row of the cash count                                 | DUP     |
-| Masked amount                      | `₹1,23,456.00` with Indian digit grouping on deposits and withdrawals          | LBL     |
+| Masked amount                      | `₹1,23,456.00` with Indian digit grouping on deposits and withdrawals          | PH      |
 | OTP step-up (2nd use of OTP input) | Withdrawals over the limit need the customer's OTP (from the dev inbox)        | DYN     |
-| Signature verification (image)     | Specimen signature shown next to the slip, with a "Signature matches" checkbox | XP      |
+| Signature verification (image)     | Specimen signature shown next to the slip, with a "Signature matches" checkbox | ALT     |
+| Lobby display link                 | "Open lobby display" link from the counter                                     | LINK    |
 | Live order feed                    | Branch activity feed over SSE (`?feedInterval=`)                               | DATA    |
 | Re-rendered rows (stale elements)  | Every N seconds the feed rebuilds every row with new keys                      | XP      |
 | Countdown timer (2nd use)          | Time left before drawer close (cut-off)                                        | ID      |
