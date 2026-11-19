@@ -239,6 +239,41 @@ export const FLOWS: GuideFlow[] = [
     ],
     phase: 4,
   },
+  {
+    id: 'tokenQueue',
+    personas: ['teller'],
+    route: '/teller',
+    elements: [
+      { key: 'tokenCounts', locator: 'NTH' },
+      { key: 'lobbyLink', locator: 'LINK' },
+      { key: 'lobbyDisplay', locator: 'ID' },
+    ],
+    phase: 5,
+  },
+  {
+    id: 'checkedWithdrawal',
+    personas: ['teller'],
+    route: '/teller',
+    elements: [
+      { key: 'amountPlaceholder', locator: 'PH' },
+      { key: 'denomStepper', locator: 'DUP' },
+      { key: 'specimenImage', locator: 'ALT' },
+      { key: 'withdrawalOtp', locator: 'DYN' },
+      { key: 'postButton', locator: 'TXT' },
+    ],
+    phase: 5,
+  },
+  {
+    id: 'branchActivity',
+    personas: ['teller', 'supervisor'],
+    route: '/teller',
+    elements: [
+      { key: 'liveFeed', locator: 'DATA' },
+      { key: 'feedStaleRows', locator: 'XP' },
+      { key: 'cutoffCountdown', locator: 'ID' },
+    ],
+    phase: 5,
+  },
 ]
 
 /**
@@ -351,4 +386,41 @@ export const ELEMENT_LOCATORS: Record<string, ElementLocators> = {
     css: ".sr-split [role='separator']",
     xpath: "//div[contains(concat(' ',normalize-space(@class),' '),' sr-split ')]//*[@role='separator']",
   },
+  // Phase 5
+  tokenCounts: {
+    css: '.token-actions > button:nth-child(3) .count',
+    xpath: "(//div[contains(@class,'token-actions')]/button)[3]/span[@class='count']",
+  },
+  lobbyLink: {
+    css: "a[href='/teller/lobby'][target='_blank']",
+    xpath: "//a[contains(text(),'lobby display')]",
+  },
+  lobbyDisplay: {
+    css: '#lobby-display .lobby-counters > li:first-child .token-label',
+    xpath: "//*[@id='lobby-fullscreen']",
+  },
+  amountPlaceholder: { css: "input[placeholder='₹0.00']", xpath: "//input[@placeholder='₹0.00']" },
+  denomStepper: {
+    css: 'table.denoms tbody tr:nth-child(1) .stepper-inc',
+    xpath: "//tr[td[1][normalize-space()='₹500']]//button[normalize-space()='+']",
+  },
+  specimenImage: {
+    css: "img[alt^='Specimen signature']",
+    xpath: "//img[contains(@alt,'Specimen')]/following::input[@type='checkbox'][1]",
+  },
+  withdrawalOtp: {
+    css: "input[id^='otp-'][id$='-0']",
+    xpath: "//input[starts-with(@id,'otp-') and substring(@id, string-length(@id) - 1) = '-5']",
+  },
+  postButton: {
+    css: "button[type='submit'][data-mode]:not(:disabled)",
+    xpath:
+      "//button[@type='submit' and (contains(normalize-space(),'Post') or contains(normalize-space(),'authorisation'))]",
+  },
+  liveFeed: { css: "li[data-event='posted'][data-seq]", xpath: '//ol/li[@data-event and @data-seq]' },
+  feedStaleRows: {
+    css: 'ol.feed-list > li:nth-child(-n+3)',
+    xpath: "//ol[@aria-label='Branch activity']/li[position()<=3]",
+  },
+  cutoffCountdown: { css: '#cutoff-countdown[data-seconds]', xpath: "//*[@id='cutoff-countdown']" },
 }

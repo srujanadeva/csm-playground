@@ -1,7 +1,15 @@
 {
-  "nav": { "teller": "Teller" },
-  "type": { "cash_deposit": "Cash deposit", "cash_withdrawal": "Cash withdrawal" },
-  "accountType": { "savings": "Savings", "current": "Current" },
+  "nav": {
+    "teller": "Teller"
+  },
+  "type": {
+    "cash_deposit": "Cash deposit",
+    "cash_withdrawal": "Cash withdrawal"
+  },
+  "accountType": {
+    "savings": "Savings",
+    "current": "Current"
+  },
   "notes": {
     "note": "Note",
     "count": "Count",
@@ -66,7 +74,10 @@
     "rejectTitle": "Reject {{txnNo}}",
     "rejectNote": "Reason for rejecting",
     "approved": "{{txnNo}} authorised. The teller can pay out.",
-    "rejected": "{{txnNo}} rejected."
+    "rejected": "{{txnNo}} rejected.",
+    "posting": "Posting…",
+    "postedShort": "Posted ✓",
+    "heldShort": "Held for authorisation"
   },
   "drawer": {
     "title": "Cash drawer",
@@ -112,5 +123,69 @@
     "signOffNote": "Note",
     "signOffNoteHelp": "Required when the drawer has a difference.",
     "signedOff": "Drawer signed off."
+  },
+  "queue": {
+    "title": "Token queue",
+    "issue": "Issue token",
+    "issued": "Token {{token}} issued",
+    "openLobby": "Open lobby display",
+    "serving": "Now serving",
+    "waiting_one": "{{count}} waiting",
+    "waiting_other": "{{count}} waiting",
+    "callNext": "Call next",
+    "recall": "Recall",
+    "skip": "Skip",
+    "serve": "Served"
+  },
+  "cutoff": {
+    "left": "Cash cut-off at {{time}}. Time left:",
+    "passed": "The cash cut-off ({{time}}) has passed. No more transactions today; you can still close your drawer."
+  },
+  "withdraw": {
+    "signatureTitle": "Signature check",
+    "specimenAlt": "Specimen signature of {{name}}",
+    "matches": "Signature matches the withdrawal slip",
+    "noSpecimen": "No specimen signature on file. ID document checked"
+  },
+  "otp": {
+    "title": "Customer code",
+    "send": "Send code to customer",
+    "sentTo": "Code sent to {{to}}. Ask the customer to read it out.",
+    "label": "Customer's code",
+    "resend": "Send a new code",
+    "resendIn": "New code in {{s}} s",
+    "verified": "Code verified",
+    "wrong_one": "That code is incorrect. {{count}} attempt left.",
+    "wrong_other": "That code is incorrect. {{count}} attempts left.",
+    "cancelled": "Too many wrong codes. The code was cancelled; send a new one."
+  },
+  "feed": {
+    "title": "Branch activity",
+    "pause": "Pause",
+    "resume": "Resume ({{count}} new)",
+    "loading": "Loading…",
+    "empty": "No cash activity yet today.",
+    "state": {
+      "open": "Live",
+      "connecting": "Reconnecting…",
+      "closed": "Disconnected"
+    },
+    "events": {
+      "posted": "{{teller}} posted {{txnNo}}: {{amount}} on {{account}}",
+      "held": "{{teller}} sent {{txnNo}} ({{amount}}) for authorisation",
+      "authorised": "{{teller}} authorised {{txnNo}} ({{amount}})",
+      "rejected": "{{teller}} rejected {{txnNo}} ({{amount}})",
+      "drawer_opened": "{{teller}} opened a drawer with {{amount}}",
+      "drawer_closed": "{{teller}} closed a drawer, counted {{amount}}"
+    }
+  },
+  "lobby": {
+    "title": "Token display",
+    "full": "Full screen",
+    "exitFull": "Exit full screen",
+    "nowServing": "Now serving",
+    "next": "Next",
+    "counter": "Counter: {{name}}",
+    "nobody": "No counter is serving yet."
   }
 }

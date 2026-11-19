@@ -75,6 +75,9 @@ export const VALIDATION_MESSAGES = {
   resolutionLength: 'Use at most 2,000 characters.',
   csatRequired: 'Record the customer’s rating, or tick "Customer declined".',
   qualityStep: 'Score in half stars, from 0.5 to 5.',
+  signatureCheck: 'Tick this box once the signature matches the slip.',
+  idCheckRequired: 'No specimen on file: record the ID document you checked.',
+  customerOtpRequired: 'Verify the customer’s one-time code first.',
   qualityNoteRequired: 'Explain a score below 3 in at least 10 characters.',
 } as const
 

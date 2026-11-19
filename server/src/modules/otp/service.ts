@@ -88,18 +88,25 @@ export async function resend(secret: string, id: string, purpose: string) {
 
 /**
  * Checks a code. On success marks the challenge verified and returns a single-use token for the
- * next step; failures count towards MAX_ATTEMPTS.
+ * next step; failures count towards `maxAttempts`.
+ * @param maxAttempts Wrong codes allowed before the challenge locks (withdrawals allow 3).
  */
-export async function verify(secret: string, id: string, purpose: string, code: string) {
+export async function verify(
+  secret: string,
+  id: string,
+  purpose: string,
+  code: string,
+  maxAttempts = MAX_ATTEMPTS,
+) {
   const doc = await load(id, purpose)
   if (doc.verifiedAt) throw new AppError(409, 'Conflict', 'This code was already used.')
-  if (doc.attempts >= MAX_ATTEMPTS) throw tooManyRequests('Too many wrong codes. Start again.')
+  if (doc.attempts >= maxAttempts) throw tooManyRequests('Too many wrong codes. Start again.')
   if (doc.expiresAt.getTime() <= Date.now()) throw codeProblem('otpExpired')
   const ok = !!doc.subject && safeEqual(doc.codeHash, hashCode(secret, String(doc._id), code))
   if (!ok) {
     doc.attempts += 1
     await doc.save()
-    throw codeProblem('otpWrong', { attemptsLeft: MAX_ATTEMPTS - doc.attempts })
+    throw codeProblem('otpWrong', { attemptsLeft: maxAttempts - doc.attempts })
   }
   const token = randomToken(32)
   doc.set({

@@ -1,6 +1,6 @@
 # Plan: practice UI elements inside the banking app
 
-Status: **in progress** (Phases 0–4 done) · Last updated: 2026-11-16
+Status: **in progress** (Phases 0–5 done) · Last updated: 2026-11-16
 
 This plan adds the UI elements the app is missing, so testers can practise automating them.
 Every element is built into a real banking flow, such as KYC, teller, service requests or

@@ -401,6 +401,85 @@ Expand rows, change priority or assignee in place, and see a request beside the 
 | Edit in the row              | `XP`          | `tr:has(select.inline-select) td:nth-child(2)`     | `//select[@aria-label='Change priority']/ancestor::tr[1]/td[2]`                                                         | The pencil is a button whose only name is hidden text (Change priority); the select appears in its place.         |
 | Resizable split view         | `CLS`         | `.sr-split [role='separator']`                     | `//div[contains(concat(' ',normalize-space(@class),' '),' sr-split ')]//*[@role='separator']`                           | Class-only container .sr-split; the divider has role separator and aria-valuenow.                                 |
 
+## Teller
+
+Runs the cash counter and their drawer.
+
+### Run the token queue
+
+Issue tokens to walk-in customers, call them to your counter, and show the queue on the lobby display.
+
+- **Who:** Teller
+- **Start at:** `/teller`
+- **Sign in as:** `tel001`
+
+**Steps**
+
+1. Sign in as a teller and open Teller → Teller counter.
+2. Click Issue token a few times (any signed-in branch user can, also from the lobby display). Tokens are T-001, T-002 … and restart every day.
+3. Click Call next: the oldest waiting token is now at your counter. Recall announces it again. Skip sends it to the back of the queue once; a second skip marks it a no-show. Served finishes it.
+4. The small number on each button counts how often you used it today.
+5. Click Open lobby display: it opens in a new tab. Click Full screen there; calls show within 2 seconds.
+
+**What you should see:** The counter and the lobby show the same token; your counts go up with each action.
+
+| Element            | Locator style | CSS                                                            | XPath                                                                      | How to find it                                                                                                           |
+| ------------------ | ------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Per-action counts  | `NTH`         | `.token-actions > button:nth-child(3) .count`                  | `(//div[contains(@class,'token-actions')]/button)[3]/span[@class='count']` | Four identical count badges; only their position tells them apart (3rd = Skip).                                          |
+| Lobby display link | `LINK`        | `a[href='/teller/lobby'][target='_blank']`                     | `//a[contains(text(),'lobby display')]`                                    | A plain link opening a new tab: By.linkText('Open lobby display') or partialLinkText('lobby'); switch to the new window. |
+| Lobby display      | `ID`          | `#lobby-display .lobby-counters > li:first-child .token-label` | `//*[@id='lobby-fullscreen']`                                              | Ids #lobby-display, #lobby-fullscreen and #lobby-issue; tokens are in .token-label.                                      |
+
+### Pay a withdrawal with signature and customer code
+
+Large withdrawals need the customer's one-time code, and every withdrawal needs the signature (or ID) checked.
+
+- **Who:** Teller
+- **Start at:** `/teller`
+- **Sign in as:** `tel001`
+
+**Steps**
+
+1. On the Teller counter, open an account and choose Cash withdrawal.
+2. Type the amount: digits fill from the right, so typing 3000000 gives ₹30,000.00.
+3. Count the notes with the − / + buttons on each row (or type the counts), or click Fill notes.
+4. If the customer has a specimen signature, compare it with the slip and tick Signature matches the withdrawal slip. Otherwise choose the ID document you checked.
+5. Above ₹25,000, click Send code to customer, read the code from the dev inbox (it was sent to the customer's mobile) and type it into the six boxes. Three wrong codes cancel it. Changing the amount needs a new code.
+6. Click Post. The button shows Posting… and then Posted ✓, or Held for authorisation above ₹50,000.
+
+**What you should see:** The withdrawal posts (or waits for a supervisor) only after the checks; the button text says which.
+
+| Element             | Locator style | CSS                                               | XPath                                                                                                              | How to find it                                                                                                   |
+| ------------------- | ------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Amount in rupees    | `PH`          | `input[placeholder='₹0.00']`                      | `//input[@placeholder='₹0.00']`                                                                                    | Fills from the right (₹0.00); getByPlaceholder('₹0.00'). The raw paise are in data-raw.                          |
+| Note − / + buttons  | `DUP`         | `table.denoms tbody tr:nth-child(1) .stepper-inc` | `//tr[td[1][normalize-space()='₹500']]//button[normalize-space()='+']`                                             | Every row has the same − and + text: scope by the row's note value first.                                        |
+| Specimen signature  | `ALT`         | `img[alt^='Specimen signature']`                  | `//img[contains(@alt,'Specimen')]/following::input[@type='checkbox'][1]`                                           | getByAltText(/Specimen signature/); the tick box follows it.                                                     |
+| Customer code boxes | `DYN`         | `input[id^='otp-'][id$='-0']`                     | `//input[starts-with(@id,'otp-') and substring(@id, string-length(@id) - 1) = '-5']`                               | Six inputs whose ids change on each load (otp-<random>-0 … -5): match the start and end of the id.               |
+| Post button text    | `TXT`         | `button[type='submit'][data-mode]:not(:disabled)` | `//button[@type='submit' and (contains(normalize-space(),'Post') or contains(normalize-space(),'authorisation'))]` | Text changes: Post / Send for authorisation → Posting… → Posted ✓ or Held for authorisation; data-state follows. |
+
+### Watch branch activity and the cut-off
+
+A live feed shows the branch's cash events as they happen; from 16:30 the counter counts down to the 17:30 cut-off.
+
+- **Who:** Teller, Supervisor
+- **Start at:** `/teller`
+- **Sign in as:** `tel001`
+
+**Steps**
+
+1. Open the Teller counter in two browsers, as two tellers of the same branch.
+2. Post a deposit in one: it appears at the top of Branch activity in both, without reloading.
+3. Click Pause: new events wait (Resume shows how many) so the list doesn't move while you read.
+4. Every 15 seconds the list is rebuilt (add ?feedInterval=3000 to make it faster): a test that keeps a reference to an old row must find it again.
+5. Add ?cutoffIn=90 to the address to see the countdown as if the cut-off were 90 seconds away; when it reaches zero, posting is blocked. (The server's real cut-off is 17:30, 13:30 on Saturdays.)
+
+**What you should see:** Events arrive live; after the cut-off the Post button is disabled and the server refuses postings.
+
+| Element                 | Locator style | CSS                                 | XPath                                                   | How to find it                                                                              |
+| ----------------------- | ------------- | ----------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Live feed rows          | `DATA`        | `li[data-event='posted'][data-seq]` | `//ol/li[@data-event and @data-seq]`                    | li[data-event][data-seq]; newest first; Pause has aria-pressed.                             |
+| Rows rebuilt on a timer | `XP`          | `ol.feed-list > li:nth-child(-n+3)` | `//ol[@aria-label='Branch activity']/li[position()<=3]` | Find rows by position each time you need them; references go stale every ?feedInterval= ms. |
+| Cut-off countdown       | `ID`          | `#cutoff-countdown[data-seconds]`   | `//*[@id='cutoff-countdown']`                           | #cutoff-countdown, seconds left in data-seconds; ?cutoffIn= shortens it on screen.          |
+
 ## Supervisor
 
 Approves, authorises and signs off.

@@ -297,6 +297,43 @@
         "Click Split view, then a row: the request opens beside the list. Drag the divider, or focus it and use ←/→ (Shift for bigger steps). The browser remembers the split."
       ],
       "expected": "Edits save in the row with a confirmation; a change someone else made first is refused with a message."
+    },
+    "tokenQueue": {
+      "title": "Run the token queue",
+      "summary": "Issue tokens to walk-in customers, call them to your counter, and show the queue on the lobby display.",
+      "steps": [
+        "Sign in as a teller and open Teller → Teller counter.",
+        "Click Issue token a few times (any signed-in branch user can, also from the lobby display). Tokens are T-001, T-002 … and restart every day.",
+        "Click Call next: the oldest waiting token is now at your counter. Recall announces it again. Skip sends it to the back of the queue once; a second skip marks it a no-show. Served finishes it.",
+        "The small number on each button counts how often you used it today.",
+        "Click Open lobby display: it opens in a new tab. Click Full screen there; calls show within 2 seconds."
+      ],
+      "expected": "The counter and the lobby show the same token; your counts go up with each action."
+    },
+    "checkedWithdrawal": {
+      "title": "Pay a withdrawal with signature and customer code",
+      "summary": "Large withdrawals need the customer's one-time code, and every withdrawal needs the signature (or ID) checked.",
+      "steps": [
+        "On the Teller counter, open an account and choose Cash withdrawal.",
+        "Type the amount: digits fill from the right, so typing 3000000 gives ₹30,000.00.",
+        "Count the notes with the − / + buttons on each row (or type the counts), or click Fill notes.",
+        "If the customer has a specimen signature, compare it with the slip and tick Signature matches the withdrawal slip. Otherwise choose the ID document you checked.",
+        "Above ₹25,000, click Send code to customer, read the code from the dev inbox (it was sent to the customer's mobile) and type it into the six boxes. Three wrong codes cancel it. Changing the amount needs a new code.",
+        "Click Post. The button shows Posting… and then Posted ✓, or Held for authorisation above ₹50,000."
+      ],
+      "expected": "The withdrawal posts (or waits for a supervisor) only after the checks; the button text says which."
+    },
+    "branchActivity": {
+      "title": "Watch branch activity and the cut-off",
+      "summary": "A live feed shows the branch's cash events as they happen; from 16:30 the counter counts down to the 17:30 cut-off.",
+      "steps": [
+        "Open the Teller counter in two browsers, as two tellers of the same branch.",
+        "Post a deposit in one: it appears at the top of Branch activity in both, without reloading.",
+        "Click Pause: new events wait (Resume shows how many) so the list doesn't move while you read.",
+        "Every 15 seconds the list is rebuilt (add ?feedInterval=3000 to make it faster): a test that keeps a reference to an old row must find it again.",
+        "Add ?cutoffIn=90 to the address to see the countdown as if the cut-off were 90 seconds away; when it reaches zero, posting is blocked. (The server's real cut-off is 17:30, 13:30 on Saturdays.)"
+      ],
+      "expected": "Events arrive live; after the cut-off the Post button is disabled and the server refuses postings."
     }
   },
   "elements": {
@@ -491,6 +528,50 @@
     "splitPanels": {
       "name": "Resizable split view",
       "hint": "Class-only container .sr-split; the divider has role separator and aria-valuenow."
+    },
+    "tokenCounts": {
+      "name": "Per-action counts",
+      "hint": "Four identical count badges; only their position tells them apart (3rd = Skip)."
+    },
+    "lobbyLink": {
+      "name": "Lobby display link",
+      "hint": "A plain link opening a new tab: By.linkText('Open lobby display') or partialLinkText('lobby'); switch to the new window."
+    },
+    "lobbyDisplay": {
+      "name": "Lobby display",
+      "hint": "Ids #lobby-display, #lobby-fullscreen and #lobby-issue; tokens are in .token-label."
+    },
+    "amountPlaceholder": {
+      "name": "Amount in rupees",
+      "hint": "Fills from the right (₹0.00); getByPlaceholder('₹0.00'). The raw paise are in data-raw."
+    },
+    "denomStepper": {
+      "name": "Note − / + buttons",
+      "hint": "Every row has the same − and + text: scope by the row's note value first."
+    },
+    "specimenImage": {
+      "name": "Specimen signature",
+      "hint": "getByAltText(/Specimen signature/); the tick box follows it."
+    },
+    "withdrawalOtp": {
+      "name": "Customer code boxes",
+      "hint": "Six inputs whose ids change on each load (otp-<random>-0 … -5): match the start and end of the id."
+    },
+    "postButton": {
+      "name": "Post button text",
+      "hint": "Text changes: Post / Send for authorisation → Posting… → Posted ✓ or Held for authorisation; data-state follows."
+    },
+    "liveFeed": {
+      "name": "Live feed rows",
+      "hint": "li[data-event][data-seq]; newest first; Pause has aria-pressed."
+    },
+    "feedStaleRows": {
+      "name": "Rows rebuilt on a timer",
+      "hint": "Find rows by position each time you need them; references go stale every ?feedInterval= ms."
+    },
+    "cutoffCountdown": {
+      "name": "Cut-off countdown",
+      "hint": "#cutoff-countdown, seconds left in data-seconds; ?cutoffIn= shortens it on screen."
     }
   }
 }

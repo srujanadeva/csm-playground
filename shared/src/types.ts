@@ -332,6 +332,8 @@ export interface AccountDTO extends AccountSearchItem {
   mobile: string
   /** The customer's KYC ID is a PAN, so large deposits don't need one entered. */
   panOnFile: boolean
+  /** A specimen signature is on file (GET /teller/accounts/:accountNo/specimen). */
+  hasSpecimen: boolean
   openedAt: string
   piiMasked: boolean
 }
@@ -425,4 +427,59 @@ export interface AnnouncementDTO {
   dismissible: boolean
   startsAt: string
   endsAt: string | null
+}
+
+// ── Teller Phase 5: token queue, live feed, OTP ─────────────────────────────────
+
+export interface TokenDTO {
+  label: string
+  status: 'waiting' | 'called' | 'served' | 'no_show'
+  counter: string | null
+  calledAt: string | null
+}
+
+/** One teller's view of the queue. */
+export interface QueueStateDTO {
+  businessDate: string
+  current: TokenDTO | null
+  waiting: number
+  next: string[]
+  stats: { called: number; recalled: number; skipped: number; served: number }
+}
+
+/** The lobby display: what each counter is serving and who is next. */
+export interface LobbyDTO {
+  businessDate: string
+  counters: { tellerId: string; tellerName: string; token: string; calledAt: string; recalls: number }[]
+  next: string[]
+  waiting: number
+}
+
+export const TELLER_EVENT_TYPES = [
+  'posted',
+  'held',
+  'authorised',
+  'rejected',
+  'drawer_opened',
+  'drawer_closed',
+] as const
+export type TellerEventType = (typeof TELLER_EVENT_TYPES)[number]
+
+export interface TellerEventDTO {
+  seq: number
+  type: TellerEventType
+  at: string
+  tellerId: string
+  txnNo: string | null
+  txnType: TxnType | null
+  amount: number | null
+  accountLast4: string | null
+}
+
+export interface WithdrawalOtpDTO {
+  challengeId: string
+  /** Masked registered mobile the code went to. */
+  sentTo: string
+  expiresAt: string
+  resendAt: string
 }

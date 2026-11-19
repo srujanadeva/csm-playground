@@ -1,0 +1,157 @@
+/* Teller Phase 5: −/+ note counts, token queue, cut-off, withdrawal checks, live feed, lobby display. */
+
+.denom-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.denom-step button {
+  width: 26px;
+  height: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.denom-step button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.token-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+.token-now,
+.token-next {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.token-label {
+  font-size: 26px;
+  font-family: var(--mono, monospace);
+}
+.token-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+.token-actions .count {
+  min-width: 20px;
+  margin-inline-start: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--sunken);
+  font-size: 11px;
+  text-align: center;
+}
+
+.cutoff b {
+  margin-inline-start: auto;
+  font-size: 18px;
+}
+
+.withdrawal-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.check-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.check-box h3 {
+  margin: 0;
+  font-size: 13px;
+}
+.specimen {
+  max-width: 100%;
+  max-height: 120px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.live-feed .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.live-feed .dot.on {
+  background: var(--ok);
+}
+.feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow: auto;
+}
+.feed-list li {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.feed-list li[data-event='held'],
+.feed-list li[data-event='rejected'] {
+  color: var(--warn);
+}
+
+.lobby-page {
+  min-height: 100vh;
+  padding: 16px;
+  background: var(--bg);
+}
+.lobby-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.lobby {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+.lobby[data-fullscreen='true'] {
+  padding: 48px;
+  font-size: 1.4em;
+}
+.lobby-counters,
+.lobby-next {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lobby-counters li {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.lobby-counters li.recalled .token-label {
+  color: var(--accent);
+}
+.lobby .token-label {
+  font-size: 2.4em;
+}
+@media (max-width: 700px) {
+  .lobby {
+    grid-template-columns: 1fr;
+  }
+}

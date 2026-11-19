@@ -26,7 +26,8 @@ const MONGO_URI = process.env.MONGO_URI_TELLER_TEST ?? 'mongodb://127.0.0.1:2701
 const PASSWORD = 'Correct-Horse-Battery-77'
 
 const mongoUp = await mongoReachable()
-const config = loadConfig({ ...validEnv, MONGO_URI })
+// The cut-off is pinned to the last minute of the day, so these tests pass whatever the time in IST.
+const config = loadConfig({ ...validEnv, MONGO_URI, TELLER_CUTOFF: '23:59' })
 const app = createApp(config, pino({ level: 'silent' }), { apiRateLimit: 10_000, authRateLimit: 10_000 })
 
 async function signedIn(staffId: string) {
@@ -120,10 +121,38 @@ describe.skipIf(!mongoUp)('Teller API (MongoDB)', () => {
     denominations: notes(d),
     ...extra,
   })
-  const withdrawal = (accountNo: string, amountRupees: number, d: Partial<Denominations>) => ({
+  // No specimen signatures are on file in this data set, so tellers record the ID they checked.
+  const withdrawal = (accountNo: string, amountRupees: number, d: Partial<Denominations>, extra = {}) => ({
     ...deposit(accountNo, amountRupees, d),
     type: 'cash_withdrawal',
+    idChecked: 'passport',
+    ...extra,
   })
+
+  /** The newest withdrawal code in the dev inbox, as the teller would read it from the customer. */
+  async function latestWithdrawalCode(c: ReturnType<typeof makeClient>) {
+    const res = await c.get('/dev/inbox?channel=sms')
+    const msg = (res.body.items as { subject: string; body: string }[]).find(
+      (m) => m.subject === 'Withdrawal code',
+    )
+    return /\b(\d{6})\b/.exec(msg?.body ?? '')?.[1] ?? ''
+  }
+
+  /** A withdrawal above ₹25,000 with a verified customer code. */
+  async function otpWithdrawal(
+    c: ReturnType<typeof makeClient>,
+    accountNo: string,
+    amountRupees: number,
+    d: Partial<Denominations>,
+  ) {
+    const start = await c.post('/teller/withdrawal-otp', { accountNo, amount: rupees(amountRupees) })
+    expect(start.status, JSON.stringify(start.body)).toBe(201)
+    const ok = await c.post('/teller/withdrawal-otp/verify', {
+      challengeId: start.body.challengeId,
+      code: await latestWithdrawalCode(c),
+    })
+    return withdrawal(accountNo, amountRupees, d, { otpToken: ok.body.otpToken })
+  }
 
   it('keeps CSRs out and scopes account lookup to the branch', async () => {
     const csr = await signedIn('csr001')
@@ -190,7 +219,7 @@ describe.skipIf(!mongoUp)('Teller API (MongoDB)', () => {
     // A PAN on file (CIF-000002's KYC ID) means none is asked for.
     const onFile = await tel.post('/teller/transactions', deposit('000110000002', 50_000, { n500: 100 }))
     expect(onFile.status).toBe(201)
-    await tel.post('/teller/transactions', withdrawal('000110000002', 50_000, { n500: 100 }))
+    await tel.post('/teller/transactions', await otpWithdrawal(tel, '000110000002', 50_000, { n500: 100 }))
   })
 
   it('refuses frozen accounts and overdrawing', async () => {
@@ -205,7 +234,10 @@ describe.skipIf(!mongoUp)('Teller API (MongoDB)', () => {
   it('holds withdrawals over ₹50,000 until another person in the branch authorises them', async () => {
     const tel = await signedIn('tel001')
     const before = await balanceOf('000110000001')
-    const held = await tel.post('/teller/transactions', withdrawal('000110000001', 75_000, { n500: 150 }))
+    const held = await tel.post(
+      '/teller/transactions',
+      await otpWithdrawal(tel, '000110000001', 75_000, { n500: 150 }),
+    )
     expect(held.status).toBe(201)
     expect(held.body.status).toBe('pending_authorisation')
     expect(await balanceOf('000110000001')).toBe(before)
@@ -238,7 +270,10 @@ describe.skipIf(!mongoUp)('Teller API (MongoDB)', () => {
   it("won't let a supervisor authorise their own withdrawal", async () => {
     const sup = await signedIn('sup001')
     await sup.post('/teller/drawer/open', { denominations: notes({ n500: 200 }) })
-    const own = await sup.post('/teller/transactions', withdrawal('000110000001', 60_000, { n500: 120 }))
+    const own = await sup.post(
+      '/teller/transactions',
+      await otpWithdrawal(sup, '000110000001', 60_000, { n500: 120 }),
+    )
     const self = await sup.post(`/teller/transactions/${own.body.txnNo}/decision`, { decision: 'approve' })
     expect(self.status).toBe(403)
     expect(self.body.code).toBe('own_request')
@@ -285,6 +320,128 @@ describe.skipIf(!mongoUp)('Teller API (MongoDB)', () => {
     expect(results.map((r) => r.status).sort()).toEqual([201, 409])
     expect(await balanceOf('000110000002')).toBe(rupees(4_000))
     expect((await tel2.get('/teller/drawer')).body.drawer.cashOut).toBe(rupees(6_000))
+  })
+
+  it('needs the ID checked, and the customer code above ₹25,000, bound to account and amount', async () => {
+    const tel = await signedIn('tel001')
+    const noId = await tel.post(
+      '/teller/transactions',
+      withdrawal('000110000001', 1_000, { n500: 2 }, { idChecked: '' }),
+    )
+    expect(noId.body.errors[0].code).toBe('idCheckRequired')
+    const noOtp = await tel.post('/teller/transactions', withdrawal('000110000001', 30_000, { n500: 60 }))
+    expect(noOtp.body.errors[0].code).toBe('customerOtpRequired')
+
+    const small = await tel.post('/teller/withdrawal-otp', {
+      accountNo: '000110000001',
+      amount: rupees(20_000),
+    })
+    expect(small.status).toBe(400)
+    const start = await tel.post('/teller/withdrawal-otp', {
+      accountNo: '000110000001',
+      amount: rupees(30_000),
+    })
+    expect(start.body.sentTo).toMatch(/•/)
+    const code = await latestWithdrawalCode(tel)
+    const wrong = code === '000000' ? '111111' : '000000'
+    for (const left of [2, 1, 0]) {
+      const res = await tel.post('/teller/withdrawal-otp/verify', {
+        challengeId: start.body.challengeId,
+        code: wrong,
+      })
+      expect(res.body.attemptsLeft).toBe(left)
+    }
+    const locked = await tel.post('/teller/withdrawal-otp/verify', {
+      challengeId: start.body.challengeId,
+      code,
+    })
+    expect(locked.status).toBe(429)
+
+    const body = await otpWithdrawal(tel, '000110000001', 30_000, { n500: 60 })
+    const otherAmount = await tel.post('/teller/transactions', {
+      ...body,
+      amount: rupees(30_500),
+      denominations: notes({ n500: 61 }),
+    })
+    expect(otherAmount.body.errors[0].code).toBe('customerOtpRequired')
+    // The failed attempt used the token up; a fresh code posts.
+    const posted = await tel.post(
+      '/teller/transactions',
+      await otpWithdrawal(tel, '000110000001', 30_000, { n500: 60 }),
+    )
+    expect(posted.status, JSON.stringify(posted.body)).toBe(201)
+    expect(posted.body.status).toBe('posted')
+  })
+
+  it('asks for the signature check when a specimen is on file', async () => {
+    await CustomerModel.updateOne(
+      { cif: 'CIF-000002' },
+      {
+        $push: {
+          documents: { kind: 'signature', fileName: 's.png', mime: 'image/png', storageKey: 'missing-file' },
+        },
+      },
+    )
+    const tel = await signedIn('tel001')
+    expect((await tel.get('/teller/accounts/000110000002')).body.hasSpecimen).toBe(true)
+    const res = await tel.post('/teller/transactions', withdrawal('000110000002', 100, { n100: 1 }))
+    expect(res.body.errors[0].code).toBe('signatureCheck')
+    const ok = await tel.post(
+      '/teller/transactions',
+      withdrawal('000110000002', 100, { n100: 1 }, { signatureMatched: true }),
+    )
+    expect(ok.status, JSON.stringify(ok.body)).toBe(201)
+  })
+
+  it('publishes branch events to the live feed with only the last 4 digits of accounts', async () => {
+    const tel = await signedIn('tel001')
+    const feed = await tel.get('/teller/feed')
+    expect(feed.status).toBe(200)
+    const types = (feed.body.items as { type: string }[]).map((e) => e.type)
+    expect(types).toEqual(expect.arrayContaining(['posted', 'held', 'drawer_opened']))
+    const posted = feed.body.items.find((e: { type: string }) => e.type === 'posted')
+    expect(posted.accountLast4).toMatch(/^\d{4}$/)
+    expect(JSON.stringify(feed.body)).not.toContain('000110000001')
+    expect((await (await signedIn('csr001')).get('/teller/feed')).status).toBe(403)
+  })
+
+  it('runs the token queue: issue, call, skip once, serve, and the lobby display', async () => {
+    const csr = await signedIn('csr001')
+    const labels = []
+    for (let i = 0; i < 3; i++) labels.push((await csr.post('/teller/queue/tokens')).body.label)
+    expect(labels).toEqual(['T-001', 'T-002', 'T-003'])
+    expect((await csr.post('/teller/queue/call-next')).status).toBe(403)
+
+    const tel = await signedIn('tel001')
+    expect((await tel.post('/teller/queue/call-next')).body.current.label).toBe('T-001')
+    expect((await tel.post('/teller/queue/call-next')).body.code).toBe('token_in_progress')
+    await tel.post('/teller/queue/recall')
+    const skipped = await tel.post('/teller/queue/skip')
+    expect(skipped.body).toMatchObject({ current: null, next: ['T-002', 'T-003', 'T-001'] })
+    await tel.post('/teller/queue/call-next')
+    const served = await tel.post('/teller/queue/serve')
+    expect(served.body.stats).toEqual({ called: 2, recalled: 1, skipped: 1, served: 1 })
+
+    await tel.post('/teller/queue/call-next')
+    const lobby = await csr.get('/teller/queue/lobby')
+    expect(lobby.body.counters).toEqual([expect.objectContaining({ tellerId: 'tel001', token: 'T-003' })])
+    expect(lobby.body.next).toEqual(['T-001'])
+  })
+
+  it('refuses postings after the cut-off but still lets drawers close', async () => {
+    const late = createApp(
+      loadConfig({ ...validEnv, MONGO_URI, TELLER_CUTOFF: '00:00' }),
+      pino({ level: 'silent' }),
+      {
+        apiRateLimit: 10_000,
+        authRateLimit: 10_000,
+      },
+    )
+    const tel = makeClient(late, PASSWORD)
+    await tel.login('tel001')
+    expect((await tel.get('/teller/cutoff')).body.passed).toBe(true)
+    const res = await tel.post('/teller/transactions', deposit('000110000001', 500, { n500: 1 }))
+    expect(res.body.code).toBe('after_cutoff')
   })
 
   it('closes with a reason for any difference, then a supervisor signs it off', async () => {

@@ -74,3 +74,40 @@ export function businessDate(now = new Date()): string {
     day: '2-digit',
   }).format(now)
 }
+
+/** Withdrawals above this need a one-time code from the customer's registered mobile (FR-TEL-024). */
+export const WITHDRAWAL_OTP_LIMIT = rupees(25_000)
+
+export function needsCustomerOtp(type: TxnType, amount: number): boolean {
+  return type === 'cash_withdrawal' && amount > WITHDRAWAL_OTP_LIMIT
+}
+
+/** Cash cut-off (IST): weekdays 17:30, Saturdays 13:30, no business on Sundays (FR-TEL-026). */
+export const CUTOFF_TIMES = { weekday: '17:30', saturday: '13:30' } as const
+/** The counter starts counting down this long before the cut-off. */
+export const CUTOFF_WARNING_MS = 60 * 60_000
+
+export interface CutoffInfo {
+  cutoffAt: string
+  countdownFrom: string
+  passed: boolean
+}
+
+/**
+ * Today's cut-off at the branch.
+ * @param override "HH:MM" used for every day, Sundays included (practice and tests).
+ */
+export function cutoffFor(now = new Date(), override?: string): CutoffInfo {
+  const date = businessDate(now)
+  const day = new Date(`${date}T12:00:00+05:30`).getUTCDay()
+  const time = override ?? (day === 0 ? '00:00' : day === 6 ? CUTOFF_TIMES.saturday : CUTOFF_TIMES.weekday)
+  const cutoff = new Date(`${date}T${time}:00+05:30`)
+  return {
+    cutoffAt: cutoff.toISOString(),
+    countdownFrom: new Date(cutoff.getTime() - CUTOFF_WARNING_MS).toISOString(),
+    passed: now.getTime() >= cutoff.getTime(),
+  }
+}
+
+/** "T-007" */
+export const formatToken = (n: number) => `T-${String(n).padStart(3, '0')}`

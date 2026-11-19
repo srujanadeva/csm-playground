@@ -7,8 +7,12 @@
  * covers a withdrawal, the drawer update only matches while the drawer is open and holds
  * enough cash (or stays under its limit). If the second update fails, the first is reversed,
  * so the balance and the drawer can't drift apart or go negative under concurrent requests.
+ *
+ * Phase 5: no postings after the cash cut-off; withdrawals need a signature check (or the ID
+ * checked when no specimen is on file) and, above ₹25,000, the customer's one-time code. Every
+ * posting, authorisation and drawer change is published to the branch's live feed.
  */
-import type { Request } from 'express'
+import type { Request, Response } from 'express'
 import type { z } from 'zod'
 import {
   ACCOUNT_NO,
@@ -19,9 +23,15 @@ import {
   denominationTotal,
   drawerVariance,
   expectedCash,
+  cutoffFor,
   maskMobile,
   needsAuthorisation,
+  needsCustomerOtp,
   needsPan,
+  type CutoffInfo,
+  type WithdrawalOtpDTO,
+  type withdrawalOtpVerifySchema,
+  type withdrawalOtpStartSchema,
   type AccountDTO,
   type AccountSearchItem,
   type Denominations,
@@ -37,8 +47,22 @@ import {
   type transactionDecisionSchema,
   type transactionListQuery,
 } from '@csm/shared'
+import { resolve } from 'node:path'
+import type { Config } from '../../config.ts'
+import { SERVER_DIR } from '../../env.ts'
 import { audit } from '../../lib/audit.ts'
-import { conflict, forbidden, notFound, staleVersion, validationFailed } from '../../lib/errors.ts'
+import {
+  badRequest,
+  conflict,
+  forbidden,
+  notFound,
+  staleVersion,
+  validationFailed,
+} from '../../lib/errors.ts'
+import { sendUpload } from '../../lib/uploads.ts'
+import * as notifications from '../notifications/service.ts'
+import * as otp from '../otp/service.ts'
+import { publish } from './events.ts'
 import { clampPageSize } from '../../lib/pagination.ts'
 import { op } from '../../lib/query.ts'
 import { escapeRegex } from '../../lib/regex.ts'
@@ -187,13 +211,108 @@ async function findAccount(req: Request, accountNo: string) {
 
 async function customerFor(cif: string) {
   const customer = await CustomerModel.findOne({ cif })
-    .select('status kyc.status kyc.idType contact.mobile')
+    .select('status kyc.status kyc.idType contact.mobile documents')
     .lean()
   if (!customer) throw notFound('Customer not found.')
   return customer
 }
 
 /** Account holder card: balance, status and KYC, with the mobile masked unless viewPII. */
+const OTP_PURPOSE = 'withdrawal'
+const OTP_MAX_ATTEMPTS = 3
+/** The code is bound to the account and amount, so it can't approve a different withdrawal. */
+const otpSubject = (accountNo: string, amount: number) => `${accountNo}|${amount}`
+
+/** The newest specimen signature (captured at onboarding, FR-ONB-010), if any. */
+function specimenOf(customer: Rec) {
+  return ((customer.documents ?? []) as Rec[]).filter((d) => d.kind === 'signature').at(-1) ?? null
+}
+
+/** Today's cut-off, honouring the practice override in config. */
+export const cutoff = (config: Config): CutoffInfo => cutoffFor(new Date(), config.TELLER_CUTOFF)
+
+/** Streams the account holder's specimen signature (an image) for the counter. */
+export async function sendSpecimen(req: Request, res: Response, accountNo: string, config: Config) {
+  const account = await findAccount(req, accountNo)
+  const doc = specimenOf(await customerFor(account.cif))
+  if (!doc) throw notFound('No specimen signature on file.')
+  await sendUpload(res, resolve(SERVER_DIR, config.UPLOAD_DIR), doc as never, true)
+}
+
+/** Sends the customer a one-time code for a withdrawal above ₹25,000. */
+export async function startWithdrawalOtp(
+  req: Request,
+  body: z.infer<typeof withdrawalOtpStartSchema>,
+  config: Config,
+): Promise<WithdrawalOtpDTO> {
+  if (!needsCustomerOtp('cash_withdrawal', body.amount)) {
+    throw badRequest('Withdrawals of ₹25,000 or less don’t need a customer code.')
+  }
+  const account = await findAccount(req, body.accountNo)
+  const customer = await customerFor(account.cif)
+  const mobile = customer.contact?.mobile
+  if (!mobile) throw conflict('The customer has no registered mobile number.', { code: 'no_mobile' })
+  const { challenge, code } = await otp.issue(
+    config.JWT_SECRET,
+    OTP_PURPOSE,
+    otpSubject(account.accountNo, body.amount),
+  )
+  await sendWithdrawalCode(mobile, account.accountNo, body.amount, code)
+  return otpDTO(challenge, mobile)
+}
+
+async function sendWithdrawalCode(mobile: string, accountNo: string, amount: number, code: string) {
+  await notifications.send({
+    channel: 'sms',
+    to: formatMobile(mobile),
+    subject: 'Withdrawal code',
+    body: `CSM Bank: ${code} is the code to approve a cash withdrawal of ₹${(amount / 100).toLocaleString('en-IN')} from account ••••${accountNo.slice(-4)}. Valid 5 minutes. Never share it.`,
+    purpose: OTP_PURPOSE,
+  })
+}
+
+function otpDTO(c: { _id: unknown; expiresAt: Date; resendAt: Date }, mobile: string): WithdrawalOtpDTO {
+  return {
+    challengeId: String(c._id),
+    sentTo: maskMobile(formatMobile(mobile)),
+    expiresAt: c.expiresAt.toISOString(),
+    resendAt: c.resendAt.toISOString(),
+  }
+}
+
+/** Sends a new code for the same withdrawal once the 30-second wait is over. */
+export async function resendWithdrawalOtp(
+  req: Request,
+  challengeId: string,
+  config: Config,
+): Promise<WithdrawalOtpDTO> {
+  const doc = await otp.load(challengeId, OTP_PURPOSE)
+  const [accountNo, amount] = doc.subject.split('|')
+  const account = await findAccount(req, accountNo!)
+  const customer = await customerFor(account.cif)
+  const { challenge, code } = await otp.resend(config.JWT_SECRET, challengeId, OTP_PURPOSE)
+  await sendWithdrawalCode(customer.contact!.mobile!, account.accountNo, Number(amount), code)
+  return otpDTO(challenge, customer.contact!.mobile!)
+}
+
+/** Checks the code; 3 wrong codes cancel it. Returns the single-use token the posting needs. */
+export async function verifyWithdrawalOtp(
+  req: Request,
+  body: z.infer<typeof withdrawalOtpVerifySchema>,
+  config: Config,
+) {
+  const doc = await otp.load(body.challengeId, OTP_PURPOSE)
+  await findAccount(req, doc.subject.split('|')[0]!) // branch scope
+  const { token } = await otp.verify(
+    config.JWT_SECRET,
+    body.challengeId,
+    OTP_PURPOSE,
+    body.code,
+    OTP_MAX_ATTEMPTS,
+  )
+  return { otpToken: token }
+}
+
 export async function getAccount(req: Request, accountNo: string): Promise<AccountDTO> {
   const account = await findAccount(req, accountNo)
   const customer = await customerFor(account.cif)
@@ -211,6 +330,7 @@ export async function getAccount(req: Request, accountNo: string): Promise<Accou
     kycStatus: customer.kyc?.status ?? 'pending',
     mobile: mobile ? (showPII ? formatMobile(mobile) : maskMobile(mobile)) : '',
     panOnFile: customer.kyc?.idType === 'pan',
+    hasSpecimen: !!specimenOf(customer),
     openedAt: new Date(account.openedAt).toISOString(),
     piiMasked: !showPII,
   }
@@ -297,7 +417,19 @@ async function openDrawerFor(req: Request) {
 }
 
 /** Posts a cash deposit or withdrawal, or holds a large withdrawal for authorisation. */
-export async function post(req: Request, input: PostTransactionInput): Promise<TransactionDTO> {
+export async function post(
+  req: Request,
+  input: PostTransactionInput,
+  config: Config,
+): Promise<TransactionDTO> {
+  if (cutoff(config).passed) {
+    throw conflict(
+      'The cash cut-off has passed; no more transactions today. You can still close your drawer.',
+      {
+        code: 'after_cutoff',
+      },
+    )
+  }
   const account = await findAccount(req, input.accountNo)
   if (account.status !== 'active') {
     throw conflict(`This account is ${account.status}, so it can't take cash transactions.`, {
@@ -322,10 +454,45 @@ export async function post(req: Request, input: PostTransactionInput): Promise<T
       },
     ])
   }
+  if (input.type === 'cash_withdrawal') {
+    if (specimenOf(customer) ? !input.signatureMatched : !input.idChecked) {
+      throw validationFailed([
+        specimenOf(customer)
+          ? {
+              path: 'signatureMatched',
+              code: 'signatureCheck',
+              message: 'Confirm the signature matches the slip.',
+            }
+          : { path: 'idChecked', code: 'idCheckRequired', message: 'Record the ID document you checked.' },
+      ])
+    }
+    if (needsCustomerOtp(input.type, input.amount) && !input.otpToken) {
+      throw validationFailed([
+        {
+          path: 'otpToken',
+          code: 'customerOtpRequired',
+          message: 'Verify the customer’s one-time code first.',
+        },
+      ])
+    }
+  }
   const drawer = await openDrawerFor(req)
   // Early checks give clear errors; moveCash re-checks atomically.
   if (input.type === 'cash_withdrawal' && input.amount > account.balance) {
     throw conflict("The account balance doesn't cover this withdrawal.", { code: 'insufficient_funds' })
+  }
+  if (needsCustomerOtp(input.type, input.amount)) {
+    // Single use: a replayed or reused token fails here, as does one for another account or amount.
+    const subject = await otp.redeem(config.JWT_SECRET, OTP_PURPOSE, input.otpToken!).catch(() => null)
+    if (subject !== otpSubject(account.accountNo, input.amount)) {
+      throw validationFailed([
+        {
+          path: 'otpToken',
+          code: 'customerOtpRequired',
+          message: 'The customer’s code doesn’t match this withdrawal. Ask for a new one.',
+        },
+      ])
+    }
   }
 
   const now = new Date()
@@ -360,6 +527,7 @@ export async function post(req: Request, input: PostTransactionInput): Promise<T
       },
       req,
     )
+    await publish({ ...eventOf(txn.toObject()), type: 'held' })
     return toTxnDTO(txn.toObject())
   }
 
@@ -388,8 +556,19 @@ export async function post(req: Request, input: PostTransactionInput): Promise<T
     },
     req,
   )
+  await publish({ ...eventOf(txn.toObject()), type: 'posted' })
   return toTxnDTO(txn.toObject())
 }
+
+/** The feed fields of a transaction. */
+const eventOf = (t: Rec) => ({
+  branchCode: t.branchCode as string,
+  tellerId: t.tellerId as string,
+  txnNo: t.txnNo as string,
+  txnType: t.type as TxnType,
+  amount: t.amount as number,
+  accountNo: t.accountNo as string,
+})
 
 async function findTxn(req: Request, txnNo: string) {
   if (!TXN_NO.test(txnNo)) throw notFound('Transaction not found.')
@@ -437,6 +616,7 @@ export async function decide(
       },
       req,
     )
+    await publish({ ...eventOf(updated), type: 'rejected', tellerId: actor(req) })
     return toTxnDTO(updated)
   }
 
@@ -481,6 +661,7 @@ export async function decide(
     },
     req,
   )
+  await publish({ ...eventOf(updated!), type: 'authorised', tellerId: actor(req) })
   return toTxnDTO(updated!)
 }
 
@@ -562,6 +743,7 @@ export async function openDrawer(req: Request, body: z.infer<typeof openDrawerSc
     },
     req,
   )
+  await publish({ branchCode: drawer.branchCode, type: 'drawer_opened', tellerId: actor(req), amount })
   return drawerDTO(drawer.toObject())
 }
 
@@ -621,6 +803,12 @@ export async function closeDrawer(req: Request, body: z.infer<typeof closeDrawer
     },
     req,
   )
+  await publish({
+    branchCode: updated.branchCode,
+    type: 'drawer_closed',
+    tellerId: actor(req),
+    amount: counted,
+  })
   return drawerDTO(updated)
 }
 

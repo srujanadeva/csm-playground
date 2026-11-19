@@ -49,6 +49,11 @@ const schema = z.object({
   /** The simulated e-KYC provider listens here: a second origin, so the app talks to it by postMessage. */
   MOCK_PROVIDER_PORT: z.coerce.number().int().min(1).max(65535).default(4002),
   MOCK_PROVIDER_ORIGIN: z.url().default('https://localhost:4002'),
+  /** Practice and tests only: one "HH:MM" (IST) cash cut-off for every day instead of 17:30 / 13:30. */
+  TELLER_CUTOFF: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'TELLER_CUTOFF must look like 17:30')
+    .optional(),
 })
 
 export type Config = z.infer<typeof schema> & { isProd: boolean }

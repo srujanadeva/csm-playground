@@ -20,6 +20,7 @@ const NewRequestPage = lazy(() => import('./modules/requests/NewRequestPage.tsx'
 const RequestBoardPage = lazy(() => import('./modules/requests/RequestBoardPage.tsx'))
 const TellerCounterPage = lazy(() => import('./modules/teller/TellerCounterPage.tsx'))
 const CashDrawerPage = lazy(() => import('./modules/teller/CashDrawerPage.tsx'))
+const LobbyDisplayPage = lazy(() => import('./modules/teller/LobbyDisplayPage.tsx'))
 const UsersPage = lazy(() => import('./modules/admin/UsersPage.tsx'))
 const ScreensPage = lazy(() => import('./modules/admin/ScreensPage.tsx'))
 
@@ -33,6 +34,15 @@ export const router = createBrowserRouter([
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/request-access', element: <RequestAccessPage /> },
   { path: '/dev/inbox', element: <DevInboxPage /> },
+  // Full-screen lobby display: signed in, but without the app's menus.
+  {
+    path: '/teller/lobby',
+    element: (
+      <RequireAuth>
+        <LobbyDisplayPage />
+      </RequireAuth>
+    ),
+  },
   {
     path: '/',
     element: (

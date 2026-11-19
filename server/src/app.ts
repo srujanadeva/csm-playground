@@ -128,7 +128,7 @@ export function createApp(config: Config, logger: Logger, options: AppOptions = 
   app.use('/api/v1/service-requests', serviceRequestRoutes(config))
   app.use('/api/v1/admin', adminRoutes())
   app.use('/api/v1/dashboard', dashboardRoutes())
-  app.use('/api/v1/teller', tellerRoutes())
+  app.use('/api/v1/teller', tellerRoutes(config))
   app.use('/api/v1/announcements', announcementRoutes())
   app.use('/api/v1/access-requests', accessRequestRoutes(options.authRateLimit))
   // Public and unauthenticated by design, so never available in production.

@@ -4,8 +4,11 @@
  * The PAN field appears for large deposits without a PAN on file; withdrawals over ₹50,000
  * go to a supervisor instead of posting. Supervisors also see the authorisation queue.
  * Posting twice (double click, retry) creates one transaction thanks to the Idempotency-Key.
+ * Phase 5: token queue, cut-off countdown (?cutoffIn=), amount typed as rupees from the right
+ * (placeholder ₹0.00), −/+ note counts, signature and customer-code checks on withdrawals, a Post
+ * button that says what happened, and the live branch feed (?feedInterval=).
  */
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +17,7 @@ import {
   TXN_TYPES,
   businessDate,
   needsAuthorisation,
+  needsCustomerOtp,
   needsPan,
   postTransactionSchema,
   suggestDenominations,
@@ -36,9 +40,28 @@ import { useToast } from '../../components/Toast.tsx'
 import { EmptyState, Pagination } from '../../components/Widgets.tsx'
 import { useDebounce } from '../../hooks/useDebounce.ts'
 import { formatDate, formatPaise, formatTime } from '../../lib/format.ts'
+import { LocatorBadge } from '../../components/LocatorBadge.tsx'
+import { MaskedTextInput } from '../../components/inputs/MaskedTextInput.tsx'
+import { CutoffCountdown, useCutoff } from './CutoffCountdown.tsx'
 import { DenominationGrid } from './DenominationGrid.tsx'
+import { LiveFeed } from './LiveFeed.tsx'
+import { TokenQueuePanel } from './TokenQueuePanel.tsx'
+import { EMPTY_CHECKS, WithdrawalChecks, checksDone, type WithdrawalCheckState } from './WithdrawalChecks.tsx'
+import './teller.css'
 
-type Errors = Partial<Record<'amount' | 'denominations' | 'narration' | 'panNumber' | 'root', string>>
+type Errors = Partial<
+  Record<
+    | 'amount'
+    | 'denominations'
+    | 'narration'
+    | 'panNumber'
+    | 'root'
+    | 'signatureMatched'
+    | 'idChecked'
+    | 'otpToken',
+    string
+  >
+>
 
 /** /teller */
 export default function TellerCounterPage() {
@@ -58,6 +81,7 @@ export default function TellerCounterPage() {
   })
   const open = drawer.data?.drawer?.status === 'open' ? drawer.data.drawer : null
   const stale = open && open.businessDate !== businessDate()
+  const cutoff = useCutoff()
 
   const pick = (no: string | null) =>
     setParams((p) => {
@@ -74,6 +98,9 @@ export default function TellerCounterPage() {
           <p>{t('counter.subtitle')}</p>
         </div>
       </div>
+
+      {canPost ? <CutoffCountdown cutoff={cutoff} /> : null}
+      {canPost ? <TokenQueuePanel /> : null}
 
       {canPost && drawer.isSuccess && (!open || stale) ? (
         <div className="note warn" role="status" data-testid="counter-drawer-banner">
@@ -93,7 +120,7 @@ export default function TellerCounterPage() {
         <AccountPanel
           accountNo={accountNo}
           onChange={() => pick(null)}
-          canPost={canPost && !!open && !stale}
+          canPost={canPost && !!open && !stale && !cutoff.passed}
         />
       ) : (
         <AccountLookup onPick={(a) => pick(a.accountNo)} />
@@ -101,6 +128,7 @@ export default function TellerCounterPage() {
 
       {canApprove ? <AuthorisationQueue /> : null}
       <TodayTable />
+      <LiveFeed />
     </div>
   )
 }
@@ -305,15 +333,21 @@ function TransactionForm({ account, canPost }: { account: AccountDTO; canPost: b
   const errorText = useErrorText()
   const idemKey = useRef(newIdempotencyKey())
   const [type, setType] = useState<TxnType>('cash_deposit')
-  const [amountText, setAmountText] = useState('')
+  /** Paise as digits, filled from the right: typing 5 gives ₹0.05 (FR-UI-002). */
+  const [amountDigits, setAmountDigits] = useState('')
+  const [checks, setChecks] = useState<WithdrawalCheckState>(EMPTY_CHECKS)
+  const [otpAmount, setOtpAmount] = useState<number | null>(null)
+  const [lastOutcome, setLastOutcome] = useState<'posted' | 'held' | null>(null)
   const [denominations, setDenominations] = useState<Denominations>(EMPTY_DENOMINATIONS)
   const [narration, setNarration] = useState('')
   const [pan, setPan] = useState('')
   const [errors, setErrors] = useState<Errors>({})
   const [result, setResult] = useState<TransactionDTO | null>(null)
 
-  const amountRupees = Number(amountText.replace(/,/g, ''))
-  const amount = Number.isFinite(amountRupees) ? Math.round(amountRupees * 100) : 0
+  const amount = Number(amountDigits || 0)
+  const amountRupees = amount / 100
+  // A verified customer code is for one amount only.
+  const otpToken = otpAmount === amount ? checks.otpToken : ''
   const showPan = needsPan(type, amount, account.panOnFile)
   const held = needsAuthorisation(type, amount)
   const usable = account.status === 'active' && account.customerStatus === 'active'
@@ -325,7 +359,10 @@ function TransactionForm({ account, canPost }: { account: AccountDTO; canPost: b
     onSuccess: (txn) => {
       idemKey.current = newIdempotencyKey()
       setResult(txn)
-      setAmountText('')
+      setLastOutcome(txn.status === 'posted' ? 'posted' : 'held')
+      setChecks(EMPTY_CHECKS)
+      setOtpAmount(null)
+      setAmountDigits('')
       setDenominations(EMPTY_DENOMINATIONS)
       setNarration('')
       setPan('')
@@ -362,10 +399,22 @@ function TransactionForm({ account, canPost }: { account: AccountDTO; canPost: b
       denominations,
       narration,
       panNumber: showPan ? pan : '',
+      ...(type === 'cash_withdrawal'
+        ? {
+            signatureMatched: account.hasSpecimen ? checks.signatureMatched : undefined,
+            idChecked: account.hasSpecimen ? undefined : checks.idChecked,
+            otpToken: needsCustomerOtp(type, amount) ? otpToken : undefined,
+          }
+        : {}),
     }
     const parsed = postTransactionSchema.safeParse(body)
     const next: Errors = {}
-    if (!amountText.trim()) next.amount = 'required'
+    if (!amountDigits) next.amount = 'required'
+    if (type === 'cash_withdrawal' && !checksDone(account, amount, { ...checks, otpToken })) {
+      if (account.hasSpecimen && !checks.signatureMatched) next.signatureMatched = 'signatureCheck'
+      if (!account.hasSpecimen && !checks.idChecked) next.idChecked = 'idCheckRequired'
+      if (needsCustomerOtp(type, amount) && !otpToken) next.otpToken = 'customerOtpRequired'
+    }
     for (const issue of parsed.error?.issues ?? []) {
       const key = String(issue.path[0]) as keyof Errors
       next[key] ??= issue.message
@@ -374,6 +423,13 @@ function TransactionForm({ account, canPost }: { account: AccountDTO; canPost: b
     setErrors(next)
     if (Object.keys(next).length === 0) submit.mutate(body)
   }
+
+  // The outcome text on the Post button goes back to normal after 3 seconds.
+  useEffect(() => {
+    if (!lastOutcome) return
+    const timer = setTimeout(() => setLastOutcome(null), 3000)
+    return () => clearTimeout(timer)
+  }, [lastOutcome])
 
   const id = (f: string) => `counter-txn-${f}`
   return (
@@ -438,14 +494,14 @@ function TransactionForm({ account, canPost }: { account: AccountDTO; canPost: b
           className="span2"
         >
           <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              {...controlProps(id('amount'), errors.amount)}
-              className="in num"
-              inputMode="decimal"
-              disabled={disabled}
-              value={amountText}
-              onChange={(e) => setAmountText(e.target.value.replace(/[^0-9.,]/g, ''))}
+            <MaskedTextInput
+              kind="amount"
+              value={amountDigits}
+              onChange={setAmountDigits}
+              invalid={!!errors.amount}
+              inputProps={{ ...controlProps(id('amount'), errors.amount), placeholder: '₹0.00', disabled }}
             />
+            <LocatorBadge style="PH" />
             <button
               type="button"
               className="btn"
@@ -457,6 +513,25 @@ function TransactionForm({ account, canPost }: { account: AccountDTO; canPost: b
             </button>
           </div>
         </Field>
+
+        {type === 'cash_withdrawal' && amount > 0 && usable ? (
+          <WithdrawalChecks
+            account={account}
+            amount={amount}
+            value={{ ...checks, otpToken }}
+            onChange={(v) => {
+              setChecks(v)
+              if (v.otpToken) setOtpAmount(amount)
+              setErrors((e) => ({
+                ...e,
+                signatureMatched: undefined,
+                idChecked: undefined,
+                otpToken: undefined,
+              }))
+            }}
+            errors={errors}
+          />
+        ) : null}
 
         {held ? (
           <div className="note info span-all" role="status" data-testid={id('auth-notice')}>
@@ -515,10 +590,21 @@ function TransactionForm({ account, canPost }: { account: AccountDTO; canPost: b
           disabled={disabled || submit.isPending}
           data-testid={id('submit')}
           data-mode={held ? 'hold' : 'post'}
+          data-state={submit.isPending ? 'posting' : (lastOutcome ?? 'idle')}
         >
           {submit.isPending ? <span className="spin" /> : null}
-          {held ? t('counter.submitHold') : t('counter.post')}
+          {/* FR-TEL-027: the text says what is happening, and what happened, for a few seconds. */}
+          {submit.isPending
+            ? t('counter.posting')
+            : lastOutcome === 'posted'
+              ? t('counter.postedShort')
+              : lastOutcome === 'held'
+                ? t('counter.heldShort')
+                : held
+                  ? t('counter.submitHold')
+                  : t('counter.post')}
         </button>
+        <LocatorBadge style="TXT" />
       </div>
     </form>
   )

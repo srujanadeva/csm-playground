@@ -9,6 +9,7 @@ import {
   needsPan,
   rupees,
   suggestDenominations,
+  cutoffFor,
 } from '../src/teller.ts'
 import { ROLES, SCREENS, resolvePermissions } from '../src/permissions.ts'
 import { closeDrawerSchema, postTransactionSchema, transactionDecisionSchema } from '../src/schemas/teller.ts'
@@ -107,5 +108,24 @@ describe('teller access', () => {
     expect(sup['teller.drawer']).toContain('approve')
     const csr = resolvePermissions('csr', grants('csr'), [], SCREENS)
     expect(csr['teller.counter']).toBeUndefined()
+  })
+})
+
+describe('cutoffFor', () => {
+  const at = (ist: string) => new Date(`${ist}+05:30`)
+
+  it('is 17:30 on weekdays and 13:30 on Saturdays, counting down from an hour before', () => {
+    expect(cutoffFor(at('2026-11-18T16:00:00'))).toEqual({
+      cutoffAt: '2026-11-18T12:00:00.000Z',
+      countdownFrom: '2026-11-18T11:00:00.000Z',
+      passed: false,
+    })
+    expect(cutoffFor(at('2026-11-21T13:30:00')).passed).toBe(true)
+    expect(cutoffFor(at('2026-11-21T13:29:00')).passed).toBe(false)
+  })
+
+  it('treats Sunday as closed unless overridden', () => {
+    expect(cutoffFor(at('2026-11-22T10:00:00')).passed).toBe(true)
+    expect(cutoffFor(at('2026-11-22T10:00:00'), '23:59').passed).toBe(false)
   })
 })

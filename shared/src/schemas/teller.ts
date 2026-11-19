@@ -1,6 +1,6 @@
 /** Teller schemas: account lookup, cash transactions, authorisation and the cash drawer. */
 import { z } from 'zod'
-import { DRAWER_STATUS, TXN_STATUS, TXN_TYPES } from '../enums.ts'
+import { DRAWER_STATUS, ID_TYPES, TXN_STATUS, TXN_TYPES } from '../enums.ts'
 import { TELLER_CASH_LIMIT, denominationTotal } from '../teller.ts'
 import { offsetQuery } from './common.ts'
 
@@ -49,6 +49,12 @@ export const postTransactionSchema = z
       emptyToUndefined,
       z.string().trim().toUpperCase().regex(PAN, 'panFormat').optional(),
     ),
+    /** Withdrawals: the teller compared the slip with the specimen signature (FR-TEL-022). */
+    signatureMatched: z.boolean().optional(),
+    /** Withdrawals without a specimen on file: the ID document the teller checked instead. */
+    idChecked: z.preprocess(emptyToUndefined, z.enum(ID_TYPES).optional()),
+    /** Withdrawals above ₹25,000: the token from verifying the customer's one-time code. */
+    otpToken: z.preprocess(emptyToUndefined, z.string().min(20).max(100).optional()),
   })
   .refine((d) => denominationTotal(d.denominations) === d.amount, {
     error: 'denominationMismatch',
@@ -90,4 +96,16 @@ export const signOffSchema = z.strictObject({
 export const drawerListQuery = offsetQuery.extend({
   status: z.preprocess(emptyToUndefined, z.enum(DRAWER_STATUS).optional()),
   date: z.preprocess(emptyToUndefined, z.iso.date().optional()),
+})
+
+const challengeId = z.string().regex(/^[a-f0-9]{24}$/, 'invalid')
+
+export const withdrawalOtpStartSchema = z.strictObject({
+  accountNo: z.string().regex(ACCOUNT_NO, 'required'),
+  amount: z.number().int().min(100).max(TELLER_CASH_LIMIT),
+})
+export const withdrawalOtpResendSchema = z.strictObject({ challengeId })
+export const withdrawalOtpVerifySchema = z.strictObject({
+  challengeId,
+  code: z.string().regex(/^\d{6}$/, 'otpFormat'),
 })
